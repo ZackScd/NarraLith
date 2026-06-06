@@ -1,0 +1,126 @@
+{
+  "title": "Mapa",
+  "loadFailed": "No se pudo cargar el mapa.",
+  "loadingMaps": "Cargando mapas…",
+  "loadingImage": "Cargando imagen…",
+  "genericError": "Error al guardar el mapa.",
+  "saving": "Guardando…",
+  "noMaps": "Aún no hay mapas en este proyecto.",
+  "emptyTitle": "Crea tu primer mapa",
+  "emptyDescription": "Abre el estudio de dibujo para trazar tu mapa desde cero, o importa una imagen y dibuja encima. Luego añade pines y territorios en el mapa interactivo.",
+  "createMap": "Nuevo mapa",
+  "createMapTitle": "Crear mapa",
+  "createModeBlank": "Lienzo vacío",
+  "createModeImport": "Importar imagen",
+  "mapName": "Nombre del mapa",
+  "mapNamePlaceholder": "p. ej. Continente de Aetheria",
+  "blankSizeLabel": "Tamaño del lienzo",
+  "blankSize": {
+    "small": "Pequeño",
+    "medium": "Mediano",
+    "large": "Grande"
+  },
+  "blankHint": "Se genera un lienzo blanco con rejilla. Dibuja libremente y guarda cuando termines.",
+  "importHint": "Elige PNG, JPG o WebP. La imagen se copiará al proyecto.",
+  "pickImage": "Elegir imagen de fondo",
+  "polygonHint": "Polígono en curso: {{count}} puntos. Haz doble clic para cerrarlo.",
+  "studio": {
+    "modeLabel": "Modo dibujo",
+    "loading": "Preparando lienzo…",
+    "save": "Guardar mapa",
+    "viewMap": "Ver mapa interactivo",
+    "editDrawing": "Editar dibujo",
+    "undo": "Deshacer",
+    "redo": "Rehacer",
+    "brush": "Pincel",
+    "eraser": "Goma",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomFit": "Encajar en pantalla",
+    "size": "Grosor",
+    "layers": "Capas",
+    "layerBackground": "Fondo",
+    "layerDraw": "Dibujo",
+    "hint": "Rueda: zoom · Alt+arrastrar: mover lienzo",
+    "presets": {
+      "pen": "Pluma",
+      "pencil": "Lápiz",
+      "marker": "Rotulador"
+    }
+  },
+  "imageLoadFailed": "No se pudo cargar la imagen del mapa. Reinicia la app y comprueba que el archivo existe en el proyecto.",
+  "creating": "Creando…",
+  "cancel": "Cancelar",
+  "selectMap": "Seleccionar mapa",
+  "resetView": "Recentrar vista",
+  "tools": {
+    "select": "Seleccionar",
+    "pin": "Pin",
+    "polygon": "Polígono",
+    "delete": "Borrar"
+  },
+  "layers": {
+    "title": "Capas",
+    "add": "Añadir capa",
+    "opacity": "Opacidad",
+    "visible": "Visible",
+    "properties": "Propiedades del elemento",
+    "label": "Etiqueta",
+    "entity": "Entidad vinculada",
+    "entityPlaceholder": "Buscar entidad…",
+    "childMap": "Mapa detallado",
+    "childMapNone": "Ninguno",
+    "openEntity": "Abrir ficha",
+    "noSelection": "Selecciona un pin o polígono en el mapa.",
+    "categoryFilter": "Filtro de categoría"
+  },
+  "breadcrumb": {
+    "root": "Mapas"
+  },
+  "sketches": {
+    "title": "Bocetos a mano alzada",
+    "show": "Mostrar bocetos",
+    "hide": "Ocultar bocetos",
+    "hint": "Capa libre de anotaciones; no se vincula a entidades ni al grafo.",
+    "loading": "Cargando bocetos…"
+  },
+  "overlays": {
+    "title": "Capas históricas",
+    "add": "Añadir imagen por época",
+    "name": "Nombre",
+    "from": "Desde (marca temporal)",
+    "to": "Hasta (opcional)",
+    "importImage": "Imagen del overlay"
+  },
+  "timeline": {
+    "title": "Evolución del mapa",
+    "scrub": "Arrastra para ver otra época",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "clear": "Vista actual",
+    "eventsTitle": "Eventos en esta época",
+    "noMarkers": "Sin cambios visuales registrados por tiempo."
+  },
+  "drillDown": {
+    "openChild": "Abrir mapa detallado",
+    "hint": "Este área tiene un mapa enlazado. Haz doble clic para entrar."
+  },
+  "errors": {
+    "generic": "No se pudo completar la operación del mapa.",
+    "name_required": "El nombre del mapa es obligatorio.",
+    "not_found": "Mapa no encontrado.",
+    "invalid_json": "Datos del mapa corruptos.",
+    "image_not_found": "No se encontró la imagen.",
+    "invalid_image_type": "Formato no admitido. Usa PNG, JPG o WebP.",
+    "image_too_large": "La imagen supera el tamaño máximo (50 MB).",
+    "invalid_image": "No se pudo leer la imagen.",
+    "invalid_dimensions": "Dimensiones del mapa no válidas.",
+    "child_cycle": "Enlace circular entre mapas no permitido.",
+    "child_not_found": "El mapa enlazado no existe.",
+    "parent_not_found": "El mapa padre no existe.",
+    "layer_not_found": "Capa no encontrada.",
+    "invalid_feature": "Geometría del elemento no válida.",
+    "overlay_invalid": "Overlay histórico no válido.",
+    "invalid_timestamp": "Marca temporal no válida."
+  }
+}

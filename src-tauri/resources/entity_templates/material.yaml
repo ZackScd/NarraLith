@@ -1,0 +1,25 @@
+id: material
+labelKey: worldbuilding.templates.material
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: source
+        type: relation
+        labelKey: worldbuilding.fields.source
+        relationCategories:
+          - geology
+          - flora
+      - key: properties
+        type: keyValue
+        labelKey: worldbuilding.fields.properties
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

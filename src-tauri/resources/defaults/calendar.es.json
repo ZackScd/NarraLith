@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "epoch": { "year": 0, "month": 1, "day": 1 },
+  "daysPerWeek": 7,
+  "weekDays": [
+    { "name": "Domingo" },
+    { "name": "Lunes" },
+    { "name": "Martes" },
+    { "name": "Miércoles" },
+    { "name": "Jueves" },
+    { "name": "Viernes" },
+    { "name": "Sábado" }
+  ],
+  "hoursPerDay": 24,
+  "hoursEnabled": true,
+  "dayPhasesMode": "perSeason",
+  "months": [
+    { "name": "Enero", "days": 31 },
+    { "name": "Febrero", "days": 28 },
+    { "name": "Marzo", "days": 31 },
+    { "name": "Abril", "days": 30 },
+    { "name": "Mayo", "days": 31 },
+    { "name": "Junio", "days": 30 },
+    { "name": "Julio", "days": 31 },
+    { "name": "Agosto", "days": 31 },
+    { "name": "Septiembre", "days": 30 },
+    { "name": "Octubre", "days": 31 },
+    { "name": "Noviembre", "days": 30 },
+    { "name": "Diciembre", "days": 31 }
+  ],
+  "leapRules": {
+    "enabled": false,
+    "everyYears": 4,
+    "extraDays": 1,
+    "monthIndex": 1,
+    "linkedPath": ""
+  },
+  "eras": [
+    {
+      "name": "Era común (d. C.)",
+      "startsAtYear": 0
+    }
+  ],
+  "annualEvents": [
+    {
+      "id": "demo-new-year",
+      "name": "Año Nuevo",
+      "month": 1,
+      "day": 1,
+      "kind": "festival",
+      "repeatEveryYears": 1,
+      "startsAtYear": 0,
+      "linkedPath": "",
+      "hour": null
+    },
+    {
+      "id": "demo-halloween",
+      "name": "Halloween",
+      "month": 10,
+      "day": 31,
+      "kind": "festival",
+      "repeatEveryYears": 1,
+      "startsAtYear": 0,
+      "linkedPath": "",
+      "hour": null
+    },
+    {
+      "id": "demo-christmas",
+      "name": "Navidad",
+      "month": 12,
+      "day": 25,
+      "kind": "festival",
+      "repeatEveryYears": 1,
+      "startsAtYear": 0,
+      "linkedPath": "",
+      "hour": null
+    }
+  ],
+  "specialYearsEnabled": true,
+  "specialYearCycles": [
+    {
+      "id": "leap-year-cycle",
+      "name": "Año Bisiesto",
+      "intervalYears": 4,
+      "startsAtYear": 0,
+      "syncFromBase": false,
+      "months": [
+        { "name": "Enero", "days": 31 },
+        { "name": "Febrero", "days": 29 },
+        { "name": "Marzo", "days": 31 },
+        { "name": "Abril", "days": 30 },
+        { "name": "Mayo", "days": 31 },
+        { "name": "Junio", "days": 30 },
+        { "name": "Julio", "days": 31 },
+        { "name": "Agosto", "days": 31 },
+        { "name": "Septiembre", "days": 30 },
+        { "name": "Octubre", "days": 31 },
+        { "name": "Noviembre", "days": 30 },
+        { "name": "Diciembre", "days": 31 }
+      ],
+      "linkedPath": ""
+    }
+  ],
+  "seasons": [
+    {
+      "id": "demo-winter",
+      "name": "Invierno",
+      "from": { "month": 12, "day": 1 },
+      "to": { "month": 2, "day": 28 },
+      "linkedPath": "",
+      "highlightColor": "#60a5fa",
+      "highlightOpacity": 0.22
+    },
+    {
+      "id": "demo-spring",
+      "name": "Primavera",
+      "from": { "month": 3, "day": 1 },
+      "to": { "month": 5, "day": 31 },
+      "linkedPath": "",
+      "highlightColor": "#4ade80",
+      "highlightOpacity": 0.16
+    },
+    {
+      "id": "demo-summer",
+      "name": "Verano",
+      "from": { "month": 6, "day": 1 },
+      "to": { "month": 8, "day": 31 },
+      "linkedPath": "",
+      "highlightColor": "#fbbf24",
+      "highlightOpacity": 0.18
+    },
+    {
+      "id": "demo-fall",
+      "name": "Otoño",
+      "from": { "month": 9, "day": 1 },
+      "to": { "month": 11, "day": 30 },
+      "linkedPath": "",
+      "highlightColor": "#fb923c",
+      "highlightOpacity": 0.17
+    }
+  ],
+  "seasonDayPhases": [
+    {
+      "seasonId": "demo-winter",
+      "name": "Invierno",
+      "phases": [
+        { "id": "demo-w-ph-0", "name": "Medianoche", "hour": 0 },
+        { "id": "demo-w-ph-1", "name": "Amanecer", "hour": 7 },
+        { "id": "demo-w-ph-2", "name": "Mediodía", "hour": 12 },
+        { "id": "demo-w-ph-3", "name": "Puesta de sol", "hour": 17 },
+        { "id": "demo-w-ph-4", "name": "Anochecer", "hour": 18 }
+      ]
+    },
+    {
+      "seasonId": "demo-spring",
+      "name": "Primavera",
+      "phases": [
+        { "id": "demo-sp-ph-0", "name": "Medianoche", "hour": 0 },
+        { "id": "demo-sp-ph-1", "name": "Amanecer", "hour": 6 },
+        { "id": "demo-sp-ph-2", "name": "Mediodía", "hour": 12 },
+        { "id": "demo-sp-ph-3", "name": "Puesta de sol", "hour": 19 },
+        { "id": "demo-sp-ph-4", "name": "Anochecer", "hour": 20 }
+      ]
+    },
+    {
+      "seasonId": "demo-summer",
+      "name": "Verano",
+      "phases": [
+        { "id": "demo-su-ph-0", "name": "Medianoche", "hour": 0 },
+        { "id": "demo-su-ph-1", "name": "Amanecer", "hour": 5 },
+        { "id": "demo-su-ph-2", "name": "Mediodía", "hour": 12 },
+        { "id": "demo-su-ph-3", "name": "Puesta de sol", "hour": 20 },
+        { "id": "demo-su-ph-4", "name": "Anochecer", "hour": 21 }
+      ]
+    },
+    {
+      "seasonId": "demo-fall",
+      "name": "Otoño",
+      "phases": [
+        { "id": "demo-fa-ph-0", "name": "Medianoche", "hour": 0 },
+        { "id": "demo-fa-ph-1", "name": "Amanecer", "hour": 7 },
+        { "id": "demo-fa-ph-2", "name": "Mediodía", "hour": 12 },
+        { "id": "demo-fa-ph-3", "name": "Puesta de sol", "hour": 18 },
+        { "id": "demo-fa-ph-4", "name": "Anochecer", "hour": 19 }
+      ]
+    }
+  ],
+  "globalDayPhases": []
+}

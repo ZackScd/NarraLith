@@ -1,0 +1,26 @@
+id: consumable
+labelKey: worldbuilding.templates.consumable
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: effect
+        type: longText
+        labelKey: worldbuilding.fields.effect
+      - key: ingredients
+        type: relation
+        labelKey: worldbuilding.fields.ingredients
+        multiple: true
+        relationCategories:
+          - flora
+          - material
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

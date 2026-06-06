@@ -1,0 +1,282 @@
+# Arquitectura — NarraLith
+
+Mapa del repositorio al **jun 2026**. Actualizar al añadir módulos estructurales.
+
+> **Manuscrito (detalle UX/disco):** `specs/manuscript-design.md`  
+> **Requisitos:** `01-REQUIREMENTS.md` · **Stack:** `02-TECH_STACK.md`
+
+---
+
+## Árbol principal
+
+```
+NarraLith/
+├── _docs/              # Archivo histórico (ver _docs/README.md)
+├── _docs2/             # Planificación vigente
+├── src/                # Frontend React + TypeScript
+│   ├── components/ui/          # Shadcn
+│   ├── components/workspace-ui/  # UI presentacional (calendario, paneles)
+│   ├── hooks/
+│   ├── i18n/
+│   ├── lib/
+│   │   ├── ipc.ts
+│   │   ├── types/              # Contratos IPC (editor.ts, manuscript.ts, …)
+│   │   ├── editor/             # documentSync, commitManuscriptLabel, calendar helpers
+│   │   ├── calendar/           # Motor fechas ficticias (Vitest)
+│   │   └── search/             # MiniSearch entidades
+│   ├── modules/
+│   │   ├── editor/             # Lexical, plugins, sidePanel
+│   │   ├── explorer/
+│   │   ├── layout/             # WorkspaceShell, GlobalNav
+│   │   ├── worldbuilding/
+│   │   ├── timeline/
+│   │   ├── calendar/
+│   │   ├── maps/               # ⏸ congelado hasta Era II cerrada
+│   │   ├── graph/
+│   │   ├── references/
+│   │   ├── versions/           # 🟡 UI sin IPC backend
+│   │   └── project/
+│   └── stores/                 # Zustand (useEditorStore, …)
+├── src-tauri/
+│   ├── src/
+│   │   ├── commands/           # Handlers IPC
+│   │   ├── parser/             # Manuscrito + legacy + inline_scanner
+│   │   ├── entity/             # Fichas WB + sync_event
+│   │   ├── db/                 # rusqlite, migrations v5
+│   │   ├── fs/                 # CRUD, watcher, reconcile, maps_store
+│   │   ├── wikilink/, references/, refactor/
+│   │   ├── timeline/, checker/, graph/
+│   │   ├── git/                # init ✅; snapshot/diff no compilados
+│   │   └── models/, state/, error.rs
+│   └── resources/
+│       ├── entity_templates/   # event.yaml, character.yaml, …
+│       ├── templates/          # standard.json, blank.json
+│       └── defaults/
+└── package.json, vite.config.ts, …
+```
+
+`.taurignore` excluye `_docs/` y `_docs2/` del binario.
+
+---
+
+## Principios de arquitectura
+
+| Regla | Implementación |
+|-------|----------------|
+| FS = verdad | Reconciliación watcher; conflicto → gana `.md` |
+| I/O en Rust | Parseo, SQLite, CRUD disco vía IPC |
+| Un DB por proyecto | `.narralith/index.db` |
+| Manuscrito vs entidad | Rutas bajo `Manuscrito/` → parser eventos; `Worldbuilding/**/*.md` → `read_entity` (sin `+++event`) |
+| Gate parser | `should_parse_as_manuscript` — solo `Manuscrito/**` + formato §1.4 |
+
+---
+
+## Flujo global
+
+```mermaid
+flowchart TB
+  subgraph UI [Frontend]
+    Nav[GlobalNav + Explorer]
+    Editor[Editor Lexical]
+    Stores[Zustand stores]
+  end
+  subgraph Rust [Tauri]
+    Cmd[commands/*]
+    Parser[parser/document.rs]
+    DB[(SQLite)]
+    FS[(Disco .md)]
+  end
+  Nav --> Cmd
+  Editor --> Cmd
+  Stores --> Cmd
+  Cmd --> Parser --> FS
+  Cmd --> DB
+  FS -->|watcher| Cmd
+```
+
+---
+
+## Manuscrito (Era II — formato vigente)
+
+### Formato en disco
+
+`+++event` / `+++end-event`, `barTags`, `{{time:…}}` inline. Ver `specs/manuscript-design.md` §4.
+
+### Pipeline lectura
+
+```mermaid
+flowchart LR
+  MD[.md] --> DET[detect_manuscript_format]
+  DET -->|EventSegments| PAR[parse_manuscript_str]
+  PAR --> MS[ParsedManuscript]
+  MS --> IPC[read_manuscript]
+  IPC --> HY[hydrateLexicalManuscript]
+```
+
+### Pipeline guardado
+
+```mermaid
+sequenceDiagram
+  participant LX as Lexical
+  participant FE as useEditorStore
+  participant IPC as save_manuscript
+  participant RS as serializer + document.rs
+  participant DB as blocks + time_markers
+
+  LX->>FE: extractManuscriptFromEditor
+  FE->>IPC: fileHeader + segments
+  IPC->>RS: write disk
+  RS->>RS: re-parse
+  RS->>DB: upsert + wiki_links
+  RS->>RS: sync_manuscript_event_entities
+```
+
+### Frontend — editor
+
+| Pieza | Ruta | Rol |
+|-------|------|-----|
+| Shell | `modules/editor/EditorShell.tsx` | Registro nodos + plugins |
+| Sync | `lib/editor/documentSync.ts` | Hydrate / extract segmentos |
+| Commit RAM | `lib/editor/commitManuscriptLabel.ts` | Staging → inline / barra / evento |
+| Store | `stores/useEditorStore.ts` | Pestañas, IPC, callbacks Lexical |
+| Panel | `EditorSidePanel` → `SideEventSection`, `SideTimeSection`, `SideReferencesSection` |
+| Nodos activos | `EventTagBarNode`, `EventFrameBottomNode`, `InlineTimeTagNode`, `WikiLinkNode` |
+| Deuda | `manuscriptBlocks.ts` adaptador `ParsedDocument`; nodos legacy registrados | Ver `04-TASK` II.4 |
+
+### IPC manuscrito (activo en UI)
+
+| Comando | Uso |
+|---------|-----|
+| `read_manuscript` | Abrir escena |
+| `save_manuscript` | Ctrl+S |
+| `create_event_at_cursor` | Nuevo evento |
+| `close_event_at_cursor` | `[-]` |
+| `insert_inline_tag` | `{{time:…}}` en cursor |
+| `update_event_metadata` | Barra / apertura evento |
+| `ensure_event_entity` | Ficha WB al commit |
+
+### IPC legacy (Rust; frontend no usa)
+
+`read_document`, `save_document`, `parse_document`, `update_block_metadata` — compatibilidad y rutas no-manuscrito.
+
+---
+
+## Worldbuilding (fichas)
+
+| Capa | Módulos |
+|------|---------|
+| Plantillas | `resources/entity_templates/*.yaml`, `template_map.json` |
+| Rust | `entity/document.rs`, `metadata_index.rs`, `sync_event.rs` |
+| Frontend | `modules/worldbuilding/`, pestañas `kind: entity` en editor store |
+
+**Formato:** un frontmatter + cuerpo (sin `+++`).
+
+**Eventos de escena:** `Worldbuilding/Eventos/` → `event.yaml`, `EntityCategory::Event`.
+
+---
+
+## SQLite (schema v5)
+
+Ubicación: `{proyecto}/.narralith/index.db`. Gestor: `db/connection.rs`.
+
+| Tabla | Rol |
+|-------|-----|
+| `project_meta` | Metadatos clave-valor |
+| `entities` | Índice entidades (nombre, ruta, categoría, metadata JSON) |
+| `blocks` | Segmentos/bloques indexados por archivo |
+| `wiki_links` | Enlaces `[[ ]]` por archivo + índice de bloque/segmento |
+| `backlinks` | Menciones inversas |
+| `time_markers` | Marcas temporales multi-fila (`segment_id`, `tag_kind`, `char_offset`) |
+| `graph_edges` | Aristas del grafo |
+
+DDL: `db/schema.sql` + `migrations/002`–`005`.
+
+---
+
+## Referencias y wikilinks
+
+| Capa | Ruta |
+|------|------|
+| Escaneo | `wikilink/scanner.rs` |
+| Persistencia | `db/wiki_links.rs`, `db/backlinks.rs` |
+| Rename global | `refactor/rename_entity.rs` |
+| Lexical | `WikiLinkNode`, typeahead `[[` / `@` |
+| Panel | `BacklinksPanel` en pestaña Referencias |
+
+---
+
+## Calendario y timeline
+
+| Capa | Ruta |
+|------|------|
+| Config | `.narralith/calendar.json`, `fs/calendar_config.rs` |
+| Motor fechas | `src/lib/calendar/*` (BigInt) |
+| Timeline global | `timeline/project.rs` → `get_timeline_events` |
+| Timeline entidad | `entity/timeline.rs` |
+| UI | `modules/timeline/`, mini-calendario en panel tiempo |
+| Plothole | `checker/plothole.rs`, `ConsistencyScheduler` |
+
+Marcas de tiempo del manuscrito: `barTags` + inline → `time_markers` (no solo `metadata.time` legacy).
+
+---
+
+## Módulos congelados (⏸)
+
+Implementados en Era I; no prioridad hasta v0.10 cerrado.
+
+### Mapas (`modules/maps/`, `fs/maps_store.rs`)
+
+Leaflet `CRS.Simple`, overlays temporales, Excalidraw. IPC `maps::*` (14 comandos).
+
+### Grafo (`modules/graph/`, `graph/indexer.rs`)
+
+D3 canvas, `graph_edges`, rebuild bajo demanda.
+
+### Versiones (`modules/versions/`)
+
+UI montada; `git/snapshot.rs` y `git/diff.rs` **no** en `git/mod.rs` — IPC ausente.
+
+---
+
+## IPC — resumen por dominio
+
+| Dominio | Comandos (conteo) |
+|---------|-------------------|
+| project | 6 |
+| fs_ops | 12 |
+| editor | 11 (4 legacy + 7 manuscript) |
+| references | 4 |
+| entity | 9 |
+| calendar | 3 |
+| timeline | 2 |
+| consistency | 2 |
+| maps | 14 |
+| graph | 3 |
+
+Registro: `src-tauri/src/lib.rs`. Tipos TS: `src/lib/types/`.
+
+---
+
+## i18n
+
+| Entorno | Locale |
+|---------|--------|
+| DEV | `es` |
+| Producción | `en` |
+
+Namespaces: `global`, `project`, `explorer`, `editor`, `worldbuilding`, `references`, `timeline`, `calendar`, `maps`, `graph`, `settings`, …  
+**Ausente:** `versions` (UI historial rota).
+
+Config: `src/i18n/config.ts`.
+
+---
+
+## Tests
+
+```bash
+cd src-tauri && cargo test
+npm test
+npm run build
+```
+
+**Última actualización:** 2026-06-06

@@ -1,0 +1,53 @@
+id: character
+labelKey: worldbuilding.templates.character
+features:
+  - timeline
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: aliases
+        type: shortText
+        labelKey: worldbuilding.fields.aliases
+      - key: role
+        type: shortText
+        labelKey: worldbuilding.fields.role
+      - key: appearance
+        type: longText
+        labelKey: worldbuilding.fields.appearance
+      - key: portrait
+        type: image
+        labelKey: worldbuilding.fields.portrait
+        imageCategory: Retratos_de_Personajes
+      - key: tags
+        type: shortText
+        labelKey: worldbuilding.fields.tags
+  - id: relations
+    labelKey: worldbuilding.sections.relations
+    fields:
+      - key: faction
+        type: relation
+        labelKey: worldbuilding.fields.faction
+        relationCategories:
+          - faction
+      - key: home_location
+        type: relation
+        labelKey: worldbuilding.fields.homeLocation
+        relationCategories:
+          - location
+      - key: allies
+        type: relation
+        labelKey: worldbuilding.fields.allies
+        multiple: true
+        relationCategories:
+          - character
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

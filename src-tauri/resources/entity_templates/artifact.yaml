@@ -1,0 +1,39 @@
+id: artifact
+labelKey: worldbuilding.templates.artifact
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: origin
+        type: relation
+        labelKey: worldbuilding.fields.origin
+        relationCategories:
+          - location
+          - lore
+      - key: current_owner
+        type: relation
+        labelKey: worldbuilding.fields.currentOwner
+        relationCategories:
+          - character
+          - faction
+      - key: power_level
+        type: shortText
+        labelKey: worldbuilding.fields.powerLevel
+      - key: ownership_log
+        type: nested
+        labelKey: worldbuilding.fields.ownershipLog
+        nestedFields:
+          - key: owner
+            labelKey: worldbuilding.fields.owner
+          - key: from_date
+            labelKey: worldbuilding.fields.fromDate
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

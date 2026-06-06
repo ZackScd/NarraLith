@@ -1,0 +1,25 @@
+id: language
+labelKey: worldbuilding.templates.language
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: family
+        type: shortText
+        labelKey: worldbuilding.fields.languageFamily
+      - key: script
+        type: shortText
+        labelKey: worldbuilding.fields.script
+      - key: glossary
+        type: keyValue
+        labelKey: worldbuilding.fields.glossary
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

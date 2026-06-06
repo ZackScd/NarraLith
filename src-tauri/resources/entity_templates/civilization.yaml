@@ -1,0 +1,27 @@
+id: civilization
+labelKey: worldbuilding.templates.civilization
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: homeworld
+        type: relation
+        labelKey: worldbuilding.fields.homeworld
+        relationCategories:
+          - location
+      - key: population
+        type: shortText
+        labelKey: worldbuilding.fields.population
+      - key: traits
+        type: longText
+        labelKey: worldbuilding.fields.traits
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

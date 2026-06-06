@@ -1,0 +1,32 @@
+{
+  "title": "Grafo",
+  "loading": "Cargando relaciones…",
+  "empty": "No hay entidades indexadas. Pulsa «Actualizar índice» para construir el grafo desde wiki-links y fichas.",
+  "refresh": "Recargar vista",
+  "rebuild": "Actualizar índice",
+  "rebuilding": "Indexando…",
+  "stats": "{{nodes}} nodos · {{links}} enlaces",
+  "filters": {
+    "title": "Categorías",
+    "hint": "Desmarca una categoría para ocultar sus nodos (sin reindexar).",
+    "none": "Sin categorías en el grafo.",
+    "clear": "Mostrar todas"
+  },
+  "categories": {
+    "character": "Personajes",
+    "location": "Ubicaciones",
+    "faction": "Facciones",
+    "lore": "Lore y mitos",
+    "powerSystem": "Sistemas de poder",
+    "nature": "Naturaleza",
+    "object": "Objetos",
+    "society": "Sociedad y cultura",
+    "manuscript": "Manuscrito",
+    "custom": "Otros"
+  },
+  "errors": {
+    "generic": "No se pudo cargar el grafo.",
+    "too_many_nodes": "Demasiados nodos para mostrar. Filtra por categoría o reduce entidades activas.",
+    "invalid_limit": "Límite de nodos no válido."
+  }
+}

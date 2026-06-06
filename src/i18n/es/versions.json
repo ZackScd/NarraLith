@@ -1,0 +1,63 @@
+{
+  "title": "Historial de versiones",
+  "description": "Puntos de control del proyecto. Restaurar sobrescribe el estado actual en disco.",
+  "saveVersion": "Guardar versión",
+  "autoBackupHint": "Copia automática: {{time}}",
+  "autoBackupPending": "Copia automática activa",
+  "saveDialog": {
+    "title": "Guardar versión",
+    "description": "Asigna un nombre para encontrar este punto más tarde.",
+    "nameLabel": "Nombre de la versión",
+    "namePlaceholder": "p. ej. Antes del capítulo 3",
+    "submit": "Guardar",
+    "cancel": "Cerrar",
+    "success": "Versión guardada."
+  },
+  "history": {
+    "empty": "Aún no hay versiones guardadas manualmente.",
+    "emptyWithAutos": "No hay versiones manuales. Activa «Mostrar copias automáticas» para ver el historial interno.",
+    "restore": "Restaurar",
+    "compare": "Comparar",
+    "compareNeedsFile": "Abre un archivo para compararlo con una versión.",
+    "showAuto": "Mostrar copias automáticas",
+    "loading": "Cargando historial…"
+  },
+  "restoreDialog": {
+    "title": "¿Restaurar esta versión?",
+    "description": "Se sobrescribirá todo el proyecto con el contenido de «{{name}}». Los cambios no guardados en pestañas abiertas se perderán.",
+    "confirm": "Restaurar versión",
+    "cancel": "Cancelar",
+    "success": "Versión restaurada."
+  },
+  "diff": {
+    "title": "Comparar con el archivo actual",
+    "description": "Versión «{{name}}» frente al contenido actual de {{path}}. Verde = añadido; tachado rojo = eliminado en la versión antigua.",
+    "legend": "Selecciona texto tachado y usa «Copiar texto eliminado» para rescatar un fragmento sin restaurar todo el proyecto.",
+    "contentLabel": "Diferencias por palabras",
+    "loading": "Calculando diferencias…",
+    "empty": "No hay diferencias entre esa versión y el archivo actual.",
+    "copyRemoved": "Copiar texto eliminado",
+    "copySuccess": "Texto copiado al portapapeles.",
+    "copyFailed": "No se pudo copiar.",
+    "restoreProject": "Restaurar versión completa del proyecto…",
+    "added": "Texto añadido",
+    "removed": "Texto eliminado en la versión anterior"
+  },
+  "errors": {
+    "error.snapshot.name_required": "Escribe un nombre para la versión.",
+    "error.snapshot.nothing_to_commit": "No hay cambios nuevos desde la última versión.",
+    "error.snapshot.not_found": "No se encontró esa versión.",
+    "error.snapshot.restore_failed": "No se pudo restaurar la versión.",
+    "error.snapshot.reserved_prefix": "Ese nombre no está permitido.",
+    "error.snapshot.stage_failed": "No se pudo preparar el guardado de la versión.",
+    "error.snapshot.commit_failed": "No se pudo guardar la versión.",
+    "error.snapshot.prune_failed": "No se pudo aplicar la retención de copias automáticas.",
+    "error.snapshot.diff_failed": "No se pudo calcular la comparación.",
+    "error.snapshot.diff_too_large": "El archivo supera el límite de comparación (10 000 palabras).",
+    "error.snapshot.diff_invalid": "El contenido no es texto válido.",
+    "error.snapshot.file_not_in_version": "Ese archivo no existía en la versión seleccionada.",
+    "error.git.not_initialized": "El control de versiones del proyecto no está disponible.",
+    "error.git.init_failed": "No se pudo preparar el historial de versiones del proyecto.",
+    "error.unknown": "Ha ocurrido un error."
+  }
+}

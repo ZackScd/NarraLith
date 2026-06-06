@@ -1,0 +1,63 @@
+{
+  "title": "Version history",
+  "description": "Project checkpoints. Restoring overwrites the current state on disk.",
+  "saveVersion": "Save version",
+  "autoBackupHint": "Auto backup: {{time}}",
+  "autoBackupPending": "Automatic backup enabled",
+  "saveDialog": {
+    "title": "Save version",
+    "description": "Give this checkpoint a name so you can find it later.",
+    "nameLabel": "Version name",
+    "namePlaceholder": "e.g. Before chapter 3",
+    "submit": "Save",
+    "cancel": "Close",
+    "success": "Version saved."
+  },
+  "history": {
+    "empty": "No manually saved versions yet.",
+    "emptyWithAutos": "No manual versions. Turn on “Show automatic backups” to see internal history.",
+    "restore": "Restore",
+    "compare": "Compare",
+    "compareNeedsFile": "Open a file to compare it with a version.",
+    "showAuto": "Show automatic backups",
+    "loading": "Loading history…"
+  },
+  "restoreDialog": {
+    "title": "Restore this version?",
+    "description": "The entire project will be replaced with the contents of “{{name}}”. Unsaved changes in open tabs will be lost.",
+    "confirm": "Restore version",
+    "cancel": "Cancel",
+    "success": "Version restored."
+  },
+  "diff": {
+    "title": "Compare with current file",
+    "description": "Version “{{name}}” vs current contents of {{path}}. Green = added; red strikethrough = removed in the older version.",
+    "legend": "Select strikethrough text and use “Copy removed text” to rescue a fragment without restoring the whole project.",
+    "contentLabel": "Word-level differences",
+    "loading": "Computing differences…",
+    "empty": "No differences between that version and the current file.",
+    "copyRemoved": "Copy removed text",
+    "copySuccess": "Copied to clipboard.",
+    "copyFailed": "Could not copy.",
+    "restoreProject": "Restore full project version…",
+    "added": "Added text",
+    "removed": "Text removed in the older version"
+  },
+  "errors": {
+    "error.snapshot.name_required": "Enter a name for the version.",
+    "error.snapshot.nothing_to_commit": "There are no new changes since the last version.",
+    "error.snapshot.not_found": "That version was not found.",
+    "error.snapshot.restore_failed": "Could not restore the version.",
+    "error.snapshot.reserved_prefix": "That name is not allowed.",
+    "error.snapshot.stage_failed": "Could not prepare the version save.",
+    "error.snapshot.commit_failed": "Could not save the version.",
+    "error.snapshot.prune_failed": "Could not apply automatic backup retention.",
+    "error.snapshot.diff_failed": "Could not compute the comparison.",
+    "error.snapshot.diff_too_large": "The file exceeds the comparison limit (10,000 words).",
+    "error.snapshot.diff_invalid": "The content is not valid text.",
+    "error.snapshot.file_not_in_version": "That file did not exist in the selected version.",
+    "error.git.not_initialized": "Project versioning is not available.",
+    "error.git.init_failed": "Could not set up project version history.",
+    "error.unknown": "Something went wrong."
+  }
+}

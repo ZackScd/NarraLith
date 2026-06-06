@@ -1,0 +1,24 @@
+id: flora
+labelKey: worldbuilding.templates.flora
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: biome
+        type: relation
+        labelKey: worldbuilding.fields.biome
+        relationCategories:
+          - biome
+      - key: uses
+        type: longText
+        labelKey: worldbuilding.fields.uses
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

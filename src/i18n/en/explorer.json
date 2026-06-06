@@ -1,0 +1,73 @@
+{
+  "title": "Explorer",
+  "loading": "Loading tree…",
+  "empty": "No files in this view.",
+  "nav": {
+    "expandExplorer": "Show file explorer",
+    "collapseExplorer": "Hide file explorer"
+  },
+  "dnd": {
+    "reorderHint": "Line: reorder between items. Highlight: move inside folder.",
+    "intoBadge": "Inside"
+  },
+  "view": {
+    "manuscript": "Manuscript",
+    "worldbuilding": "Worldbuilding",
+    "all": "Entire project"
+  },
+  "toolbar": {
+    "search": "Search",
+    "searchPlaceholder": "Search file…",
+    "openLocal": "Open local file",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
+    "closeSearch": "Close search",
+    "newFile": "New file in last opened path",
+    "newFolder": "New folder in last opened path"
+  },
+  "context": {
+    "newFile": "New file",
+    "newFolder": "New folder",
+    "rename": "Rename",
+    "delete": "Delete",
+    "moveHere": "Drop here to move"
+  },
+  "createFile": {
+    "title": "New file",
+    "nameLabel": "File name",
+    "namePlaceholder": "Scene_1",
+    "submit": "Create",
+    "cancel": "Cancel"
+  },
+  "createFolder": {
+    "title": "New folder",
+    "nameLabel": "Folder name",
+    "namePlaceholder": "Chapter 2",
+    "submit": "Create",
+    "cancel": "Cancel"
+  },
+  "rename": {
+    "title": "Rename",
+    "nameLabel": "New name",
+    "submit": "Save",
+    "cancel": "Cancel"
+  },
+  "delete": {
+    "title": "Delete",
+    "message": "Delete «{{name}}»? This cannot be undone from the app.",
+    "folderWarning": "If this is a folder, all contents will be removed.",
+    "submit": "Delete",
+    "cancel": "Cancel"
+  },
+  "error": {
+    "fs": {
+      "invalid_path": "Invalid path.",
+      "invalid_name": "Invalid name.",
+      "path_exists": "A file or folder with that name already exists.",
+      "not_found": "Path was not found.",
+      "not_empty": "Folder is not empty.",
+      "path_outside_project": "Path is outside the project."
+    },
+    "unknown": "An unexpected error occurred."
+  }
+}

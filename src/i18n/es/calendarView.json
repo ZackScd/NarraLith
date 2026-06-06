@@ -1,0 +1,234 @@
+{
+  "loading": "Cargando calendario…",
+
+  "back": "Volver",
+
+  "yearLabel": "Año",
+
+  "prevYear": "Año anterior",
+
+  "nextYear": "Año siguiente",
+
+  "jumpToYear": "Ir al año {{year}}",
+
+  "scrollYearsBack": "Desplazar años hacia la izquierda",
+
+  "scrollYearsForward": "Desplazar años hacia la derecha",
+
+  "yearReferenceHint": "Última fecha en el proyecto: año {{year}}",
+
+  "yearGoToLast": "Última fecha",
+
+  "specialYearLabel": "Año especial: {{name}}",
+  "specialYearLabelWithFile": "Año especial: {{name}} · {{file}}",
+
+  "legendButton": "Leyenda",
+
+  "filters": "Filtros",
+
+  "editCalendar": "Editar calendario",
+
+  "weekday": "D{{index}}",
+
+  "month": {
+    "prevMonth": "Mes anterior",
+
+    "nextMonth": "Mes siguiente",
+
+    "backToYear": "Volver al año",
+
+    "backToMonth": "Volver al mes",
+
+    "monthTitle": "{{month}} · {{year}}",
+
+    "monthSubtitle": "Marcas de tiempo del mes (cronológico)",
+
+    "dayTitle": "Día {{day}} · {{month}} {{year}}",
+
+    "daySubtitle": "Eventos de este día",
+
+    "hour": "{{hour}}:00",
+
+    "noHour": "Sin hora",
+
+    "noMonthEntries": "No hay marcas de tiempo en este mes.",
+
+    "noDayEntries": "No hay marcas de tiempo en este día.",
+
+    "openMonth": "Abrir mes"
+  },
+
+  "legend": {
+    "manuscript": "Manuscrito",
+
+    "event": "Eventos",
+
+    "birthday": "Cumpleaños",
+
+    "cosmic": "Cósmicos",
+
+    "festival": "Festividades",
+
+    "anniversary": "Aniversarios"
+  },
+
+  "specialYear": {
+    "defaultName": "Año especial"
+  },
+
+  "edit": {
+    "specialYear": "Año especial",
+
+    "specialYears": "Años especiales",
+
+    "specialYearOptions": "Ciclos de año especial",
+
+    "defaultName": "Ciclo especial",
+
+    "cycleName": "Nombre de año especial",
+
+    "intervalYears": "Intervalo",
+
+    "startsAtYear": "Año inicial",
+
+    "syncFromBase": "Sincronizar con calendario base",
+
+    "copyBaseCalendar": "Copiar calendario base",
+
+    "hoursEnabled": "Habilitar horas",
+
+    "hoursPerDay": "Horas por día",
+
+    "dayPhases": "Fases del día",
+    "dayPhasesGlobal": "Horario único",
+    "dayPhasesGlobalHint": "Mismas fases del día para todo el año (desactivado = una lista por estación).",
+    "dayPhasesUnique": "Horario único",
+    "dayPhasesOrderWarning": "Las horas no siguen un orden ascendente en la lista.",
+    "dayPhasesNeedSeasons": "Añade estaciones arriba para definir horarios por estación.",
+    "phaseName": "Fase",
+    "phaseDawn": "Amanecer",
+    "phaseNoon": "Mediodía",
+    "phaseSunset": "Puesta de sol",
+    "phaseDusk": "Anochecer",
+    "phaseMidnight": "Medianoche",
+    "addPhase": "Añadir fase",
+    "removePhase": "Eliminar fase",
+
+    "months": "Meses",
+    "seasons": "Estaciones",
+    "season": "Estación",
+    "month": "Mes",
+    "description": "Descripción",
+    "from": "Desde",
+    "to": "Hasta",
+    "seasonStarts": "Comienza:",
+    "seasonEnds": "Termina:",
+    "highlightColor": "Color:",
+    "highlightOpacity": "Opacidad:",
+    "addSeason": "Añadir estación",
+    "removeSeason": "Eliminar estación",
+    "seasonNumber": "Estación {{n}}",
+    "seasonOverlapSummary": "Existen estaciones superpuestas:",
+    "seasonOverlapPair": "«{{a}}» y «{{b}}»",
+    "seasonOverlapWith": "Se superpone con: {{names}}",
+    "daysPerWeek": "Días por semana",
+    "editWeekDays": "Editar días",
+    "weekDayLabel": "Día {{n}}",
+    "weekDayName": "Nombre del día",
+    "weekDayDefault": "Día {{n}}",
+    "seasonDescriptionLink": "Descripción (archivo)",
+
+    "addMonth": "Añadir mes",
+    "days": "días",
+
+    "monthName": "Nombre del mes",
+
+    "editMonth": "Editar",
+
+    "editDayHours": "Editar día",
+
+    "addHourAll": "+ hora (todos)",
+
+    "removeHourAll": "− hora (todos)",
+
+    "dayN": "Día {{day}}",
+    "day": "Día",
+    "dragMonth": "Arrastrar para reordenar",
+
+    "edit": "Editar",
+
+    "confirmEdit": "Confirmar",
+    "toggleList": "Expandir/contraer lista",
+
+    "backToList": "Volver a la lista",
+
+    "removeCycle": "Eliminar ciclo",
+    "addSpecialYear": "Añadir año especial",
+    "addMonthToCycle": "Añadir mes al año especial",
+    "removeMonth": "Eliminar mes",
+
+    "leapYearTitle": "Año bisiesto",
+
+    "leapStartsHint": "El bisiesto aplica desde el año 0 del calendario",
+
+    "leapMonthHint": "Mes que recibe días extra en años bisiestos",
+
+    "leapMonth": "Mes bisiesto",
+
+    "leapExtraDays": "Días extra",
+
+    "leapEnabled": "Bisiesto activo",
+    "leapEveryYears": "Cada N años",
+    "leapDisabledHint": "Sin bisiesto: todos los años tienen la misma duración.",
+    "leapSummary": "Cada {{every}} años, {{month}} gana {{extra}} día(s) extra (p. ej. 29 de febrero).",
+
+    "recurringEvents": "Eventos recurrentes",
+    "recurringDates": "Fechas recurrentes",
+    "recurringEmpty": "No hay fechas recurrentes definidas.",
+
+    "eventName": "Nombre",
+
+    "linkedPath": "Archivo",
+
+    "addRecurring": "Añadir fecha recurrente",
+    "removeRecurring": "Eliminar fecha recurrente",
+
+    "eventHourOptional": "Hora (opcional)",
+    "eventHourShort": "Hora",
+    "eventTimeInterval": "Intervalo",
+    "eventIntervals": "Intervalos",
+    "eventIntervalsEveryYear": "Cada año",
+    "eventFirstCountedYear": "Año Inicial",
+    "warnRecurringDayZero": "El día está en 0: puede que no aparezca en el calendario.",
+    "warnRecurringIntervalZero": "El intervalo está en 0: el evento no se repetirá por años.",
+
+    "kindFestival": "Festividad",
+    "kindStellar": "Estelar",
+    "kindAnniversary": "Aniversario"
+  },
+
+  "actions": {
+    "save": "Guardar",
+    "discard": "Descartar",
+    "saving": "Guardando…",
+    "unsavedHint": "Cambios sin guardar"
+  },
+
+  "unsaved": {
+    "title": "Cambios sin guardar",
+    "messageLeave": "Si sales ahora, se perderán los cambios del calendario que no hayas guardado.",
+    "messageSection": "Si cambias de vista o cierras la edición, se perderán los cambios del calendario que no hayas guardado.",
+    "cancel": "Seguir editando",
+    "discard": "Descartar cambios",
+    "save": "Guardar y continuar"
+  },
+
+  "deleteCalendar": {
+    "button": "Eliminar calendario…",
+    "title": "¿Restablecer el calendario?",
+    "description": "Elige cómo quieres reiniciar el calendario de este proyecto. Esta acción no se puede deshacer.",
+    "restoreDefault": "Restaurar plantilla de ejemplo",
+    "leaveBlank": "Dejar en blanco (mínimo)",
+    "cancel": "Cancelar"
+  }
+}

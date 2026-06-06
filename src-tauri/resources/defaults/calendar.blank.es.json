@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "epoch": { "year": 0, "month": 1, "day": 1 },
+  "daysPerWeek": 7,
+  "weekDays": [
+    { "name": "Día 1" },
+    { "name": "Día 2" },
+    { "name": "Día 3" },
+    { "name": "Día 4" },
+    { "name": "Día 5" },
+    { "name": "Día 6" },
+    { "name": "Día 7" }
+  ],
+  "hoursPerDay": 24,
+  "hoursEnabled": false,
+  "dayPhasesMode": "global",
+  "months": [{ "name": "Mes 1", "days": 30 }],
+  "leapRules": {
+    "enabled": false,
+    "everyYears": 4,
+    "extraDays": 1,
+    "monthIndex": 0,
+    "linkedPath": ""
+  },
+  "eras": [],
+  "annualEvents": [],
+  "specialYearsEnabled": true,
+  "specialYearCycles": [],
+  "seasons": [],
+  "seasonDayPhases": [],
+  "globalDayPhases": []
+}

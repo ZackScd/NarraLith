@@ -1,0 +1,33 @@
+{
+  "panel": {
+    "tabReferences": "Referencias",
+    "noEntity": "Abre un archivo .md para ver backlinks y menciones.",
+    "loading": "Cargando referencias…",
+    "backlinksTitle": "Enlaces hacia «{{name}}»",
+    "backlinksEmpty": "Ningún documento enlaza a esta entidad.",
+    "unlinkedTitle": "Menciones sin enlazar",
+    "unlinkedEmpty": "No hay menciones en texto plano.",
+    "blockShort": "bloque {{index}}",
+    "convertToLink": "Convertir en enlace",
+    "converting": "Convirtiendo…"
+  },
+  "error": {
+    "load_failed": "No se pudieron cargar las referencias.",
+    "invalid_range": "La mención ya no coincide con el texto en disco.",
+    "mention_mismatch": "El texto en esa posición no coincide con la entidad.",
+    "unknown": "Error desconocido en referencias.",
+    "refactor": {
+      "invalid_path": "Ruta no válida para refactorizar el proyecto."
+    }
+  },
+  "typeahead": {
+    "ariaLabel": "Referencias de entidades",
+    "loading": "Cargando diccionario…",
+    "hint": "Escribe para buscar entidades",
+    "empty": "Sin resultados para «{{query}}»"
+  },
+  "wikilink": {
+    "unresolvedTitle": "Entidad no encontrada: {{name}}",
+    "aliasTitle": "{{alias}} → {{name}}"
+  }
+}

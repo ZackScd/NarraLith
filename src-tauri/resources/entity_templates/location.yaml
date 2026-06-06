@@ -1,0 +1,31 @@
+id: location
+labelKey: worldbuilding.templates.location
+features:
+  - inhabitants
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: location_type
+        type: shortText
+        labelKey: worldbuilding.fields.locationType
+      - key: climate
+        type: longText
+        labelKey: worldbuilding.fields.climate
+      - key: government
+        type: shortText
+        labelKey: worldbuilding.fields.government
+      - key: map_image
+        type: image
+        labelKey: worldbuilding.fields.mapImage
+        imageCategory: Mapas_y_Geografia
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

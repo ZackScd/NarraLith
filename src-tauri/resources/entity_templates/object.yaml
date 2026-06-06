@@ -1,0 +1,19 @@
+id: object
+labelKey: worldbuilding.templates.object
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: summary
+        type: longText
+        labelKey: worldbuilding.fields.summary
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

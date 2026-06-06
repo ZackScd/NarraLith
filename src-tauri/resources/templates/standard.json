@@ -1,0 +1,243 @@
+{
+  "id": "standard",
+  "labelKey": "project.template.standard",
+  "nodes": [
+    {
+      "type": "dir",
+      "name": "Manuscrito",
+      "children": [
+        {
+          "type": "dir",
+          "name": "Volumen 1",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Capitulo 1",
+              "children": [
+                {
+                  "type": "file",
+                  "name": "Escena_1.md",
+                  "content": "---\ntitle: \"Escena 1\"\n---\n\n"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "dir",
+      "name": "Imagenes",
+      "children": [
+        { "type": "dir", "name": "Mapas_y_Geografia", "children": [] },
+        { "type": "dir", "name": "Retratos_de_Personajes", "children": [] },
+        { "type": "dir", "name": "Artefactos_e_Items", "children": [] },
+        { "type": "dir", "name": "Iconografia_y_Simbolos", "children": [] },
+        { "type": "dir", "name": "Otros_Recursos", "children": [] }
+      ]
+    },
+    {
+      "type": "dir",
+      "name": "Worldbuilding",
+      "children": [
+        {
+          "type": "dir",
+          "name": "Personajes",
+          "children": [
+            { "type": "dir", "name": "Principal", "children": [] },
+            { "type": "dir", "name": "Secundario", "children": [] },
+            { "type": "dir", "name": "Incidental", "children": [] }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Eventos",
+          "children": []
+        },
+        {
+          "type": "dir",
+          "name": "Ubicaciones",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Continentes",
+              "children": [
+                {
+                  "type": "dir",
+                  "name": "Reinos_y_Naciones",
+                  "children": [
+                    {
+                      "type": "dir",
+                      "name": "Regiones",
+                      "children": [
+                        {
+                          "type": "dir",
+                          "name": "Ciudades_y_Pueblos",
+                          "children": [
+                            {
+                              "type": "dir",
+                              "name": "Edificios_y_Lugares",
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Facciones",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Alianzas_Macro",
+              "children": [
+                {
+                  "type": "dir",
+                  "name": "Gobiernos_y_Casas",
+                  "children": [
+                    { "type": "dir", "name": "Divisiones_y_Sedes", "children": [] }
+                  ]
+                },
+                {
+                  "type": "dir",
+                  "name": "Gremios_y_Corporaciones",
+                  "children": [
+                    { "type": "dir", "name": "Sedes_Locales", "children": [] }
+                  ]
+                },
+                { "type": "dir", "name": "Cultos_y_Organizaciones", "children": [] }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Lore_y_Mitos",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Eras_y_Edades",
+              "children": [
+                {
+                  "type": "dir",
+                  "name": "Eventos_Historicos_Clave",
+                  "children": [
+                    { "type": "dir", "name": "Mitos_y_Leyendas", "children": [] }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Sistemas_de_Poder",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Fuentes_y_Sistemas_Base",
+              "children": [
+                {
+                  "type": "dir",
+                  "name": "Escuelas_Disciplinas_o_Leyes",
+                  "children": [
+                    {
+                      "type": "dir",
+                      "name": "Técnicas_Hechizos_y_Costos",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Naturaleza",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Biomas_y_Ecosistemas",
+              "children": [
+                {
+                  "type": "dir",
+                  "name": "Bestiario_y_Fauna",
+                  "children": [
+                    {
+                      "type": "dir",
+                      "name": "Clasificaciones_y_Familias",
+                      "children": []
+                    }
+                  ]
+                },
+                { "type": "dir", "name": "Flora_y_Hongos", "children": [] },
+                { "type": "dir", "name": "Fenomenos_y_Clima", "children": [] }
+              ]
+            },
+            { "type": "dir", "name": "Geologia_y_Minerales", "children": [] },
+            { "type": "dir", "name": "Cosmologia_y_Astros", "children": [] },
+            {
+              "type": "dir",
+              "name": "Materiales_Naturales_y_Derivados",
+              "children": []
+            }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Objetos_y_Artefactos",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Reliquias_y_Artefactos_Magicos",
+              "children": []
+            },
+            { "type": "dir", "name": "Armas_y_Equipamiento", "children": [] },
+            { "type": "dir", "name": "Vehiculos_y_Transportes", "children": [] },
+            { "type": "dir", "name": "Consumibles_y_Pociones", "children": [] }
+          ]
+        },
+        {
+          "type": "dir",
+          "name": "Sociedad_y_Cultura",
+          "children": [
+            {
+              "type": "dir",
+              "name": "Civilizaciones_y_Razas",
+              "children": [
+                {
+                  "type": "dir",
+                  "name": "Sistemas_Politicos_y_Leyes",
+                  "children": []
+                },
+                {
+                  "type": "dir",
+                  "name": "Economia_Monedas_y_Comercio",
+                  "children": []
+                },
+                { "type": "dir", "name": "Religiones_y_Creencias", "children": [] },
+                { "type": "dir", "name": "Idiomas_y_Conlangs", "children": [] },
+                {
+                  "type": "dir",
+                  "name": "Cultura_Diaria",
+                  "children": [
+                    { "type": "dir", "name": "Costumbres", "children": [] },
+                    { "type": "dir", "name": "Gastronomia", "children": [] },
+                    { "type": "dir", "name": "Arte_y_Moda", "children": [] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "title": "Map",
+  "loadFailed": "Could not load the map.",
+  "loadingMaps": "Loading maps…",
+  "loadingImage": "Loading image…",
+  "genericError": "Failed to save the map.",
+  "saving": "Saving…",
+  "noMaps": "No maps in this project yet.",
+  "emptyTitle": "Create your first map",
+  "emptyDescription": "Open the drawing studio to sketch your map from scratch, or import an image and draw on top. Then add pins and territories in the interactive map.",
+  "createMap": "New map",
+  "createMapTitle": "Create map",
+  "createModeBlank": "Blank canvas",
+  "createModeImport": "Import image",
+  "mapName": "Map name",
+  "mapNamePlaceholder": "e.g. Continent of Aetheria",
+  "blankSizeLabel": "Canvas size",
+  "blankSize": {
+    "small": "Small",
+    "medium": "Medium",
+    "large": "Large"
+  },
+  "blankHint": "A white grid canvas is generated. Draw freely and save when done.",
+  "importHint": "Choose PNG, JPG, or WebP. The image will be copied into the project.",
+  "pickImage": "Choose background image",
+  "polygonHint": "Polygon in progress: {{count}} points. Double-click to close.",
+  "studio": {
+    "modeLabel": "Drawing mode",
+    "loading": "Preparing canvas…",
+    "save": "Save map",
+    "viewMap": "Interactive map",
+    "editDrawing": "Edit drawing",
+    "undo": "Undo",
+    "redo": "Redo",
+    "brush": "Brush",
+    "eraser": "Eraser",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit to screen",
+    "size": "Size",
+    "layers": "Layers",
+    "layerBackground": "Background",
+    "layerDraw": "Drawing",
+    "hint": "Wheel: zoom · Alt+drag: pan canvas",
+    "presets": {
+      "pen": "Pen",
+      "pencil": "Pencil",
+      "marker": "Marker"
+    }
+  },
+  "imageLoadFailed": "Could not load the map image. Restart the app and verify the file exists in the project.",
+  "creating": "Creating…",
+  "cancel": "Cancel",
+  "selectMap": "Select map",
+  "resetView": "Reset view",
+  "tools": {
+    "select": "Select",
+    "pin": "Pin",
+    "polygon": "Polygon",
+    "delete": "Delete"
+  },
+  "layers": {
+    "title": "Layers",
+    "add": "Add layer",
+    "opacity": "Opacity",
+    "visible": "Visible",
+    "properties": "Feature properties",
+    "label": "Label",
+    "entity": "Linked entity",
+    "entityPlaceholder": "Search entity…",
+    "childMap": "Detail map",
+    "childMapNone": "None",
+    "openEntity": "Open sheet",
+    "noSelection": "Select a pin or polygon on the map.",
+    "categoryFilter": "Category filter"
+  },
+  "breadcrumb": {
+    "root": "Maps"
+  },
+  "sketches": {
+    "title": "Freehand sketches",
+    "show": "Show sketches",
+    "hide": "Hide sketches",
+    "hint": "Free annotation layer; not linked to entities or the graph.",
+    "loading": "Loading sketches…"
+  },
+  "overlays": {
+    "title": "Historical layers",
+    "add": "Add period image",
+    "name": "Name",
+    "from": "From (timestamp)",
+    "to": "Until (optional)",
+    "importImage": "Overlay image"
+  },
+  "timeline": {
+    "title": "Map evolution",
+    "scrub": "Drag to preview another era",
+    "play": "Play",
+    "pause": "Pause",
+    "clear": "Current view",
+    "eventsTitle": "Events in this period",
+    "noMarkers": "No time-based visual changes recorded."
+  },
+  "drillDown": {
+    "openChild": "Open detail map",
+    "hint": "This area links to a detail map. Double-click to enter."
+  },
+  "errors": {
+    "generic": "Could not complete the map operation.",
+    "name_required": "Map name is required.",
+    "not_found": "Map not found.",
+    "invalid_json": "Map data is corrupted.",
+    "image_not_found": "Image not found.",
+    "invalid_image_type": "Unsupported format. Use PNG, JPG, or WebP.",
+    "image_too_large": "Image exceeds maximum size (50 MB).",
+    "invalid_image": "Could not read the image.",
+    "invalid_dimensions": "Invalid map dimensions.",
+    "child_cycle": "Circular map links are not allowed.",
+    "child_not_found": "Linked map does not exist.",
+    "parent_not_found": "Parent map does not exist.",
+    "layer_not_found": "Layer not found.",
+    "invalid_feature": "Invalid feature geometry.",
+    "overlay_invalid": "Invalid historical overlay.",
+    "invalid_timestamp": "Invalid timestamp."
+  }
+}

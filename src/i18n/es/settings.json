@@ -1,0 +1,46 @@
+{
+  "title": "Configuración",
+  "description": "Preferencias de la aplicación. Se guardan en este dispositivo.",
+  "close": "Cerrar",
+  "appearance": {
+    "sectionTitle": "Apariencia",
+    "themeLabel": "Tema",
+    "themeLight": "Claro (crema y gris)",
+    "themeDark": "Oscuro (gris cálido)",
+    "themeHint": "El tema claro usa tonos crema; el oscuro, grises profundos.",
+    "languageLabel": "Idioma",
+    "languageEs": "Español",
+    "languageEn": "English",
+    "languageHint": "Afecta a toda la interfaz de la aplicación."
+  },
+  "editor": {
+    "sectionTitle": "Editor",
+    "autosaveEnabled": "Activar autoguardado",
+    "debounceLabel": "Guardar tras pausa (segundos)",
+    "debounceHint": "Tras dejar de escribir durante este tiempo (5–600 s).",
+    "intervalLabel": "Guardar cada X segundos (0 = desactivado)",
+    "intervalHint": "Guardado periódico adicional. Usa 0 para solo guardar tras la pausa.",
+    "manualHint": "Con el autoguardado desactivado, usa el botón Guardar o Ctrl+S. Las pestañas muestran un punto cuando hay cambios sin guardar."
+  },
+  "graph": {
+    "sectionTitle": "Grafo de conocimiento",
+    "autoRebuildOnView": "Actualizar índice al abrir la vista Grafo",
+    "autoRebuildHint": "Desactivado por defecto. Si lo activas, se reconstruyen las aristas desde wiki-links y relaciones en fichas al entrar al grafo."
+  },
+  "explorer": {
+    "sectionTitle": "Explorador y vistas",
+    "openAllView": "Ver todo el proyecto (archivos locales)",
+    "openConsistency": "Abrir panel de consistencia"
+  },
+  "project": {
+    "sectionTitle": "Proyecto",
+    "closeProject": "Cerrar proyecto"
+  },
+  "manuscript": {
+    "sectionTitle": "Manuscrito",
+    "dateFormatLabel": "Formato de fechas en el panel",
+    "dateFormatShort": "2030-03-10 (AAAA-MM-DD)",
+    "dateFormatLong": "Martes 10 de Marzo, 2030",
+    "dateFormatHint": "Aplica a «Última fecha añadida» y «Última fecha en el documento»."
+  }
+}

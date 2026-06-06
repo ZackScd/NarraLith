@@ -1,0 +1,79 @@
+{
+  "defaultTemplateId": "custom",
+  "rules": [
+    { "pattern": "Worldbuilding/Eventos/**", "templateId": "event" },
+    { "pattern": "Worldbuilding/Personajes/**", "templateId": "character" },
+    { "pattern": "Worldbuilding/Ubicaciones/**", "templateId": "location" },
+    { "pattern": "Worldbuilding/Lore_y_Mitos/**", "templateId": "lore" },
+    { "pattern": "Worldbuilding/Facciones/**", "templateId": "faction" },
+    { "pattern": "Worldbuilding/Sistemas_de_Poder/**", "templateId": "power_system" },
+    {
+      "pattern": "Worldbuilding/Naturaleza/Bestiario_y_Fauna/**",
+      "templateId": "creature"
+    },
+    { "pattern": "Worldbuilding/Naturaleza/Flora_y_Hongos/**", "templateId": "flora" },
+    {
+      "pattern": "Worldbuilding/Naturaleza/Fenomenos_y_Clima/**",
+      "templateId": "phenomenon"
+    },
+    {
+      "pattern": "Worldbuilding/Naturaleza/Geologia_y_Minerales/**",
+      "templateId": "geology"
+    },
+    {
+      "pattern": "Worldbuilding/Naturaleza/Cosmologia_y_Astros/**",
+      "templateId": "cosmology"
+    },
+    {
+      "pattern": "Worldbuilding/Naturaleza/Materiales_Naturales_y_Derivados/**",
+      "templateId": "material"
+    },
+    {
+      "pattern": "Worldbuilding/Naturaleza/Biomas_y_Ecosistemas/**",
+      "templateId": "biome"
+    },
+    { "pattern": "Worldbuilding/Naturaleza/**", "templateId": "nature" },
+    {
+      "pattern": "Worldbuilding/Objetos_y_Artefactos/Reliquias_y_Artefactos_Magicos/**",
+      "templateId": "artifact"
+    },
+    {
+      "pattern": "Worldbuilding/Objetos_y_Artefactos/Armas_y_Equipamiento/**",
+      "templateId": "weapon"
+    },
+    {
+      "pattern": "Worldbuilding/Objetos_y_Artefactos/Vehiculos_y_Transportes/**",
+      "templateId": "vehicle"
+    },
+    {
+      "pattern": "Worldbuilding/Objetos_y_Artefactos/Consumibles_y_Pociones/**",
+      "templateId": "consumable"
+    },
+    { "pattern": "Worldbuilding/Objetos_y_Artefactos/**", "templateId": "object" },
+    {
+      "pattern": "Worldbuilding/Sociedad_y_Cultura/Civilizaciones_y_Razas/Sistemas_Politicos_y_Leyes/**",
+      "templateId": "politics"
+    },
+    {
+      "pattern": "Worldbuilding/Sociedad_y_Cultura/Civilizaciones_y_Razas/Economia_Monedas_y_Comercio/**",
+      "templateId": "economy"
+    },
+    {
+      "pattern": "Worldbuilding/Sociedad_y_Cultura/Civilizaciones_y_Razas/Religiones_y_Creencias/**",
+      "templateId": "religion"
+    },
+    {
+      "pattern": "Worldbuilding/Sociedad_y_Cultura/Civilizaciones_y_Razas/Idiomas_y_Conlangs/**",
+      "templateId": "language"
+    },
+    {
+      "pattern": "Worldbuilding/Sociedad_y_Cultura/Civilizaciones_y_Razas/**",
+      "templateId": "civilization"
+    },
+    {
+      "pattern": "Worldbuilding/Sociedad_y_Cultura/Cultura_Diaria/**",
+      "templateId": "culture"
+    },
+    { "pattern": "Worldbuilding/Sociedad_y_Cultura/**", "templateId": "society" }
+  ]
+}

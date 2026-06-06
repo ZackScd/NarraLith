@@ -1,0 +1,24 @@
+id: phenomenon
+labelKey: worldbuilding.templates.phenomenon
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: region
+        type: relation
+        labelKey: worldbuilding.fields.region
+        relationCategories:
+          - location
+      - key: frequency
+        type: shortText
+        labelKey: worldbuilding.fields.frequency
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

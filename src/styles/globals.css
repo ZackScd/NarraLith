@@ -1,0 +1,299 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Tema claro — crema y gris cálido */
+  :root {
+    --background: oklch(0.97 0.012 85);
+    --foreground: oklch(0.32 0.02 75);
+    --card: oklch(0.95 0.014 85);
+    --card-foreground: oklch(0.32 0.02 75);
+    --popover: oklch(0.96 0.012 85);
+    --popover-foreground: oklch(0.32 0.02 75);
+    --primary: oklch(0.42 0.03 75);
+    --primary-foreground: oklch(0.98 0.01 85);
+    --secondary: oklch(0.91 0.014 85);
+    --secondary-foreground: oklch(0.35 0.02 75);
+    --muted: oklch(0.92 0.012 85);
+    --muted-foreground: oklch(0.52 0.02 75);
+    --accent: oklch(0.9 0.016 85);
+    --accent-foreground: oklch(0.32 0.02 75);
+    --destructive: oklch(0.55 0.18 25);
+    --destructive-foreground: oklch(0.98 0.01 85);
+    --border: oklch(0.86 0.014 85);
+    --input: oklch(0.88 0.014 85);
+    --ring: oklch(0.62 0.03 75);
+    --radius: 0.5rem;
+
+    --timeline-canvas: oklch(0.96 0.014 85);
+    --timeline-axis: oklch(0.55 0.025 75);
+    --timeline-cap: oklch(0.45 0.03 75);
+    --timeline-stem: oklch(0.62 0.02 75);
+    --timeline-tick: oklch(0.72 0.018 85);
+    --timeline-date: oklch(0.48 0.025 75);
+    --timeline-chip-bg: oklch(0.99 0.008 85);
+    --timeline-chip-border: oklch(0.82 0.016 85);
+    --timeline-chip-text: oklch(0.3 0.02 75);
+    --timeline-chip-hover: oklch(0.94 0.014 85);
+
+    --cal-manuscript: oklch(0.72 0.08 250);
+    --cal-event: oklch(0.75 0.1 145);
+    --cal-birthday: oklch(0.8 0.12 55);
+    --cal-cosmic: oklch(0.7 0.14 300);
+    --cal-festival: oklch(0.78 0.11 25);
+    --cal-anniversary: oklch(0.74 0.09 200);
+    --cal-special-extra: oklch(0.42 0.08 145);
+
+    --ms-tree-row-hover: oklch(0.9 0.014 85 / 0.35);
+    --ms-tree-row-active: oklch(0.86 0.016 85 / 0.35);
+  }
+
+  /* Tema oscuro — gris cálido profundo */
+  .dark {
+    --background: oklch(0.24 0.018 75);
+    --foreground: oklch(0.93 0.012 85);
+    --card: oklch(0.28 0.02 75);
+    --card-foreground: oklch(0.93 0.012 85);
+    --popover: oklch(0.3 0.02 75);
+    --popover-foreground: oklch(0.93 0.012 85);
+    --primary: oklch(0.88 0.014 85);
+    --primary-foreground: oklch(0.26 0.018 75);
+    --secondary: oklch(0.34 0.02 75);
+    --secondary-foreground: oklch(0.93 0.012 85);
+    --muted: oklch(0.34 0.02 75);
+    --muted-foreground: oklch(0.72 0.016 85);
+    --accent: oklch(0.36 0.022 75);
+    --accent-foreground: oklch(0.93 0.012 85);
+    --destructive: oklch(0.65 0.17 22);
+    --destructive-foreground: oklch(0.98 0.01 85);
+    --border: oklch(0.4 0.02 75);
+    --input: oklch(0.38 0.02 75);
+    --ring: oklch(0.58 0.03 75);
+
+    --timeline-canvas: oklch(0.26 0.02 75);
+    --timeline-axis: oklch(0.78 0.014 85);
+    --timeline-cap: oklch(0.88 0.012 85);
+    --timeline-stem: oklch(0.62 0.02 75);
+    --timeline-tick: oklch(0.5 0.02 75);
+    --timeline-date: oklch(0.75 0.014 85);
+    --timeline-chip-bg: oklch(0.32 0.022 75);
+    --timeline-chip-border: oklch(0.45 0.022 75);
+    --timeline-chip-text: oklch(0.92 0.012 85);
+    --timeline-chip-hover: oklch(0.36 0.024 75);
+
+    --cal-manuscript: oklch(0.55 0.1 250);
+    --cal-event: oklch(0.52 0.09 145);
+    --cal-birthday: oklch(0.58 0.11 55);
+    --cal-cosmic: oklch(0.5 0.12 300);
+    --cal-festival: oklch(0.56 0.1 25);
+    --cal-anniversary: oklch(0.54 0.08 200);
+    --cal-special-extra: oklch(0.38 0.07 145);
+
+    --ms-tree-row-hover: oklch(0.36 0.022 75 / 0.35);
+    --ms-tree-row-active: oklch(0.4 0.022 75 / 0.35);
+  }
+
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: "Geist Variable", sans-serif;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html {
+    @apply font-sans;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Cursor: flecha por defecto en toda la app */
+  *,
+  *::before,
+  *::after {
+    cursor: default !important;
+  }
+
+  /* Excepción: campos de texto editables */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not(
+      [type="submit"]
+    ):not([type="reset"]):not([type="color"]):not([type="file"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    cursor: text !important;
+  }
+
+  /* Excepción: divisores redimensionables de paneles laterales */
+  .panel-resize-handle {
+    cursor: col-resize !important;
+  }
+}
+
+@layer utilities {
+  .scroll-panel {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.5 0.02 75 / 25%) transparent;
+  }
+
+  .scroll-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-panel::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-panel::-webkit-scrollbar-thumb {
+    background: oklch(0.5 0.02 75 / 25%);
+    border-radius: 3px;
+  }
+
+  .dark .scroll-panel {
+    scrollbar-color: oklch(0.85 0.01 85 / 18%) transparent;
+  }
+
+  .dark .scroll-panel::-webkit-scrollbar-thumb {
+    background: oklch(0.85 0.01 85 / 18%);
+  }
+
+  /* Sin flechas en inputs numéricos (línea de tiempo, calendario, etc.) */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  /* Campos del panel de calendario: nunca fondo blanco del tema claro */
+  .calendar-edit-panel [data-slot="input"] {
+    background-color: color-mix(in oklch, var(--muted) 55%, transparent);
+    color: var(--foreground);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .calendar-edit-panel [data-slot="input"]:focus-visible {
+    border-color: var(--ring);
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 40%, transparent);
+  }
+
+  .calendar-edit-panel [data-slot="input"]:-webkit-autofill,
+  .calendar-edit-panel [data-slot="input"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 1000px color-mix(in oklch, var(--muted) 55%, transparent)
+      inset;
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  /* Bloque Eventos del panel manuscrito: mismo fondo que los inputs del calendario */
+  .manuscript-event-card textarea {
+    background-color: color-mix(in oklch, var(--muted) 55%, transparent);
+    color: var(--foreground);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .manuscript-event-card textarea:focus-visible {
+    border-color: var(--ring);
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 40%, transparent);
+  }
+}
+
+/* Bloques: chips de metadatos en línea */
+.narra-block-metadata {
+  margin: 0;
+}
+
+.narra-block-metadata:empty {
+  display: none;
+}
+
+/* Eventos §1.3 — barra, marco y chips inline */
+.narra-event-tag-bar,
+.narra-event-frame-bottom-host {
+  margin: 0;
+  padding: 0;
+}
+
+.narra-event-tag-bar:empty,
+.narra-event-frame-bottom-host:empty {
+  display: none;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.narra-event-tag-bar-row,
+.narra-event-frame-bottom {
+  margin: 0;
+}
+
+.narra-event-corner {
+  line-height: 1;
+}
+
+.narra-inline-time-tag {
+  @apply rounded-full border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 font-medium text-sky-800 dark:text-sky-200;
+}
+
+/* §1.3 — etiquetas OFF: texto plano, sin marco ni hueco */
+.narra-tags-off .narra-event-tag-bar,
+.narra-tags-off .narra-event-frame-bottom-host {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.narra-tags-off .narra-inline-time-tag {
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* Wiki-links (Fase 3.2) */
+.narra-wikilink {
+  @apply rounded px-0.5 font-medium underline decoration-2 underline-offset-2;
+}
+
+.narra-wikilink-resolved {
+  @apply text-sky-600 decoration-sky-600/50 hover:text-sky-700 dark:text-sky-400 dark:decoration-sky-500/60 dark:hover:text-sky-300;
+}
+
+.narra-wikilink-unresolved {
+  @apply text-amber-700/90 decoration-dashed decoration-amber-600/50 hover:text-amber-800 dark:text-amber-400/90 dark:decoration-amber-500/50 dark:hover:text-amber-300;
+}

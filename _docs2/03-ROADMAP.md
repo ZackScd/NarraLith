@@ -1,0 +1,138 @@
+# Roadmap — NarraLith
+
+Planificación **macro** desde jun 2026. Sustituye `_docs/03-ROADMAP.md` (fases 0–12 del escenario ideal).
+
+> **Cadena documental:** `03-ROADMAP` (fases) → `04-TASK` (fase activa detallada) → `05-CHANGELOG` (cerrado).  
+> **Specs profundas** (refactors grandes): carpeta `specs/` — estilo `plan.md` + `plan_roadmap.md`.
+
+---
+
+## Por qué un roadmap nuevo
+
+El roadmap original asumía un camino lineal hasta v0.10 exportación. Tras **v0.9.0** (grafo), el desarrollo divergió:
+
+- Refactor de **manuscrito** (eventos, inline tags) — no estaba en el roadmap original.
+- **Calendario/timeline** re-adaptados al nuevo formato — trabajo no reflejado en `04-TASK`.
+- Features **implementadas al lote** (mapas, grafo, versiones UI) sin integración cerrada.
+- Documentación congelada ~commit `c819bc6` en adelante.
+
+Este roadmap parte del **código y la deuda real**, no del escenario ideal.
+
+### Visión de producto (jun 2026)
+
+- **No hay MVP recortado:** al salir a producción se espera una versión **completa y estable** de todo lo planificado (manuscrito, worldbuilding, tiempo, ubicación, grafos, versiones).
+- **Orden de reparación** (acordado): **manuscrito → mapas → worldbuilding** (WB depende de manuscrito y mapas).
+- **UI de módulos rotos:** no ocultar; marcar con **✗** lo que no funcione.
+- **Usuario actual:** un solo desarrollador/usuario; objetivo producto serio para usuarios finales; desarrollo asistido por IA.
+
+---
+
+## Eras del proyecto
+
+| Era | Versión | Estado | Resumen |
+|-----|---------|--------|---------|
+| **I — Cimientos** | v0.1.0 – v0.9.0 | ✅ Cerrada | FS, parser legacy, WB, refs, calendario v1, mapas, grafo |
+| **II — Manuscrito v2** | v0.10.x | 🔄 **Activa** | Eventos `+++event`, editor Lexical, tiempo multi-marca, estabilización |
+| **III — Espacio** | v0.11.x | 📋 | Ubicación inline + reintegración mapas |
+| **IV — Confianza** | v0.12.x | 📋 | Versiones Git, QA transversal, deuda UI rota |
+| **V — Salida** | v0.13.x | 📋 | Exportación editorial |
+| **VI — QoL y futuro** | — | 📋 | Focus mode, dashboard, plugins, P2P |
+
+La Era I **no se rehace**. Su changelog queda en `05-CHANGELOG.md` como archivo histórico.
+
+---
+
+## Era II — Manuscrito v2 (activa)
+
+**Objetivo:** Editor de manuscrito fiable con formato por eventos, tiempo opt-in, sync WB Eventos. Cero legacy `+++` en flujo de usuario.
+
+**Spec de diseño:** [`specs/manuscript-design.md`](specs/manuscript-design.md)  
+**Plan de ejecución:** [`specs/manuscript-roadmap.md`](specs/manuscript-roadmap.md)
+
+| Fase | Nombre | Estado | Entregable clave |
+|------|--------|--------|------------------|
+| II.0 | Documentación limpia | 🔄 | `_docs2/` completo |
+| II.1 | Backend parser + SQLite | ✅ | `+++event`, `time_markers` v5, tests |
+| II.2 | IPC + tipos TS | ✅ | `read/save_manuscript` |
+| II.3 | Lexical + panel | 🟡 | Eventos, inline, staging — deuda adaptador |
+| II.4 | Estabilización editor | 📋 | Un modelo en memoria, sin legacy |
+| II.5 | QA manual | 📋 | Checklist §1.6 cerrada |
+| II.6 | Cierre Era II | 📋 | Changelog v0.10.0 |
+
+**Criterio de cierre Era II:** checklist en `specs/manuscript-design.md` §7 + `npm test` + `cargo test` verdes.
+
+**Fuera de alcance Era II:** ubicación inline, mapas, Git snapshots, exportación.
+
+---
+
+## Era III — Mapas y espacio (planificada)
+
+**Objetivo:** **Rehacer el sistema de mapas** y, sobre esa base, ubicación en manuscrito.
+
+| Entregable | Notas |
+|------------|-------|
+| Reintegración mapas ↔ entidades | Prioridad antes de WB v2 |
+| `{{location:…}}` inline + `barTags` | Mismo patrón que tiempo |
+| Panel / picker de ubicación | Incl. mapa interno del proyecto (futuro) |
+| Smoke test mapas ↔ manuscrito | Código Leaflet existe — ⏸ hasta Era II cerrada |
+
+---
+
+## Era IV — Worldbuilding y confianza (planificada)
+
+**Objetivo:** **Rehacer worldbuilding** (tras manuscrito + mapas) y reparar features “existen pero rotas”; integridad FS↔SQLite verificada.
+
+| Área | Situación actual |
+|------|------------------|
+| Worldbuilding v2 | Depende de manuscrito estable + mapas |
+| Versiones Git | UI montada; `snapshot.rs` no compilado — marcar ✗ en UI |
+| Grafo | ✅ índice; validar con manuscrito v2 |
+| Backlinks panel | 🟡 índices legacy en navegación |
+
+---
+
+## Era V — Salida (planificada)
+
+Motor de exportación (DOCX, PDF, EPUB, Wiki HTML, zip). Hereda requisitos originales Fase 9 del roadmap archivado.
+
+---
+
+## Era VI — Futuro (sin fecha)
+
+Focus mode, dashboard, plugins, P2P. Ver visión en `01-REQUIREMENTS.md` §12.
+
+---
+
+## Qué hacer con el roadmap archivado
+
+| Archivo `_docs/` | Tratamiento |
+|------------------|-------------|
+| `03-ROADMAP.md` | Solo consulta histórica |
+| `04-TASK.md` | Congelado en Fase 9 ficticia |
+| `05-CHANGELOG.md` | Copiado a `_docs2/05-CHANGELOG.md` como historial I |
+| `plan.md` | Archivo en `archive/manuscript-refactor/`; vigente: `specs/manuscript-design.md` |
+| `plan_roadmap.md` | Archivo en `archive/manuscript-refactor/`; vigente: `specs/manuscript-roadmap.md` |
+
+---
+
+## Resumen visual
+
+```mermaid
+flowchart LR
+  E1[Era I v0.1-0.9]
+  E2[Era II v0.10 Manuscrito]
+  E3[Era III Espacio]
+  E4[Era IV Confianza]
+  E5[Era V Export]
+  E6[Era VI Futuro]
+
+  E1 --> E2
+  E2 --> E3
+  E3 --> E4
+  E4 --> E5
+  E5 --> E6
+```
+
+**Regla:** no abrir Era III hasta cerrar II.5 + II.6.
+
+**Última actualización:** 2026-06-06

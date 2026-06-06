@@ -1,0 +1,17 @@
+{
+  "title": "Consistency",
+  "description": "Background checks for logical conflicts in your timeline metadata.",
+  "empty": "No consistency alerts. Keep writing — checks run after saves.",
+  "loadFailed": "Could not load consistency alerts.",
+  "loading": "Checking…",
+  "dualLocation": "{{character}} appears in two places at {{rawTime}}.",
+  "openScene": "Open scene",
+  "dismiss": "Mark as intentional",
+  "dismissedHint": "Intentional conflicts are saved in the project and hidden from this list.",
+  "severity": {
+    "warning": "Warning"
+  },
+  "errors": {
+    "invalid_dismissed": "Could not read dismissed alerts file."
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "title": "Explorador",
+  "loading": "Cargando árbol…",
+  "empty": "No hay archivos en esta vista.",
+  "nav": {
+    "expandExplorer": "Mostrar explorador de archivos",
+    "collapseExplorer": "Ocultar explorador de archivos"
+  },
+  "dnd": {
+    "reorderHint": "Línea: reordenar entre carpetas. Resaltado: mover dentro.",
+    "intoBadge": "Dentro"
+  },
+  "view": {
+    "manuscript": "Manuscrito",
+    "worldbuilding": "Worldbuilding",
+    "all": "Todo el proyecto"
+  },
+  "toolbar": {
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar archivo…",
+    "openLocal": "Abrir archivo local",
+    "collapseAll": "Colapsar todo",
+    "expandAll": "Expandir todo",
+    "closeSearch": "Cerrar búsqueda",
+    "newFile": "Nuevo archivo en última ruta",
+    "newFolder": "Nueva carpeta en última ruta"
+  },
+  "context": {
+    "newFile": "Nuevo archivo",
+    "newFolder": "Nueva carpeta",
+    "rename": "Renombrar",
+    "delete": "Eliminar",
+    "moveHere": "Soltar aquí para mover"
+  },
+  "createFile": {
+    "title": "Nuevo archivo",
+    "nameLabel": "Nombre del archivo",
+    "namePlaceholder": "Escena_1",
+    "submit": "Crear",
+    "cancel": "Cancelar"
+  },
+  "createFolder": {
+    "title": "Nueva carpeta",
+    "nameLabel": "Nombre de la carpeta",
+    "namePlaceholder": "Capitulo 2",
+    "submit": "Crear",
+    "cancel": "Cancelar"
+  },
+  "rename": {
+    "title": "Renombrar",
+    "nameLabel": "Nuevo nombre",
+    "submit": "Guardar",
+    "cancel": "Cancelar"
+  },
+  "delete": {
+    "title": "Eliminar",
+    "message": "¿Eliminar «{{name}}»? Esta acción no se puede deshacer desde la app.",
+    "folderWarning": "Si es una carpeta, se eliminará todo su contenido.",
+    "submit": "Eliminar",
+    "cancel": "Cancelar"
+  },
+  "error": {
+    "fs": {
+      "invalid_path": "Ruta no válida.",
+      "invalid_name": "Nombre no válido.",
+      "path_exists": "Ya existe un archivo o carpeta con ese nombre.",
+      "not_found": "No se encontró la ruta.",
+      "not_empty": "La carpeta no está vacía.",
+      "path_outside_project": "La ruta queda fuera del proyecto."
+    },
+    "unknown": "Ha ocurrido un error inesperado."
+  }
+}

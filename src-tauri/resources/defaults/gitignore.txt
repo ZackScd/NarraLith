@@ -1,0 +1,3 @@
+# NarraLith — ignorar solo artefactos locales opcionales (el manuscrito del usuario NUNCA se excluye)
+.narralith/*.tmp
+*.tmp

@@ -1,0 +1,234 @@
+{
+  "loading": "Loading calendar…",
+
+  "back": "Back",
+
+  "yearLabel": "Year",
+
+  "prevYear": "Previous year",
+
+  "nextYear": "Next year",
+
+  "jumpToYear": "Go to year {{year}}",
+
+  "scrollYearsBack": "Scroll years left",
+
+  "scrollYearsForward": "Scroll years right",
+
+  "yearReferenceHint": "Last date in project: year {{year}}",
+
+  "yearGoToLast": "Last date",
+
+  "specialYearLabel": "Special year: {{name}}",
+  "specialYearLabelWithFile": "Special year: {{name}} · {{file}}",
+
+  "legendButton": "Legend",
+
+  "filters": "Filters",
+
+  "editCalendar": "Edit calendar",
+
+  "weekday": "D{{index}}",
+
+  "month": {
+    "prevMonth": "Previous month",
+
+    "nextMonth": "Next month",
+
+    "backToYear": "Back to year",
+
+    "backToMonth": "Back to month",
+
+    "monthTitle": "{{month}} · {{year}}",
+
+    "monthSubtitle": "Time marks this month (chronological)",
+
+    "dayTitle": "Day {{day}} · {{month}} {{year}}",
+
+    "daySubtitle": "Events on this day",
+
+    "hour": "{{hour}}:00",
+
+    "noHour": "No specific hour",
+
+    "noMonthEntries": "No time marks in this month.",
+
+    "noDayEntries": "No time marks on this day.",
+
+    "openMonth": "Open month"
+  },
+
+  "legend": {
+    "manuscript": "Manuscript",
+
+    "event": "Events",
+
+    "birthday": "Birthdays",
+
+    "cosmic": "Cosmic",
+
+    "festival": "Festivals",
+
+    "anniversary": "Anniversaries"
+  },
+
+  "specialYear": {
+    "defaultName": "Special year"
+  },
+
+  "edit": {
+    "specialYear": "Special year",
+
+    "specialYears": "Special years",
+
+    "specialYearOptions": "Special year cycles",
+
+    "defaultName": "Special cycle",
+
+    "cycleName": "Special year name",
+
+    "intervalYears": "Interval",
+
+    "startsAtYear": "Start year",
+
+    "syncFromBase": "Sync with base calendar",
+
+    "copyBaseCalendar": "Copy base calendar",
+
+    "hoursEnabled": "Enable hours",
+
+    "hoursPerDay": "Hours per day",
+
+    "dayPhases": "Day phases",
+    "dayPhasesGlobal": "Single schedule",
+    "dayPhasesGlobalHint": "Same day phases all year (off = one list per season).",
+    "dayPhasesUnique": "Single schedule",
+    "dayPhasesOrderWarning": "Hours are not in ascending order in the list.",
+    "dayPhasesNeedSeasons": "Add seasons above to set a schedule per season.",
+    "phaseName": "Phase",
+    "phaseDawn": "Dawn",
+    "phaseNoon": "Noon",
+    "phaseSunset": "Sunset",
+    "phaseDusk": "Dusk",
+    "phaseMidnight": "Midnight",
+    "addPhase": "Add phase",
+    "removePhase": "Remove phase",
+
+    "months": "Months",
+    "seasons": "Seasons",
+    "season": "Season",
+    "month": "Month",
+    "description": "Description",
+    "from": "From",
+    "to": "To",
+    "seasonStarts": "Starts:",
+    "seasonEnds": "Ends:",
+    "highlightColor": "Color:",
+    "highlightOpacity": "Opacity:",
+    "addSeason": "Add season",
+    "removeSeason": "Remove season",
+    "seasonNumber": "Season {{n}}",
+    "seasonOverlapSummary": "Some seasons overlap:",
+    "seasonOverlapPair": "“{{a}}” and “{{b}}”",
+    "seasonOverlapWith": "Overlaps with: {{names}}",
+    "daysPerWeek": "Days per week",
+    "editWeekDays": "Edit days",
+    "weekDayLabel": "Day {{n}}",
+    "weekDayName": "Day name",
+    "weekDayDefault": "Day {{n}}",
+    "seasonDescriptionLink": "Description (file)",
+
+    "addMonth": "Add month",
+    "days": "days",
+
+    "monthName": "Month name",
+
+    "editMonth": "Edit",
+
+    "editDayHours": "Edit day",
+
+    "addHourAll": "+ hour (all)",
+
+    "removeHourAll": "− hour (all)",
+
+    "dayN": "Day {{day}}",
+    "day": "Day",
+    "dragMonth": "Drag to reorder",
+
+    "edit": "Edit",
+
+    "confirmEdit": "Confirm",
+    "toggleList": "Expand/collapse list",
+
+    "backToList": "Back to list",
+
+    "removeCycle": "Remove cycle",
+    "addSpecialYear": "Add special year",
+    "addMonthToCycle": "Add month to special year",
+    "removeMonth": "Remove month",
+
+    "leapYearTitle": "Leap year",
+
+    "leapStartsHint": "Leap applies from calendar year 0",
+
+    "leapMonthHint": "Month that gains extra days on leap years",
+
+    "leapMonth": "Leap month",
+
+    "leapExtraDays": "Extra days",
+
+    "leapEnabled": "Leap year enabled",
+    "leapEveryYears": "Every N years",
+    "leapDisabledHint": "Leap years off: every year has the same length.",
+    "leapSummary": "Every {{every}} years, {{month}} gains {{extra}} extra day(s) (e.g. Feb 29).",
+
+    "recurringEvents": "Recurring events",
+    "recurringDates": "Recurring dates",
+    "recurringEmpty": "No recurring dates defined.",
+
+    "eventName": "Name",
+
+    "linkedPath": "File",
+
+    "addRecurring": "Add recurring date",
+    "removeRecurring": "Remove recurring date",
+
+    "eventHourOptional": "Hour (optional)",
+    "eventHourShort": "Hour",
+    "eventTimeInterval": "Interval",
+    "eventIntervals": "Intervals",
+    "eventIntervalsEveryYear": "Every year",
+    "eventFirstCountedYear": "Initial year",
+    "warnRecurringDayZero": "Day is set to 0: it may not appear on the calendar.",
+    "warnRecurringIntervalZero": "Interval is set to 0: the event will not repeat by year.",
+
+    "kindFestival": "Festival",
+    "kindStellar": "Stellar",
+    "kindAnniversary": "Anniversary"
+  },
+
+  "actions": {
+    "save": "Save",
+    "discard": "Discard",
+    "saving": "Saving…",
+    "unsavedHint": "Unsaved changes"
+  },
+
+  "unsaved": {
+    "title": "Unsaved changes",
+    "messageLeave": "If you leave now, unsaved calendar changes will be lost.",
+    "messageSection": "If you change view or close editing, unsaved calendar changes will be lost.",
+    "cancel": "Keep editing",
+    "discard": "Discard changes",
+    "save": "Save and continue"
+  },
+
+  "deleteCalendar": {
+    "button": "Delete calendar…",
+    "title": "Reset the calendar?",
+    "description": "Choose how to reset this project's calendar. This cannot be undone.",
+    "restoreDefault": "Restore example template",
+    "leaveBlank": "Leave blank (minimal)",
+    "cancel": "Cancel"
+  }
+}

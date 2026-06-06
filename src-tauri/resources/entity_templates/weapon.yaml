@@ -1,0 +1,33 @@
+id: weapon
+labelKey: worldbuilding.templates.weapon
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: weapon_type
+        type: shortText
+        labelKey: worldbuilding.fields.weaponType
+      - key: material
+        type: relation
+        labelKey: worldbuilding.fields.material
+        relationCategories:
+          - material
+          - geology
+      - key: wielder
+        type: relation
+        labelKey: worldbuilding.fields.wielder
+        relationCategories:
+          - character
+      - key: stats
+        type: keyValue
+        labelKey: worldbuilding.fields.stats
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

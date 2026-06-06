@@ -1,0 +1,28 @@
+id: economy
+labelKey: worldbuilding.templates.economy
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: currency
+        type: shortText
+        labelKey: worldbuilding.fields.currency
+      - key: trade_routes
+        type: relation
+        labelKey: worldbuilding.fields.tradeRoutes
+        multiple: true
+        relationCategories:
+          - location
+      - key: commodities
+        type: keyValue
+        labelKey: worldbuilding.fields.commodities
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

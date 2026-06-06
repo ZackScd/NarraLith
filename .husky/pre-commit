@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Usa el binario local (npx no está en node_modules/.bin y falla en GitHub Desktop).
+lint-staged

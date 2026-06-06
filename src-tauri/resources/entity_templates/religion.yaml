@@ -1,0 +1,33 @@
+id: religion
+labelKey: worldbuilding.templates.religion
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: deity
+        type: shortText
+        labelKey: worldbuilding.fields.deity
+      - key: holy_sites
+        type: relation
+        labelKey: worldbuilding.fields.holySites
+        multiple: true
+        relationCategories:
+          - location
+      - key: hierarchy
+        type: nested
+        labelKey: worldbuilding.fields.hierarchy
+        nestedFields:
+          - key: rank
+            labelKey: worldbuilding.fields.rank
+          - key: role
+            labelKey: worldbuilding.fields.roleField
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

@@ -1,0 +1,27 @@
+id: politics
+labelKey: worldbuilding.templates.politics
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: government_type
+        type: shortText
+        labelKey: worldbuilding.fields.governmentType
+      - key: civilization
+        type: relation
+        labelKey: worldbuilding.fields.civilization
+        relationCategories:
+          - civilization
+      - key: laws
+        type: keyValue
+        labelKey: worldbuilding.fields.laws
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

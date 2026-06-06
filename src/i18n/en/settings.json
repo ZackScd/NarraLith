@@ -1,0 +1,46 @@
+{
+  "title": "Settings",
+  "description": "Application preferences. Stored on this device.",
+  "close": "Close",
+  "appearance": {
+    "sectionTitle": "Appearance",
+    "themeLabel": "Theme",
+    "themeLight": "Light (cream and gray)",
+    "themeDark": "Dark (warm gray)",
+    "themeHint": "Light theme uses cream tones; dark theme uses deep warm grays.",
+    "languageLabel": "Language",
+    "languageEs": "Español",
+    "languageEn": "English",
+    "languageHint": "Applies to the entire application interface."
+  },
+  "editor": {
+    "sectionTitle": "Editor",
+    "autosaveEnabled": "Enable autosave",
+    "debounceLabel": "Save after idle (seconds)",
+    "debounceHint": "After you stop typing for this long (5–600 s).",
+    "intervalLabel": "Save every X seconds (0 = off)",
+    "intervalHint": "Optional periodic save. Use 0 for idle-only saves.",
+    "manualHint": "With autosave off, use Save or Ctrl+S. Tabs show a dot when there are unsaved changes."
+  },
+  "graph": {
+    "sectionTitle": "Knowledge graph",
+    "autoRebuildOnView": "Rebuild index when opening Graph view",
+    "autoRebuildHint": "Off by default. When enabled, edges are rebuilt from wiki-links and entity relations on each visit."
+  },
+  "explorer": {
+    "sectionTitle": "Explorer & views",
+    "openAllView": "View entire project (local files)",
+    "openConsistency": "Open consistency panel"
+  },
+  "project": {
+    "sectionTitle": "Project",
+    "closeProject": "Close project"
+  },
+  "manuscript": {
+    "sectionTitle": "Manuscript",
+    "dateFormatLabel": "Date format in side panel",
+    "dateFormatShort": "2030-03-10 (YYYY-MM-DD)",
+    "dateFormatLong": "Tuesday 10 March, 2030",
+    "dateFormatHint": "Applies to “Last added date” and “Last date in document”."
+  }
+}

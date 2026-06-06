@@ -1,0 +1,59 @@
+{
+  "title": "Timeline",
+  "placeholder": "The timeline view will be rebuilt soon.",
+  "loading": "Loading events…",
+  "loadFailed": "Could not load timeline events.",
+  "noCalendar": "Loading project calendar…",
+  "empty": "No timestamped entries match the active filters.",
+  "verticalPlaceholder": "Vertical view will be available later.",
+  "canvasLabel": "Project horizontal timeline",
+  "hoursOn": "hours visible",
+  "zoomLevel": "zoom ×{{level}}",
+  "deadTimeCollapsed": "dead time trimmed",
+  "zoom": {
+    "year": "Grouping: years",
+    "month": "Grouping: months",
+    "week": "Grouping: weeks",
+    "day": "Grouping: days"
+  },
+  "controls": {
+    "zoomIn": "Zoom in one level",
+    "zoomOut": "Zoom out one level",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "zoomButtonsMode": "Zoom buttons"
+  },
+  "zoomLevelLabel": {
+    "all": "Full range",
+    "years4": "4 years",
+    "years2": "2 years",
+    "year1": "1 year",
+    "months": "x1 month",
+    "days": "x1 day",
+    "hours": "Day hours"
+  },
+  "panel": {
+    "title": "Timeline tools",
+    "expandTools": "Expand menu",
+    "collapseTools": "Collapse menu",
+    "horizontal": "Horizontal view",
+    "verticalSoon": "Vertical view (coming soon)",
+    "calendar": "Calendar",
+    "calendarSoon": "Open calendar (coming soon)",
+    "filters": "Filters",
+    "collapseDeadTime": "Hide long dead-time gaps",
+    "collapsePeriods": "Hide periods",
+    "collapseYears": "Hide years",
+    "collapseMonths": "Hide months",
+    "collapseDays": "Hide days",
+    "collapseHours": "Hide hours"
+  },
+  "filters": {
+    "manuscript": "Manuscript",
+    "events": "Events",
+    "annuals": "Annual",
+    "festivals": "Festivals",
+    "anniversaries": "Anniversaries",
+    "cosmic": "Stellar"
+  }
+}

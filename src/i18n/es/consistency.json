@@ -1,0 +1,17 @@
+{
+  "title": "Consistencia",
+  "description": "Comprobaciones en segundo plano de conflictos lógicos en los metadatos temporales.",
+  "empty": "Sin alertas de consistencia. Sigue escribiendo — las comprobaciones corren tras guardar.",
+  "loadFailed": "No se pudieron cargar las alertas de consistencia.",
+  "loading": "Comprobando…",
+  "dualLocation": "{{character}} aparece en dos lugares en {{rawTime}}.",
+  "openScene": "Abrir escena",
+  "dismiss": "Marcar como intencional",
+  "dismissedHint": "Los conflictos intencionales se guardan en el proyecto y no se muestran aquí.",
+  "severity": {
+    "warning": "Aviso"
+  },
+  "errors": {
+    "invalid_dismissed": "No se pudo leer el archivo de alertas descartadas."
+  }
+}

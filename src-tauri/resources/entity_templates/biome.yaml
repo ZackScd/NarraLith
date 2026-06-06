@@ -1,0 +1,31 @@
+id: biome
+labelKey: worldbuilding.templates.biome
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: climate
+        type: longText
+        labelKey: worldbuilding.fields.climate
+      - key: flora
+        type: relation
+        labelKey: worldbuilding.fields.flora
+        multiple: true
+        relationCategories:
+          - flora
+      - key: fauna
+        type: relation
+        labelKey: worldbuilding.fields.fauna
+        multiple: true
+        relationCategories:
+          - creature
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

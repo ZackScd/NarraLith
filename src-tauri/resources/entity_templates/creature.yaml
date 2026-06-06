@@ -1,0 +1,38 @@
+id: creature
+labelKey: worldbuilding.templates.creature
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: habitat
+        type: relation
+        labelKey: worldbuilding.fields.habitat
+        relationCategories:
+          - location
+          - biome
+      - key: diet
+        type: shortText
+        labelKey: worldbuilding.fields.diet
+      - key: threat_level
+        type: select
+        labelKey: worldbuilding.fields.threatLevel
+        options:
+          - value: low
+            labelKey: worldbuilding.threat.low
+          - value: medium
+            labelKey: worldbuilding.threat.medium
+          - value: high
+            labelKey: worldbuilding.threat.high
+      - key: loot
+        type: keyValue
+        labelKey: worldbuilding.fields.loot
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

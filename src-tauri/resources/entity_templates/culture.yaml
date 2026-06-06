@@ -1,0 +1,27 @@
+id: culture
+labelKey: worldbuilding.templates.culture
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: region
+        type: relation
+        labelKey: worldbuilding.fields.region
+        relationCategories:
+          - location
+      - key: traditions
+        type: longText
+        labelKey: worldbuilding.fields.traditions
+      - key: festivals
+        type: keyValue
+        labelKey: worldbuilding.fields.festivals
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

@@ -1,0 +1,29 @@
+id: geology
+labelKey: worldbuilding.templates.geology
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: hardness
+        type: shortText
+        labelKey: worldbuilding.fields.hardness
+      - key: rarity
+        type: select
+        labelKey: worldbuilding.fields.rarity
+        options:
+          - value: common
+            labelKey: worldbuilding.rarity.common
+          - value: uncommon
+            labelKey: worldbuilding.rarity.uncommon
+          - value: rare
+            labelKey: worldbuilding.rarity.rare
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

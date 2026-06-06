@@ -1,0 +1,28 @@
+id: vehicle
+labelKey: worldbuilding.templates.vehicle
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: vehicle_type
+        type: shortText
+        labelKey: worldbuilding.fields.vehicleType
+      - key: capacity
+        type: shortText
+        labelKey: worldbuilding.fields.capacity
+      - key: owner
+        type: relation
+        labelKey: worldbuilding.fields.owner
+        relationCategories:
+          - character
+          - faction
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

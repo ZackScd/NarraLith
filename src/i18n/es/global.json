@@ -1,0 +1,25 @@
+{
+  "app": {
+    "title": "NarraLith",
+    "tagline": "Espacio de escritura narrativa y construcción de mundo",
+    "initialized": "Aplicación lista",
+    "greetPlaceholder": "Escribe un nombre…",
+    "greetAction": "Saludar",
+    "greetResult": "Hola, {{name}}. Saludo desde Rust."
+  },
+  "project": {
+    "noActive": "Sin proyecto activo",
+    "launcherHint": "Abre o crea un proyecto desde el lanzador (Fase 1)."
+  },
+  "error": {
+    "validation": {
+      "empty_name": "El nombre no puede estar vacío."
+    },
+    "project": {
+      "not_found": "Proyecto no encontrado."
+    },
+    "database": {
+      "generic": "Error de base de datos."
+    }
+  }
+}

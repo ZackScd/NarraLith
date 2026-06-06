@@ -1,0 +1,57 @@
+{
+  "launcher": {
+    "title": "NarraLith",
+    "subtitle": "Create your project and start writing.",
+    "pickerTitle": "Open project",
+    "pickerDescription": "Pick a recent project or open another folder.",
+    "create": "Create project",
+    "open": "Open project",
+    "recent": "Recent projects",
+    "recentEmpty": "No recent projects on this machine yet.",
+    "recentMissing": "Folder not found",
+    "removeRecent": "Remove from list"
+  },
+  "createDialog": {
+    "title": "New project",
+    "description": "Choose where to store your project folder on your device.",
+    "nameLabel": "Project name",
+    "namePlaceholder": "My novel",
+    "templateLabel": "Template",
+    "templateStandard": "Standard (full manuscript + worldbuilding tree)",
+    "templateBlank": "Blank (minimal structure)",
+    "parentLabel": "Parent folder",
+    "parentPlaceholder": "Select a folder…",
+    "browse": "Choose folder",
+    "submit": "Create",
+    "cancel": "Cancel"
+  },
+  "workspace": {
+    "closeProject": "Close project",
+    "activePath": "Project path",
+    "canvasPlaceholder": "Select a file in the explorer (coming soon).",
+    "explorerPlaceholder": "File explorer — Phase 1.3",
+    "panelPlaceholder": "Context panel — coming soon"
+  },
+  "nav": {
+    "manuscript": "Manuscript",
+    "worldbuilding": "Worldbuilding",
+    "all": "All"
+  },
+  "error": {
+    "project": {
+      "not_found": "Project folder was not found.",
+      "not_open": "No project is currently open.",
+      "path_exists": "A folder with that name already exists at the chosen location.",
+      "invalid_name": "Invalid project name.",
+      "template_not_found": "Project template was not found.",
+      "template_invalid": "The project template is invalid."
+    },
+    "git": {
+      "init_failed": "Could not initialize local version history for the project."
+    },
+    "database": {
+      "generic": "Error accessing the project's local cache."
+    },
+    "unknown": "An unexpected error occurred."
+  }
+}

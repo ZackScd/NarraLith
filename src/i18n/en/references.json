@@ -1,0 +1,33 @@
+{
+  "panel": {
+    "tabReferences": "References",
+    "noEntity": "Open an .md file to see backlinks and mentions.",
+    "loading": "Loading references…",
+    "backlinksTitle": "Links to “{{name}}”",
+    "backlinksEmpty": "No documents link to this entity.",
+    "unlinkedTitle": "Unlinked mentions",
+    "unlinkedEmpty": "No plain-text mentions found.",
+    "blockShort": "block {{index}}",
+    "convertToLink": "Convert to link",
+    "converting": "Converting…"
+  },
+  "error": {
+    "load_failed": "Could not load references.",
+    "invalid_range": "The mention no longer matches the text on disk.",
+    "mention_mismatch": "The text at that position does not match the entity.",
+    "unknown": "Unknown references error.",
+    "refactor": {
+      "invalid_path": "Invalid path for project refactor."
+    }
+  },
+  "typeahead": {
+    "ariaLabel": "Entity references",
+    "loading": "Loading dictionary…",
+    "hint": "Type to search entities",
+    "empty": "No results for “{{query}}”"
+  },
+  "wikilink": {
+    "unresolvedTitle": "Entity not found: {{name}}",
+    "aliasTitle": "{{alias}} → {{name}}"
+  }
+}

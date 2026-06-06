@@ -1,0 +1,36 @@
+{
+  "id": "blank",
+  "labelKey": "project.template.blank",
+  "nodes": [
+    {
+      "type": "dir",
+      "name": "Manuscrito",
+      "children": []
+    },
+    {
+      "type": "dir",
+      "name": "Imagenes",
+      "children": [
+        { "type": "dir", "name": "Mapas_y_Geografia", "children": [] },
+        { "type": "dir", "name": "Retratos_de_Personajes", "children": [] },
+        { "type": "dir", "name": "Artefactos_e_Items", "children": [] },
+        { "type": "dir", "name": "Iconografia_y_Simbolos", "children": [] },
+        { "type": "dir", "name": "Otros_Recursos", "children": [] }
+      ]
+    },
+    {
+      "type": "dir",
+      "name": "Worldbuilding",
+      "children": [
+        { "type": "dir", "name": "Personajes", "children": [] },
+        { "type": "dir", "name": "Ubicaciones", "children": [] },
+        { "type": "dir", "name": "Facciones", "children": [] },
+        { "type": "dir", "name": "Lore_y_Mitos", "children": [] },
+        { "type": "dir", "name": "Sistemas_de_Poder", "children": [] },
+        { "type": "dir", "name": "Naturaleza", "children": [] },
+        { "type": "dir", "name": "Objetos_y_Artefactos", "children": [] },
+        { "type": "dir", "name": "Sociedad_y_Cultura", "children": [] }
+      ]
+    }
+  ]
+}

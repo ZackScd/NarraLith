@@ -1,0 +1,36 @@
+id: event
+labelKey: worldbuilding.templates.event
+features:
+  - timeline
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: sourcePath
+        type: shortText
+        labelKey: worldbuilding.fields.sourcePath
+      - key: date
+        type: shortText
+        labelKey: worldbuilding.fields.date
+      - key: location
+        type: relation
+        labelKey: worldbuilding.fields.eventLocation
+        relationCategories:
+          - location
+      - key: participants
+        type: relation
+        labelKey: worldbuilding.fields.participants
+        multiple: true
+        relationCategories:
+          - character
+          - faction
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

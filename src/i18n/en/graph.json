@@ -1,0 +1,32 @@
+{
+  "title": "Graph",
+  "loading": "Loading relationships…",
+  "empty": "No indexed entities. Click «Rebuild index» to build the graph from wiki-links and entity sheets.",
+  "refresh": "Reload view",
+  "rebuild": "Rebuild index",
+  "rebuilding": "Indexing…",
+  "stats": "{{nodes}} nodes · {{links}} links",
+  "filters": {
+    "title": "Categories",
+    "hint": "Uncheck a category to hide its nodes (no reindex needed).",
+    "none": "No categories in the graph.",
+    "clear": "Show all"
+  },
+  "categories": {
+    "character": "Characters",
+    "location": "Locations",
+    "faction": "Factions",
+    "lore": "Lore & myths",
+    "powerSystem": "Power systems",
+    "nature": "Nature",
+    "object": "Objects",
+    "society": "Society & culture",
+    "manuscript": "Manuscript",
+    "custom": "Other"
+  },
+  "errors": {
+    "generic": "Could not load the graph.",
+    "too_many_nodes": "Too many nodes to display. Filter by category or reduce active entities.",
+    "invalid_limit": "Invalid node limit."
+  }
+}

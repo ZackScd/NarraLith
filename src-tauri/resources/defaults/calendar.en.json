@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "epoch": { "year": 0, "month": 1, "day": 1 },
+  "daysPerWeek": 7,
+  "weekDays": [
+    { "name": "Sunday" },
+    { "name": "Monday" },
+    { "name": "Tuesday" },
+    { "name": "Wednesday" },
+    { "name": "Thursday" },
+    { "name": "Friday" },
+    { "name": "Saturday" }
+  ],
+  "hoursPerDay": 24,
+  "hoursEnabled": true,
+  "dayPhasesMode": "perSeason",
+  "months": [
+    { "name": "January", "days": 31 },
+    { "name": "February", "days": 28 },
+    { "name": "March", "days": 31 },
+    { "name": "April", "days": 30 },
+    { "name": "May", "days": 31 },
+    { "name": "June", "days": 30 },
+    { "name": "July", "days": 31 },
+    { "name": "August", "days": 31 },
+    { "name": "September", "days": 30 },
+    { "name": "October", "days": 31 },
+    { "name": "November", "days": 30 },
+    { "name": "December", "days": 31 }
+  ],
+  "leapRules": {
+    "enabled": false,
+    "everyYears": 4,
+    "extraDays": 1,
+    "monthIndex": 1,
+    "linkedPath": ""
+  },
+  "eras": [
+    {
+      "name": "Common Era (C.E.)",
+      "startsAtYear": 0
+    }
+  ],
+  "annualEvents": [
+    {
+      "id": "demo-new-year",
+      "name": "New Year's Day",
+      "month": 1,
+      "day": 1,
+      "kind": "festival",
+      "repeatEveryYears": 1,
+      "startsAtYear": 0,
+      "linkedPath": "",
+      "hour": null
+    },
+    {
+      "id": "demo-halloween",
+      "name": "Halloween",
+      "month": 10,
+      "day": 31,
+      "kind": "festival",
+      "repeatEveryYears": 1,
+      "startsAtYear": 0,
+      "linkedPath": "",
+      "hour": null
+    },
+    {
+      "id": "demo-christmas",
+      "name": "Christmas",
+      "month": 12,
+      "day": 25,
+      "kind": "festival",
+      "repeatEveryYears": 1,
+      "startsAtYear": 0,
+      "linkedPath": "",
+      "hour": null
+    }
+  ],
+  "specialYearsEnabled": true,
+  "specialYearCycles": [
+    {
+      "id": "leap-year-cycle",
+      "name": "Leap year",
+      "intervalYears": 4,
+      "startsAtYear": 0,
+      "syncFromBase": false,
+      "months": [
+        { "name": "January", "days": 31 },
+        { "name": "February", "days": 29 },
+        { "name": "March", "days": 31 },
+        { "name": "April", "days": 30 },
+        { "name": "May", "days": 31 },
+        { "name": "June", "days": 30 },
+        { "name": "July", "days": 31 },
+        { "name": "August", "days": 31 },
+        { "name": "September", "days": 30 },
+        { "name": "October", "days": 31 },
+        { "name": "November", "days": 30 },
+        { "name": "December", "days": 31 }
+      ],
+      "linkedPath": ""
+    }
+  ],
+  "seasons": [
+    {
+      "id": "demo-winter",
+      "name": "Winter",
+      "from": { "month": 12, "day": 1 },
+      "to": { "month": 2, "day": 28 },
+      "linkedPath": "",
+      "highlightColor": "#60a5fa",
+      "highlightOpacity": 0.22
+    },
+    {
+      "id": "demo-spring",
+      "name": "Spring",
+      "from": { "month": 3, "day": 1 },
+      "to": { "month": 5, "day": 31 },
+      "linkedPath": "",
+      "highlightColor": "#4ade80",
+      "highlightOpacity": 0.16
+    },
+    {
+      "id": "demo-summer",
+      "name": "Summer",
+      "from": { "month": 6, "day": 1 },
+      "to": { "month": 8, "day": 31 },
+      "linkedPath": "",
+      "highlightColor": "#fbbf24",
+      "highlightOpacity": 0.18
+    },
+    {
+      "id": "demo-fall",
+      "name": "Fall",
+      "from": { "month": 9, "day": 1 },
+      "to": { "month": 11, "day": 30 },
+      "linkedPath": "",
+      "highlightColor": "#fb923c",
+      "highlightOpacity": 0.17
+    }
+  ],
+  "seasonDayPhases": [
+    {
+      "seasonId": "demo-winter",
+      "name": "Winter",
+      "phases": [
+        { "id": "demo-w-ph-0", "name": "Midnight", "hour": 0 },
+        { "id": "demo-w-ph-1", "name": "Dawn", "hour": 7 },
+        { "id": "demo-w-ph-2", "name": "Noon", "hour": 12 },
+        { "id": "demo-w-ph-3", "name": "Sunset", "hour": 17 },
+        { "id": "demo-w-ph-4", "name": "Dusk", "hour": 18 }
+      ]
+    },
+    {
+      "seasonId": "demo-spring",
+      "name": "Spring",
+      "phases": [
+        { "id": "demo-sp-ph-0", "name": "Midnight", "hour": 0 },
+        { "id": "demo-sp-ph-1", "name": "Dawn", "hour": 6 },
+        { "id": "demo-sp-ph-2", "name": "Noon", "hour": 12 },
+        { "id": "demo-sp-ph-3", "name": "Sunset", "hour": 19 },
+        { "id": "demo-sp-ph-4", "name": "Dusk", "hour": 20 }
+      ]
+    },
+    {
+      "seasonId": "demo-summer",
+      "name": "Summer",
+      "phases": [
+        { "id": "demo-su-ph-0", "name": "Midnight", "hour": 0 },
+        { "id": "demo-su-ph-1", "name": "Dawn", "hour": 5 },
+        { "id": "demo-su-ph-2", "name": "Noon", "hour": 12 },
+        { "id": "demo-su-ph-3", "name": "Sunset", "hour": 20 },
+        { "id": "demo-su-ph-4", "name": "Dusk", "hour": 21 }
+      ]
+    },
+    {
+      "seasonId": "demo-fall",
+      "name": "Fall",
+      "phases": [
+        { "id": "demo-fa-ph-0", "name": "Midnight", "hour": 0 },
+        { "id": "demo-fa-ph-1", "name": "Dawn", "hour": 7 },
+        { "id": "demo-fa-ph-2", "name": "Noon", "hour": 12 },
+        { "id": "demo-fa-ph-3", "name": "Sunset", "hour": 18 },
+        { "id": "demo-fa-ph-4", "name": "Dusk", "hour": 19 }
+      ]
+    }
+  ],
+  "globalDayPhases": []
+}

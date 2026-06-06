@@ -1,0 +1,22 @@
+id: cosmology
+labelKey: worldbuilding.templates.cosmology
+sections:
+  - id: core
+    labelKey: worldbuilding.sections.core
+    fields:
+      - key: title
+        type: shortText
+        labelKey: worldbuilding.fields.title
+        required: true
+      - key: orbit
+        type: shortText
+        labelKey: worldbuilding.fields.orbit
+      - key: influence
+        type: longText
+        labelKey: worldbuilding.fields.influence
+  - id: body
+    labelKey: worldbuilding.sections.body
+    fields:
+      - key: _body
+        type: markdownBody
+        labelKey: worldbuilding.fields.body

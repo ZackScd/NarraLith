@@ -1,0 +1,59 @@
+{
+  "title": "Línea de tiempo",
+  "placeholder": "La línea de tiempo se reconstruirá pronto.",
+  "loading": "Cargando eventos…",
+  "loadFailed": "No se pudieron cargar los eventos de la línea de tiempo.",
+  "noCalendar": "Cargando calendario del proyecto…",
+  "empty": "No hay entradas con marca de tiempo para los filtros activos.",
+  "verticalPlaceholder": "La vista vertical estará disponible más adelante.",
+  "canvasLabel": "Línea de tiempo horizontal del proyecto",
+  "hoursOn": "horas visibles",
+  "zoomLevel": "zoom ×{{level}}",
+  "deadTimeCollapsed": "tiempo muerto recortado",
+  "zoom": {
+    "year": "Agrupación: años",
+    "month": "Agrupación: meses",
+    "week": "Agrupación: semanas",
+    "day": "Agrupación: días"
+  },
+  "controls": {
+    "zoomIn": "Acercar nivel",
+    "zoomOut": "Alejar nivel",
+    "moveLeft": "Mover hacia la izquierda",
+    "moveRight": "Mover hacia la derecha",
+    "zoomButtonsMode": "Botones zoom"
+  },
+  "zoomLevelLabel": {
+    "all": "Rango completo",
+    "years4": "4 años",
+    "years2": "2 años",
+    "year1": "1 año",
+    "months": "x1 mes",
+    "days": "x1 día",
+    "hours": "Horas del día"
+  },
+  "panel": {
+    "title": "Herramientas de línea de tiempo",
+    "expandTools": "Expandir menú",
+    "collapseTools": "Contraer menú",
+    "horizontal": "Vista horizontal",
+    "verticalSoon": "Vista vertical (próximamente)",
+    "calendar": "Calendario",
+    "calendarSoon": "Abrir calendario (próximamente)",
+    "filters": "Filtros",
+    "collapseDeadTime": "Ocultar periodos de tiempo muerto",
+    "collapsePeriods": "Ocultar periodos",
+    "collapseYears": "Ocultar años",
+    "collapseMonths": "Ocultar meses",
+    "collapseDays": "Ocultar días",
+    "collapseHours": "Ocultar horas"
+  },
+  "filters": {
+    "manuscript": "Manuscrito",
+    "events": "Eventos",
+    "annuals": "Anuales",
+    "festivals": "Festividades",
+    "anniversaries": "Aniversarios",
+    "cosmic": "Estelares"
+  }
+}
