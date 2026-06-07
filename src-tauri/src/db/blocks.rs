@@ -177,7 +177,8 @@ fn upsert_time_markers_for_block(
         }
         return Ok(());
     }
-    upsert_legacy_time_marker(conn, file_path, block)
+    upsert_legacy_time_marker(conn, file_path, block)?;
+    upsert_inline_time_markers_for_block(conn, file_path, block)
 }
 
 fn has_indexable_event_marks(block: &ParsedBlock) -> bool {
@@ -243,6 +244,38 @@ fn upsert_event_time_markers(
             &tag.value,
             timestamp.clone(),
             Some(&segment_id),
+            "inline",
+            Some(tag.char_offset),
+        )?;
+    }
+
+    Ok(())
+}
+
+fn upsert_inline_time_markers_for_block(
+    conn: &rusqlite::Connection,
+    file_path: &str,
+    block: &ParsedBlock,
+) -> Result<(), AppError> {
+    let label = metadata_string(&block.metadata, "event")
+        .or_else(|| metadata_string(&block.metadata, "location"))
+        .or_else(|| metadata_string(&block.metadata, "title"));
+    let timestamp = resolved_timestamp(block);
+
+    for tag in scan_inline_tags(&block.body) {
+        if tag.tag_type != "time" || tag.value.trim().is_empty() {
+            continue;
+        }
+        let marker_id = format!("{}::inline::{}", block.id, tag.char_offset);
+        insert_time_marker(
+            conn,
+            &marker_id,
+            &block.id,
+            file_path,
+            label.clone(),
+            &tag.value,
+            timestamp.clone(),
+            None,
             "inline",
             Some(tag.char_offset),
         )?;
@@ -522,6 +555,31 @@ mod tests {
         assert_eq!(rows[2].0, "inline");
         assert_eq!(rows[2].1, "11.1.0");
         assert!(rows[2].2.unwrap() > rows[1].2.unwrap());
+    }
+
+    #[test]
+    fn non_event_inline_time_tag_creates_timeline_marker() {
+        let tmp = TempDir::new().unwrap();
+        let db = ProjectDb::open(tmp.path()).unwrap();
+        let raw = "---\ntitle: Sin evento\n---\n\
+                   prosa libre {{time:17.1.0}} continúa\n";
+        upsert_manuscript_raw(&db, "Manuscrito/SinEvento.md", raw);
+
+        let rows: Vec<(String, String, Option<i64>)> = db
+            .connection()
+            .prepare(
+                "SELECT tag_kind, raw_time, char_offset FROM time_markers
+                 WHERE entity_path = 'Manuscrito/SinEvento.md'
+                 ORDER BY char_offset ASC",
+            )
+            .unwrap()
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+            .unwrap()
+            .filter_map(|r| r.ok())
+            .collect();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0], ("inline".to_string(), "17.1.0".to_string(), Some(12)));
     }
 
     #[test]

@@ -1,31 +1,40 @@
 import {
   $applyNodeReplacement,
-  type EditorConfig,
+  DecoratorNode,
+  type DOMConversionMap,
+  type DOMExportOutput,
   type LexicalNode,
   type NodeKey,
-  type SerializedTextNode,
-  TextNode,
+  type SerializedLexicalNode,
 } from "lexical";
+import type { JSX } from "react";
 
 import { serializeInlineTag } from "@/lib/editor/inlineTagSyntax";
+import { TimeTagChip } from "@/modules/editor/components/TimeTagChip";
+import { useLayoutStore } from "@/stores/useLayoutStore";
 
-export type SerializedInlineTimeTagNode = SerializedTextNode & {
+export type SerializedInlineTimeTagNode = SerializedLexicalNode & {
   tagType: string;
   value: string;
   type: "inline-time-tag";
   version: 1;
 };
 
+function InlineTimeTagDecorator({ value }: { value: string }): JSX.Element {
+  const visible = useLayoutStore((s) => s.inlineMetadataVisible);
+  return <TimeTagChip value={value} visible={visible} />;
+}
+
 /**
  * Chip inline de tiempo en prosa (`{{time:…}}`). Sustituye el chip único `time` por bloque.
  * `getTextContent()` devuelve el valor visible para alinear offsets del cursor.
  */
-export class InlineTimeTagNode extends TextNode {
+export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
   __tagType: string;
   __value: string;
 
   constructor(tagType: string, value: string, key?: NodeKey) {
-    super(value, key);
+    super(key);
     this.__tagType = tagType;
     this.__value = value;
   }
@@ -55,32 +64,37 @@ export class InlineTimeTagNode extends TextNode {
     return this.__value;
   }
 
-  canInsertTextAfter(): boolean {
-    return false;
-  }
-
-  canInsertTextBefore(): boolean {
+  isInline(): boolean {
     return true;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.className = "narra-inline-time-tag";
-    dom.setAttribute("data-inline-tag-type", this.__tagType);
-    dom.setAttribute("data-inline-tag-value", this.__value);
-    dom.title = this.__value;
-    return dom;
+  isKeyboardSelectable(): boolean {
+    return true;
   }
 
-  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const typeChanged = prevNode.__tagType !== this.__tagType;
-    const valueChanged = prevNode.__value !== this.__value;
-    if (typeChanged || valueChanged) {
-      dom.setAttribute("data-inline-tag-type", this.__tagType);
-      dom.setAttribute("data-inline-tag-value", this.__value);
-      dom.title = this.__value;
-    }
-    return super.updateDOM(prevNode, dom, config) || typeChanged || valueChanged;
+  createDOM(): HTMLElement {
+    const el = document.createElement("span");
+    el.className = "narra-inline-time-tag-host";
+    el.contentEditable = "false";
+    el.setAttribute("data-inline-tag-type", this.__tagType);
+    el.setAttribute("data-inline-tag-value", this.__value);
+    return el;
+  }
+
+  updateDOM(): boolean {
+    return false;
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return null;
+  }
+
+  exportDOM(): DOMExportOutput {
+    return { element: document.createElement("span") };
+  }
+
+  decorate(): JSX.Element {
+    return <InlineTimeTagDecorator value={this.__value} />;
   }
 
   static importJSON(serializedNode: SerializedInlineTimeTagNode): InlineTimeTagNode {
@@ -102,8 +116,7 @@ export function $createInlineTimeTagNode(
   tagType: string,
   value: string,
 ): InlineTimeTagNode {
-  const node = new InlineTimeTagNode(tagType, value);
-  return $applyNodeReplacement(node).setMode("token");
+  return $applyNodeReplacement(new InlineTimeTagNode(tagType, value));
 }
 
 export function $isInlineTimeTagNode(

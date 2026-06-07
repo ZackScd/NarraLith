@@ -256,13 +256,18 @@ DOCX, PDF, EPUB, Wiki HTML, JSON para game devs, zip portable.
 
 ## 11. Resumen de prioridades (desde jun 2026)
 
+**Producto:** versión completa y estable al salir a producción (sin MVP recortado).
+
 ```text
-1. Manuscrito estable (editor v2, sin legacy)
-2. Tiempo end-to-end verificado (checklist manual)
-3. Referencias pulidas en contexto manuscrito
-4. Ubicación inline (nueva feature, diseño aparte)
-5. Mapas / grafo / versiones / exportación (reintegración)
+1. Manuscrito estable (Era II — activa)
+2. Tiempo + timeline verificados con el nuevo formato (cierre Era II)
+3. Mapas rehechos e integrados (Era III)
+4. Worldbuilding v2 (Era IV — depende de 1 y 3)
+5. Referencias / grafo / versiones Git / exportación (Eras IV–V)
+6. QoL y visión lejana (Era VI)
 ```
+
+Módulos rotos: **visibles con ✗**, no ocultos.
 
 ---
 

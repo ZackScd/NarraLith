@@ -1,7 +1,8 @@
-import { Calendar, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { BarTag } from "@/lib/types/manuscript";
+import { TimeTagChip } from "@/modules/editor/components/TimeTagChip";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 
 interface EventTagBarProps {
@@ -44,14 +45,7 @@ export function EventTagBar({ segmentId, eventName, barTags }: EventTagBarProps)
           </span>
         )}
         {timeTags.map((tag) => (
-          <span
-            key={`${tag.type}-${tag.value}`}
-            className="inline-flex max-w-[14rem] items-center gap-1 rounded-full border border-border/60 bg-background px-2 py-0.5 font-sans text-[11px] text-foreground"
-            title={t("metadata.time")}
-          >
-            <Calendar className="size-3 shrink-0 text-muted-foreground" />
-            <span className="truncate">{tag.value}</span>
-          </span>
+          <TimeTagChip key={`${tag.type}-${tag.value}`} value={tag.value} />
         ))}
         <button
           type="button"

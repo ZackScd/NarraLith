@@ -7,6 +7,13 @@ import type {
 } from "@/lib/types/manuscript";
 
 /** Lee etiqueta `time` del adaptador legacy (metadata.time o primer chip en barTags). */
+export function segmentHasBarTime(barTags: BarTag[] | undefined): boolean {
+  if (!barTags?.length) {
+    return false;
+  }
+  return barTags.some((t) => t.type === "time" && t.value.trim().length > 0);
+}
+
 export function timeTagFromBlockMetadata(
   metadata: Record<string, unknown> | undefined,
 ): string | null {

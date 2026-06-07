@@ -1,4 +1,5 @@
 import type { ActiveEventContext } from "@/lib/editor/documentSync";
+import { segmentHasBarTime } from "@/lib/editor/manuscriptBlocks";
 import type { BarTag } from "@/lib/types/manuscript";
 import type { PendingManuscriptLabel } from "@/stores/useManuscriptLabelDraftStore";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -107,7 +108,18 @@ export function commitManuscriptLabel(params: {
     const timeValue = timeDraft.timeTag;
 
     if (activeEventContext.inEvent && activeEventContext.segmentId) {
-      return appendBarTimeToActiveEvent(timeValue, timeDraft.timeHour);
+      const manuscript = useEditorStore.getState().manuscript;
+      const segment = manuscript?.segments.find(
+        (s) =>
+          s.kind === "event" && s.segmentIndex === activeEventContext.segmentIndex,
+      );
+      const hasBarTime =
+        segment?.kind === "event" && segmentHasBarTime(segment.barTags);
+
+      if (!hasBarTime) {
+        return appendBarTimeToActiveEvent(timeValue, timeDraft.timeHour);
+      }
+      return insertInlineTagAtCursor("time", timeValue);
     }
 
     return insertInlineTagAtCursor("time", timeValue);
