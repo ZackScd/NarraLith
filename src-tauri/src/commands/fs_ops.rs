@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
 
 use crate::error::AppError;
 use crate::fs::crud;
@@ -173,4 +174,21 @@ pub fn save_explorer_order(
     order: ExplorerOrderMap,
 ) -> Result<(), AppError> {
     state.with_db(|_db, root| explorer_order::write_order(root, &order))
+}
+
+/// Abre la carpeta raíz del proyecto activo en el explorador del SO (FIX-003).
+#[tauri::command]
+pub fn open_project_root_in_os(
+    app: AppHandle,
+    state: State<'_, ProjectState>,
+) -> Result<(), AppError> {
+    let root = state.project_root()?;
+    if !root.is_dir() {
+        return Err(AppError::new("error.fs.not_found"));
+    }
+    let path = root.to_string_lossy().to_string();
+    app.opener()
+        .open_path(path, None::<&str>)
+        .map_err(|_| AppError::new("error.fs.not_found"))?;
+    Ok(())
 }

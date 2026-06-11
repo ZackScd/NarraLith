@@ -13,7 +13,7 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | Pendiente |
 | 3 | Timeline: chip doble (archivo + evento) y conectores por evento | UX timeline | Medio–Alto | Pendiente |
 | 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | ✅ |
-| 5 | Botón carpeta: abrir carpeta en el SO sin diálogo bloqueante | UX explorador | Bajo | Pendiente |
+| 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
 | 7 | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | UX manuscrito | Medio | Pendiente |
 | 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | Pendiente |
@@ -609,15 +609,16 @@ const selected = await open({
 
 Eso abre el **diálogo nativo de selección de archivo** (`@tauri-apps/plugin-dialog`), que **bloquea la ventana** de NarraLith hasta que el usuario elige o cancela.
 
-El usuario quiere otro comportamiento: **abrir directamente la carpeta de destino** en el explorador del sistema operativo (Explorador de archivos en Windows, Finder en macOS, etc.) **sin modal** y sin restricciones sobre la app.
+El usuario quiere otro comportamiento: **abrir directamente la carpeta del proyecto** en el explorador del SO **sin modal**.
 
-### Comportamiento deseado
+### Comportamiento deseado (spec acordada jun 2026)
 
-1. Clic en el botón → se abre en el SO la carpeta contextual del proyecto (no un file picker).
+1. Clic en el botón → se abre en el SO la **carpeta raíz del proyecto** (`activeProject.rootPath`), no un file picker.
 2. La app **sigue usable** en segundo plano.
-3. La carpeta debe ser la misma lógica que «última ruta» / destino de creación de archivos: [`resolveLastOpenedParentPath`](../../src/lib/explorer/explorerParentPath.ts) (carpeta del nodo seleccionado, padre del archivo activo, o raíz de vista `Manuscrito/` / `Worldbuilding/`).
+3. Misma **posición en la barra del explorador** que antes (sin cambios de layout).
+4. **No** abre la subcarpeta del módulo ni la «última ruta» de creación — eso queda para mejora futura.
 
-Ejemplo con captura: archivo `meow` seleccionado en `Manuscrito/Volumen 1/Capitulo 1/` → abrir esa carpeta en el SO.
+> *Nota:* una versión intermedia del plan proponía `resolveLastOpenedParentPath`; el usuario aclaró que por ahora solo quiere la **raíz del proyecto**.
 
 ### Estado actual
 

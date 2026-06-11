@@ -42,6 +42,7 @@ pub fn run() {
             commands::fs_ops::get_folder_meta,
             commands::fs_ops::set_folder_description,
             commands::fs_ops::count_entities_in_tree,
+            commands::fs_ops::open_project_root_in_os,
             commands::editor::read_document,
             commands::editor::parse_document,
             commands::editor::save_document,

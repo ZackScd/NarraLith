@@ -1,4 +1,3 @@
-import { open } from "@tauri-apps/plugin-dialog";
 import {
   DndContext,
   PointerSensor,
@@ -35,6 +34,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { invokeCommand } from "@/lib/ipc";
 import { basename, displayName } from "@/lib/pathUtils";
 import { resolveLastOpenedParentPath } from "@/lib/explorer/explorerParentPath";
 import type { FileTreeNode } from "@/lib/types/fs";
@@ -159,31 +159,6 @@ function EditorTabItem({
   );
 }
 
-function normalizeFsPath(path: string): string {
-  return path.split("\\").join("/").replace(/\/+$/, "");
-}
-
-function toRelativeProjectPath(
-  absolutePath: string,
-  projectRoot: string,
-): string | null {
-  const normalizedAbsolute = normalizeFsPath(absolutePath);
-  const normalizedRoot = normalizeFsPath(projectRoot);
-  const absoluteLower = normalizedAbsolute.toLowerCase();
-  const rootLower = normalizedRoot.toLowerCase();
-
-  if (absoluteLower === rootLower) {
-    return "";
-  }
-
-  const rootPrefix = `${rootLower}/`;
-  if (!absoluteLower.startsWith(rootPrefix)) {
-    return null;
-  }
-
-  return normalizedAbsolute.slice(normalizedRoot.length + 1);
-}
-
 export function WorkspaceTopBar() {
   const { t } = useTranslation("explorer");
   const { t: tEditor } = useTranslation("editor");
@@ -204,8 +179,6 @@ export function WorkspaceTopBar() {
   const searchQuery = useFileTreeStore((s) => s.searchQuery);
   const toggleSearch = useFileTreeStore((s) => s.toggleSearch);
   const toggleExpandAll = useFileTreeStore((s) => s.toggleExpandAll);
-  const requestOpenDocument = useEditorStore((s) => s.requestOpenDocument);
-
   const tabOrder = useEditorStore((s) => s.tabOrder);
   const tabs = useEditorStore((s) => s.tabs);
   const activeFilePath = useEditorStore((s) => s.activeFilePath);
@@ -271,6 +244,17 @@ export function WorkspaceTopBar() {
   const showExplorerColumn = isEditorView && explorerOpen;
   const isSearchVisible = searchOpen || searchQuery.length > 0;
 
+  const handleOpenProjectRootInOs = useCallback(async () => {
+    if (!activeProject?.rootPath) {
+      return;
+    }
+    try {
+      await invokeCommand("open_project_root_in_os");
+    } catch {
+      // Sin UI extra en v1 si el SO rechaza la ruta.
+    }
+  }, [activeProject?.rootPath]);
+
   const anyFolderExpanded = useMemo(() => {
     let found = false;
     const walk = (nodes: FileTreeNode[], depth: number) => {
@@ -289,26 +273,6 @@ export function WorkspaceTopBar() {
     walk(tree, 0);
     return found;
   }, [tree, expandedPaths]);
-
-  async function handleOpenLocalMarkdown() {
-    const selected = await open({
-      directory: false,
-      multiple: false,
-      title: "NarraLith",
-      filters: [{ name: "Markdown", extensions: ["md"] }],
-    });
-
-    if (!selected || Array.isArray(selected) || !activeProject?.rootPath) {
-      return;
-    }
-
-    const relative = toRelativeProjectPath(selected, activeProject.rootPath);
-    if (!relative) {
-      return;
-    }
-
-    await requestOpenDocument(relative);
-  }
 
   const toggleAllLabel = anyFolderExpanded
     ? t("toolbar.collapseAll")
@@ -358,9 +322,9 @@ export function WorkspaceTopBar() {
             size="icon"
             variant="ghost"
             className="size-7"
-            title={t("toolbar.openLocal")}
-            aria-label={t("toolbar.openLocal")}
-            onClick={() => void handleOpenLocalMarkdown()}
+            title={t("toolbar.openFolderInOs")}
+            aria-label={t("toolbar.openFolderInOs")}
+            onClick={() => void handleOpenProjectRootInOs()}
           >
             <FolderOpen className="size-4" />
           </Button>

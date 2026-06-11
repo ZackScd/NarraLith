@@ -18,7 +18,7 @@
   "toolbar": {
     "search": "Search",
     "searchPlaceholder": "Search file…",
-    "openLocal": "Open local file",
+    "openFolderInOs": "Open project folder in system explorer",
     "collapseAll": "Collapse all",
     "expandAll": "Expand all",
     "closeSearch": "Close search",
