@@ -38,7 +38,7 @@ Documento de trabajo para cerrar decisiones de producto antes de refactorizar m�
 | WB fichas base | ✅ CRUD + plantillas | IV | Rehacer tras mapas |
 | Referencias / wikilinks | ✅ core; 🟡 backlinks legacy | II–IV | Tras II.4 |
 | Explorador / FS | ✅ CRUD + DnD parcial | IV | QA tras renames |
-| Mapas | 🟡 mucho código, sin validar | **III** | **Rehacer** |
+| Mapas | 🟡 mucho código, sin validar | **III** | **Rehacer** — spec en [`maps-design.md`](maps-design.md) 🔄 |
 | Grafo | ⏸ índice OK | IV | ✗ + validar post-II |
 | Versiones Git | 🟡 UI rota, snapshot no compila | IV | ✗ + reparar |
 | Exportación | 📋 | V | Posponer |
