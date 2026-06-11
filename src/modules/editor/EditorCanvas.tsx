@@ -70,7 +70,7 @@ export function EditorCanvas() {
         </p>
       ) : null}
 
-      <section className="scroll-panel relative min-h-0 flex-1">
+      <section className="scroll-panel relative flex min-h-0 flex-1 flex-col">
         <EditorShell
           key={`${activeFilePath}:${documentSyncKey}`}
           manuscript={manuscript}

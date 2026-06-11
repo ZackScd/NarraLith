@@ -16,7 +16,7 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
 | 7 | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | UX manuscrito | Medio | Pendiente |
-| 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | Pendiente |
+| 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B pendiente (FIX-005) |
 | — | *(más tareas por definir)* | — | — | — |
 
 ---
@@ -1019,9 +1019,12 @@ Round-trip: escribir → guardar → reabrir pierde trailing newlines en segment
 
 #### 8.A — Enfoque / hit target
 
+**Plan detallado:** [`plans/FIX-004-click-empty-focus.md`](plans/FIX-004-click-empty-focus.md)
+
 Archivo: [`src/modules/editor/EditorShell.tsx`](../../src/modules/editor/EditorShell.tsx)
 
 - `ContentEditable` tiene `min-h-[280px] flex-1` pero el contenedor `.scroll-panel` ([`EditorCanvas.tsx`](../../src/modules/editor/EditorCanvas.tsx)) puede ser más alto que el contenido real.
+- `.scroll-panel` no es contenedor flex → `flex-1` en `.narra-editor` no estira el `contenteditable` al viewport.
 - Los clics en el vacío del scroll caen en `.scroll-panel`, no en el `contenteditable`, por lo que Lexical no recibe foco ni mueve la selección al final.
 
 ### Objetivo

@@ -29,6 +29,7 @@ import { InlineTimeTagNode } from "@/modules/editor/nodes/InlineTimeTagNode";
 import { WikiLinkNode } from "@/modules/editor/nodes/WikiLinkNode";
 
 import { ActiveEventContextPlugin } from "@/modules/editor/plugins/ActiveEventContextPlugin";
+import { ClickToFocusPlugin } from "@/modules/editor/plugins/ClickToFocusPlugin";
 
 import { DirtyStatePlugin } from "@/modules/editor/plugins/DirtyStatePlugin";
 
@@ -95,7 +96,7 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
     <LexicalComposer initialConfig={editorConfig}>
       <div
         className={cn(
-          "narra-editor relative flex min-h-0 flex-1 flex-col",
+          "narra-editor relative flex min-h-full min-h-0 flex-1 flex-col",
 
           !tagsVisible && "narra-tags-off",
         )}
@@ -103,7 +104,7 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <RichTextPlugin
           contentEditable={
             <ContentEditable
-              className="narra-editor-input min-h-[280px] flex-1 resize-none px-1 py-2 text-base outline-none"
+              className="narra-editor-input min-h-[max(17.5rem,100%)] flex-1 resize-none px-1 py-2 text-base outline-none"
               aria-label="Editor"
             />
           }
@@ -130,6 +131,8 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <WikiLinkNormalizeTailPlugin />
 
         <WikiLinkClickPlugin />
+
+        <ClickToFocusPlugin />
       </div>
     </LexicalComposer>
   );
