@@ -12,7 +12,7 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | 1 | Deshabilitar cuadro «Información guardada» del navegador | UI / plataforma | Bajo | ✅ |
 | 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | Pendiente |
 | 3 | Timeline: chip doble (archivo + evento) y conectores por evento | UX timeline | Medio–Alto | Pendiente |
-| 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | Pendiente |
+| 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | ✅ |
 | 5 | Botón carpeta: abrir carpeta en el SO sin diálogo bloqueante | UX explorador | Bajo | Pendiente |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
 | 7 | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | UX manuscrito | Medio | Pendiente |

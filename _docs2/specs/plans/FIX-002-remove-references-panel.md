@@ -1,7 +1,7 @@
 # FIX-002 — Quitar panel «Referencias» del lateral del manuscrito
 
 > Plan de implementación detallado. Spec origen: [`fix-backlog.md` §4](../fix-backlog.md).  
-> **Estado:** ⬜ Pendiente · **Esfuerzo:** Bajo · **Riesgo:** Bajo (si se respeta el alcance)
+> **Estado:** ✅ Implementado · **Esfuerzo:** Bajo · **Riesgo:** Bajo (si se respeta el alcance)
 
 ---
 
@@ -281,14 +281,14 @@ Añadir 2–3 líneas en el doc del módulo indicando API dormida para backlinks
 ## 6. Pasos de implementación (checklist)
 
 ```
-[ ] 1. Editar EditorSidePanel.tsx (capa A)
-[ ] 2. Borrar 5 archivos UI + carpetas vacías (capa B)
-[ ] 3. Recortar panel.* en es/en references.json
-[ ] 4. Comentario API dormida en commands/references.rs
-[ ] 5. npm run build (sin errores TS / imports rotos)
-[ ] 6. cargo test (sin regresiones Rust)
-[ ] 7. QA manual §7
-[ ] 8. Actualizar implementation-plan.md + fix-backlog.md
+[x] 1. Editar EditorSidePanel.tsx (capa A)
+[x] 2. Borrar 5 archivos UI + carpetas vacías (capa B)
+[x] 3. Recortar panel.* en es/en references.json
+[x] 4. Comentario API dormida en commands/references.rs
+[x] 5. npm run build (sin errores TS / imports rotos)
+[x] 6. cargo test (sin regresiones Rust)
+[ ] 7. QA manual §7 — pendiente usuario
+[x] 8. Actualizar implementation-plan.md + fix-backlog.md
 ```
 
 **Sin tests Vitest nuevos** — eliminación pura de UI; QA manual es el criterio principal.

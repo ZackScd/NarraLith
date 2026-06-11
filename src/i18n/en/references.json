@@ -1,16 +1,4 @@
 {
-  "panel": {
-    "tabReferences": "References",
-    "noEntity": "Open an .md file to see backlinks and mentions.",
-    "loading": "Loading references…",
-    "backlinksTitle": "Links to “{{name}}”",
-    "backlinksEmpty": "No documents link to this entity.",
-    "unlinkedTitle": "Unlinked mentions",
-    "unlinkedEmpty": "No plain-text mentions found.",
-    "blockShort": "block {{index}}",
-    "convertToLink": "Convert to link",
-    "converting": "Converting…"
-  },
   "error": {
     "load_failed": "Could not load references.",
     "invalid_range": "The mention no longer matches the text on disk.",

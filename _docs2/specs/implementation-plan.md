@@ -40,7 +40,7 @@
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
 | **FIX-001** | ✅ | Deshabilitar autocompletado «Información guardada» del navegador | Bajo | [`fix-backlog.md` §1](fix-backlog.md) · [**plan detallado**](plans/FIX-001-autofill.md) |
-| **FIX-002** | ⬜ | Quitar pestaña/panel «Referencias» del lateral del manuscrito | Bajo | [`fix-backlog.md` §4](fix-backlog.md) · [**plan detallado**](plans/FIX-002-remove-references-panel.md) |
+| **FIX-002** | ✅ | Quitar pestaña/panel «Referencias» del lateral del manuscrito | Bajo | [`fix-backlog.md` §4](fix-backlog.md) · [**plan detallado**](plans/FIX-002-remove-references-panel.md) |
 | **FIX-003** | ⬜ | Botón carpeta: abrir carpeta en el SO sin diálogo bloqueante | Bajo | [`fix-backlog.md` §5](fix-backlog.md) |
 
 ---
@@ -147,7 +147,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | # | ID | Tarea corta |
 |---|-----|-------------|
 | 1 | FIX-001 | Autofill navegador off ✅ |
-| 2 | FIX-002 | Quitar panel Referencias |
+| 2 | FIX-002 | Quitar panel Referencias ✅ |
 | 3 | FIX-003 | Abrir carpeta en SO |
 | 4 | FIX-004 | Clic zona vacía editor |
 | 5 | FIX-005 | Guardado sin recortar espacios/saltos |

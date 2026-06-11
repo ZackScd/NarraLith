@@ -1,4 +1,7 @@
 //! Comandos IPC del diccionario de entidades y referencias (Fase 3.1–3.4).
+//!
+//! `get_backlinks`, `find_unlinked_mentions` y `convert_unlinked_mention` quedan como API
+//! dormida tras FIX-002 (panel lateral retirado); reservada para una futura ficha WB.
 
 use tauri::{AppHandle, State};
 

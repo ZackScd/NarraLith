@@ -26,11 +26,8 @@ import { useManuscriptLabelDraftStore } from "@/stores/useManuscriptLabelDraftSt
 import { useTimeTagDialogStore } from "@/stores/useTimeTagDialogStore";
 
 import { SideEventSection } from "./sidePanel/SideEventSection";
-import { SideReferencesSection } from "./sidePanel/SideReferencesSection";
 import { SideTimeSection } from "./sidePanel/SideTimeSection";
 import { TimeTagDialog } from "./sidePanel/TimeTagDialog";
-
-type SidePanelTab = "tools" | "references";
 
 /**
  * Barra lateral derecha del editor:
@@ -42,11 +39,6 @@ type SidePanelTab = "tools" | "references";
  */
 export function EditorSidePanel() {
   const { t } = useTranslation("editor");
-  const { t: tRef } = useTranslation("references");
-  const [sideTabOverride, setSideTabOverride] = useState<{
-    path: string;
-    tab: SidePanelTab;
-  } | null>(null);
   const [commitError, setCommitError] = useState<{
     filePath: string;
     key: string;
@@ -82,22 +74,8 @@ export function EditorSidePanel() {
 
   const showManuscriptTools = activeTabKind === "manuscript" && Boolean(activeFilePath);
 
-  const sideTab: SidePanelTab =
-    sideTabOverride?.path === activeFilePath
-      ? sideTabOverride.tab
-      : activeTabKind === "entity"
-        ? "references"
-        : "tools";
-
   const commitErrorKey =
     commitError?.filePath === activeFilePath ? commitError.key : null;
-
-  const selectSideTab = (tab: SidePanelTab) => {
-    if (!activeFilePath) {
-      return;
-    }
-    setSideTabOverride({ path: activeFilePath, tab });
-  };
 
   const hasDirtyTabs = tabOrder.some((path) => tabs[path]?.isDirty);
   const saving = saveStatus === "saving";
@@ -333,42 +311,16 @@ export function EditorSidePanel() {
         )}
       </div>
 
-      {activeFilePath ? (
-        <div className="flex shrink-0 gap-1 border-b border-border/60 px-3 py-2">
-          {showManuscriptTools ? (
-            <Button
-              type="button"
-              variant={sideTab === "tools" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 flex-1 text-xs"
-              onClick={() => selectSideTab("tools")}
-            >
-              {t("panel.tabTools")}
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant={sideTab === "references" ? "secondary" : "ghost"}
-            size="sm"
-            className="h-7 flex-1 text-xs"
-            onClick={() => selectSideTab("references")}
-          >
-            {tRef("panel.tabReferences")}
-          </Button>
-        </div>
-      ) : null}
-
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {sideTab === "tools" && showManuscriptTools ? (
+        {showManuscriptTools ? (
           <>
             <SideEventSection />
             <SideTimeSection />
           </>
         ) : null}
-        {sideTab === "references" && activeFilePath ? <SideReferencesSection /> : null}
       </div>
 
-      {showManuscriptTools && sideTab === "tools" ? (
+      {showManuscriptTools ? (
         <div className="shrink-0 space-y-2 border-t border-border/60 bg-card/30 p-3">
           {commitErrorKey ? (
             <p className="text-xs text-destructive" role="alert">

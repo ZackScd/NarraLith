@@ -139,7 +139,7 @@ sequenceDiagram
 | Sync | `lib/editor/documentSync.ts` | Hydrate / extract segmentos |
 | Commit RAM | `lib/editor/commitManuscriptLabel.ts` | Staging → inline / barra / evento |
 | Store | `stores/useEditorStore.ts` | Pestañas, IPC, callbacks Lexical |
-| Panel | `EditorSidePanel` → `SideEventSection`, `SideTimeSection`, `SideReferencesSection` |
+| Panel | `EditorSidePanel` → `SideEventSection`, `SideTimeSection` (sin panel Referencias; FIX-002) |
 | Nodos activos | `EventTagBarNode`, `EventFrameBottomNode`, `InlineTimeTagNode`, `WikiLinkNode` |
 | Deuda | `manuscriptBlocks.ts` adaptador `ParsedDocument`; nodos legacy registrados | Ver `04-TASK` II.4 |
 
@@ -201,7 +201,7 @@ DDL: `db/schema.sql` + `migrations/002`–`005`.
 | Persistencia | `db/wiki_links.rs`, `db/backlinks.rs` |
 | Rename global | `refactor/rename_entity.rs` |
 | Lexical | `WikiLinkNode`, typeahead `[[` / `@` |
-| Panel | `BacklinksPanel` en pestaña Referencias |
+| Panel backlinks | API dormida (`get_backlinks`, etc.); UI retirada en FIX-002 |
 
 ---
 
