@@ -98,7 +98,7 @@ export function FolderDescriptionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form onSubmit={(e) => void handleSubmit(e)}>
+        <form autoComplete="off" onSubmit={(e) => void handleSubmit(e)}>
           <DialogHeader>
             <DialogTitle>{t("folderEdit.title")}</DialogTitle>
             <DialogDescription>{t("folderEdit.description")}</DialogDescription>
@@ -122,6 +122,7 @@ export function FolderDescriptionDialog({
                 <Label htmlFor="folder-desc">{t("folderEdit.descriptionLabel")}</Label>
                 <textarea
                   id="folder-desc"
+                  autoComplete="off"
                   className="border-input bg-background min-h-[80px] w-full rounded-md border px-3 py-2 text-sm"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}

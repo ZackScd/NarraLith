@@ -158,7 +158,7 @@ function ExplorerDialogForm({
   return (
     <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent>
-        <form onSubmit={(e) => void handleSubmit(e)}>
+        <form autoComplete="off" onSubmit={(e) => void handleSubmit(e)}>
           <DialogHeader>
             <DialogTitle>{t(titleKey)}</DialogTitle>
             {dialog.type === "delete" ? (

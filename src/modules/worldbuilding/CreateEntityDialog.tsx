@@ -73,7 +73,7 @@ export function CreateEntityDialog({
       }}
     >
       <DialogContent>
-        <form onSubmit={(e) => void handleSubmit(e)}>
+        <form autoComplete="off" onSubmit={(e) => void handleSubmit(e)}>
           <DialogHeader>
             <DialogTitle>{t("create.title")}</DialogTitle>
             <DialogDescription>

@@ -1,7 +1,7 @@
 # Backlog de fixes y cambios — NarraLith
 
-Documento de **planificación** (jun 2026). Las tareas se listan en orden de ejecución sugerido.  
-**No implementar** hasta cerrar el listado completo o pedir explícitamente una tarea concreta.
+Documento de **planificación** (jun 2026). Detalle por fix.  
+**Orden de ejecución global:** [`implementation-plan.md`](implementation-plan.md) (FIX-001…).
 
 ---
 
@@ -9,7 +9,7 @@ Documento de **planificación** (jun 2026). Las tareas se listan en orden de eje
 
 | # | Tarea | Tipo | Esfuerzo | Estado |
 |---|-------|------|----------|--------|
-| 1 | Deshabilitar cuadro «Información guardada» del navegador | UI / plataforma | Bajo | Pendiente |
+| 1 | Deshabilitar cuadro «Información guardada» del navegador | UI / plataforma | Bajo | ✅ |
 | 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | Pendiente |
 | 3 | Timeline: chip doble (archivo + evento) y conectores por evento | UX timeline | Medio–Alto | Pendiente |
 | 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | Pendiente |

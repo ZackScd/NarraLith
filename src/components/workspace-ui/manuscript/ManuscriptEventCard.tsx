@@ -128,6 +128,7 @@ export function ManuscriptEventCard({
       </div>
 
       <textarea
+        autoComplete="off"
         value={description}
         onChange={(e) => pushDraft(name, e.target.value)}
         placeholder={descriptionPlaceholder}

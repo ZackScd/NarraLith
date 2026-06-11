@@ -24,8 +24,12 @@ Fuente de verdad para planificación y ejecución desde jun 2026.
 **Specs profundas** (refactors como el manuscrito) — estilo `plan.md` + `plan_roadmap.md`:
 
 ```text
-specs/manuscript-design.md   → diseño cerrado
-specs/manuscript-roadmap.md  → orden de ejecución
+specs/implementation-plan.md → lista maestra ordenada (fixes → refactors)
+specs/fix-backlog.md           → detalle fixes UX/manuscrito
+specs/manuscript-design.md     → diseño manuscrito cerrado
+specs/manuscript-roadmap.md    → ejecución manuscrito M1–M8
+specs/maps-design.md           → diseño mapas (Era III)
+specs/module-replan.md         → decisiones globales módulos
 ```
 
 No duplicar auditorías en varios archivos: diseño en `specs/`, progreso en `04-TASK`, histórico en `05-CHANGELOG`.
@@ -43,8 +47,12 @@ No duplicar auditorías en varios archivos: diseño en `specs/`, progreso en `04
 | [05-CHANGELOG.md](05-CHANGELOG.md) | ✅ Era I archivada + hueco |
 | [06-ARCHITECTURE.md](06-ARCHITECTURE.md) | ✅ Mapa jun 2026 |
 | [07-GUIDELINES-LLMs.md](07-GUIDELINES-LLMs.md) | ✅ |
+| [specs/implementation-plan.md](specs/implementation-plan.md) | 📋 Lista maestra fixes → Era II → Era III |
+| [specs/fix-backlog.md](specs/fix-backlog.md) | 📋 Fixes UX (detalle por tarea) |
 | [specs/manuscript-design.md](specs/manuscript-design.md) | ✅ Sustituye `plan.md` §1 |
 | [specs/manuscript-roadmap.md](specs/manuscript-roadmap.md) | ✅ Sustituye `plan_roadmap.md` |
+| [specs/maps-design.md](specs/maps-design.md) | 🔄 Diseño mapas Era III |
+| [specs/module-replan.md](specs/module-replan.md) | 🔄 Decisiones módulos |
 
 **Archivo histórico del refactor:** `_docs/archive/manuscript-refactor/` (auditoría completa).
 
