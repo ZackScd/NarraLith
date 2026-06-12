@@ -1,6 +1,6 @@
 # FIX-012 — Guardar no debe cambiar pestaña ni cerrar tabs abiertas
 
-> Plan de investigación y arreglo. **Estado:** 📋 Planificado (sin implementar) · **Esfuerzo:** Medio · **Riesgo:** Medio  
+> Plan de investigación y arreglo. **Estado:** 🔄 Fase 0 ✅ (evidencia OBS-001) · **Implementación:** pendiente · **Esfuerzo:** Medio · **Riesgo:** Medio  
 > **Lista maestra:** [`implementation-plan.md`](../implementation-plan.md) Fase B · **Sin archivos extra** — solo este plan + la fila en la lista maestra.
 
 ---
@@ -58,6 +58,43 @@ Si fs-changed kind=remove incluye meow y eventoTest (watcher / OneDrive):
 H1 (`saveAllOpenTabs` + switchTab) explicaría **saltos temporales**, pero **no** el cierre de **dos** pestañas de la barra. Eso apunta a **`remove` espurio** en el watcher, no solo a restauración fallida.
 
 **Primer reporte (sesión anterior):** salto `eventoTest` → `meow` sin cierre explícito — compatible con H1 o con un solo `remove`. Este segundo reporte **eleva H2** a causa principal.
+
+### 1.2 Evidencia OBS-001 (NDJSON, 2026-06-11)
+
+**Archivo:** `_debug/logs/session-1781303360008-18448.ndjson` (107 líneas, audit ON, `tauri dev`).
+
+**Escenario capturado:** tabs restauradas `shushah`, `sas` (+ activo previo `sas`); luego abiertas `meow`, `eventoTest`. Guardados con «Guardar todo» (`obs.editor.saveAll.*`). Solo **`eventoTest`** sucio en el guardado fatal.
+
+**Cadena del bug (guardado fatal, ~L66–79):**
+
+| t (ms rel.) | Evento | Hallazgo |
+|-------------|--------|----------|
+| +464793 | `saveAll.start` | `activePath`: `eventoTest`; `dirtyPaths`: solo `eventoTest` |
+| +464829 | `save.end` ok | `segmentCount`: 3 |
+| +464826 (Rust) | `obs.rust.save_manuscript` | `touchedEntityPaths`: `evento1.md`, `EVENTO 2.md` |
+| +464844 | `saveAll.end` ok | `activePath` sigue en **`eventoTest`** → **H1 descartada** como causa del cierre |
+| +465060–75 | `watcher.raw` | `modify` en manuscrito + entidades; `remove` en `.narralith-write-18448` (temp atómico WB) |
+| +465125 | `reconcile.emit` **`kind=remove`** | paths: `evento1.md`, **`eventoTest.md`**, `EVENTO 2.md`, `.narralith-write-18448` |
+| +465127 | `tab.close` **`reason=fs-remove`** | Cierra **`eventoTest`** (activo); `nextActive`: **`meow`** |
+
+**Conclusiones cerradas con evidencia:**
+
+1. **H2 confirmada:** el cierre de pestaña ocurre **~283 ms después** de `saveAll.end`, por `fs-changed` `remove`, no por `switchTab`.
+2. **Causa raíz en Rust (`apply_changes`):** un mismo batch debounced mezcla `Modify` + `Remove`; el `kind` final queda en **`remove`** pero `paths` incluye rutas que en el watcher eran **`modify`** y **siguen en disco** ([`reconcile.rs`](../../../src-tauri/src/fs/reconcile.rs) L68–96, un solo `kind` + un solo `touched` por batch).
+3. **Temp WB no ignorado:** `.narralith-write-{pid}` dispara `remove` + `mark_ghost` espurio (`should_ignore` no lo filtra); agrava el batch mixto.
+4. **`markSelfSave` no protege `remove`:** en [`useEditorFsSync.ts`](../../../src/hooks/useEditorFsSync.ts) la rama `remove` llama `closeTabsRemovedFromDisk` sin consultar self-save (solo aplica a recarga en `modify`).
+5. **Repro parcial respecto a §1.1:** en esta sesión solo cerró **`eventoTest`** (única sucia); **`meow` no se cerró**. El salto final fue a **`meow`**, no a `skanlnsklnals` (orden de tabs distinto: 4 tabs, sin `skanlnsklnals`).
+
+**Segundo guardado (L82–101):** reabrió `eventoTest`, guardó de nuevo; hubo `remove` solo sobre `EVENTO 2.md` + temp — **sin** `tab.close` de manuscrito. Comportamiento intermitente (timing OneDrive / debounce).
+
+**Fixes derivados (prioridad Fase 3):**
+
+| # | Cambio | Motivo (evidencia) |
+|---|--------|-------------------|
+| F3a | **`should_ignore`** para `.narralith-write-*` (y no emitir ghost) | L24–33, L50–61 |
+| F3b | **`apply_changes`:** emitir **por kind** o no incluir en `remove` paths que existen en disco al reconciliar | L77: `modify` raw → `remove` emit |
+| F3c | Frontend: ignorar `remove` en paths de `touchedEntityPaths` / `markSelfSave` recientes | L79: cierre pese a guardado propio |
+| F3d | Opcional: devolver `touchedPaths` desde `save_manuscript` (ya logueado en audit) | Correlación batch ↔ watcher |
 
 ---
 
@@ -162,29 +199,27 @@ Invocado desde [`useEditorFsSync.ts`](../../../src/hooks/useEditorFsSync.ts) cua
 
 > Tras repro §1.1, **H2 es la causa principal** (cierre de tabs). **H1 sigue siendo un agravante** (Ctrl+S guarda todo y multiplica ventanas de carrera con el watcher).
 
-### H2 — **Principal:** `fs-changed` `remove` cierra pestañas guardadas
+### H2 — **Principal (confirmada OBS-001):** batch `remove` mezclado cierra pestañas guardadas
 
-**Mecanismo:** El watcher interpreta «archivo eliminado» (`normalize_debounced`: path no existe → `Remove`). `useEditorFsSync` llama `closeTabsRemovedFromDisk` **sin** consultar `markSelfSave` (solo aplica a recarga `modify`, no a `remove`).
+**Mecanismo:** El watcher debounced agrupa `Modify` (manuscrito + entidades) y `Remove` (temp `.narralith-write-*`, posibles glitches OneDrive). [`apply_changes`](../../../src-tauri/src/fs/reconcile.rs) usa **un solo** `kind` por batch: cualquier `Remove` posterior fuerza `kind=remove` sobre **todas** las rutas en `touched`, incluidas las que fueron `Modify` y siguen existiendo. [`useEditorFsSync`](../../../src/hooks/useEditorFsSync.ts) cierra tabs en rama `remove` **sin** `markSelfSave`.
+
+**Evidencia:** `_debug/logs/session-1781303360008-18448.ndjson` L77–79 — ver §1.2.
 
 **Por qué encaja con §1.1:**
 
-- Dos manuscritos sucios guardados → dos escrituras → uno o dos eventos `remove` espurios → **dos tabs cerradas**.
-- Orden final `skanlnsklnals` = dos cierres secuenciales en `tabOrder` `[…, meow, eventoTest]`.
+- Dos manuscritos sucios guardados → dos escrituras → uno o dos eventos `remove` espurios → **dos tabs cerradas** (captura parcial: una sucia → un cierre).
+- Orden final distinto según `tabOrder` al cerrar (captura: `eventoTest` → activo `meow`).
 - Contenido guardado OK + tabs cerradas = disco bien, sesión rota.
 
 **Factores agravantes:**
 
 - Proyecto bajo **OneDrive** (`OneDrive/Documentos/…` en ruta del workspace).
 - Escritura atómica WB (`.narralith-write-*` + `rename`) y `fs::write` manuscrito en el mismo debounce (250 ms).
-- **`markSelfSave` no protege la rama `remove`** en el frontend ni `mark_ghost` en Rust.
+- **`markSelfSave` no protege la rama `remove`** en el frontend ni coalesce en Rust.
 
-**Cómo confirmar (Fase 0):**
+**Estado confirmación:** ✅ **Confirmada** (Fase 0 OBS-001, jun 2026). Comprobar SQLite `ghost` en `eventoTest`/`meow` sigue siendo QA manual pendiente.
 
-- Log `[FIX-012] fs-changed kind=remove paths=…` coincidiendo con cierre de tabs.
-- Tras bug, comprobar en SQLite si `meow` / `eventoTest` tienen `status = 'ghost'` indebidamente.
-- Guardar manuscrito **sin** eventos: si el bug desaparece → batch WB + watcher.
-
-**Probabilidad:** **Muy alta** con la repro dual-close.
+**Probabilidad:** **Confirmada** con NDJSON.
 
 ---
 
@@ -227,6 +262,8 @@ Invocado desde [`useEditorFsSync.ts`](../../../src/hooks/useEditorFsSync.ts) cua
 
 ## 4. Matriz de reproducción QA (Fase 0 — antes de codear)
 
+> **Fase 0:** ✅ Repro capturada en `_debug/logs/session-1781303360008-18448.ndjson` (R8 parcial: 1 tab cerrada). Repetir R8 completo (5 tabs, 2 sucias) tras fix para regresión.
+
 Ejecutar y anotar **pestaña activa final**, **pestañas sucias antes**, **atajo usado**:
 
 | # | Precondición | Acción | Resultado esperado tras fix |
@@ -241,7 +278,7 @@ Ejecutar y anotar **pestaña activa final**, **pestañas sucias antes**, **atajo
 | **R8** | **Repro §1.1:** 5 tabs, solo `meow`+`eventoTest` sucios, activo `eventoTest` | Guardar | **5 tabs siguen abiertas**; activo `eventoTest`; sin ghost SQLite |
 | R9 | Tras R8 | Explorador | Un solo resaltado coherente con tab activa |
 
-**Instrumentación (Fase 0):** usar **OBS-001** ([`OBS-001-system-audit-log.md`](OBS-001-system-audit-log.md) §6) — export NDJSON y correlación `save-batch`; no logs ad hoc `[FIX-012]`.
+**Instrumentación (Fase 0):** ✅ **OBS-001** — export `_debug/logs/session-*.ndjson`; buscar `obs.fs.reconcile.emit` `kind=remove` + `obs.editor.tab.close` `reason=fs-remove` tras `obs.editor.saveAll.end` (§1.2).
 
 ---
 
@@ -289,12 +326,14 @@ Objetivo: guardar pestañas inactivas **desde caché de tab** cuando sea posible
 
 | Cambio | Archivo |
 |--------|---------|
-| **`saveBatchGuard`** | Contador en store; mientras > 0: **no** `closeTabsRemovedFromDisk` para paths del batch; **no** recarga agresiva |
-| Ampliar `markSelfSave` | `string[]` — manuscrito + rutas WB tocadas; usar también en rama **`remove`** del listener (ignorar remove si path recién guardado) |
-| **Rust: no `mark_ghost` en guardado propio** | Ideal: IPC devuelve `touchedPaths`; watcher coalesce remove+modify del mismo path en <500 ms como **`modify`** ([`watcher.rs`](../../../src-tauri/src/fs/watcher.rs) / `reconcile.rs`) |
+| **F3b — Emitir por kind / no mezclar paths** | [`reconcile.rs`](../../../src-tauri/src/fs/reconcile.rs) `apply_changes`: no poner rutas `Modify` en un evento `remove`; o emitir un `fs-changed` por kind. **Causa raíz confirmada §1.2.** |
+| **F3a — Ignorar temp atómico WB** | `should_ignore` para `.narralith-write-*` (no watcher, no ghost) |
+| **`saveBatchGuard`** | Contador en store; mientras > 0: **no** `closeTabsRemovedFromDisk` para paths del batch |
+| Ampliar `markSelfSave` | `string[]` — manuscrito + `touchedEntityPaths`; usar también en rama **`remove`** del listener |
+| **Rust: no `mark_ghost` si path existe** | Antes de `mark_ghost`, `Path::exists()`; skip temp files |
 | **Explorador** | Tras cierre legítimo de tab, limpiar `selectedPath` si apunta a path sin pestaña |
 
-**IPC opcional:** `save_manuscript` → `{ manuscript, touchedPaths: string[] }`.
+**IPC opcional:** `save_manuscript` → `{ manuscript, touchedPaths: string[] }` (audit ya loguea `touchedEntityPaths` en Rust).
 
 ---
 
@@ -326,8 +365,8 @@ Objetivo: guardar pestañas inactivas **desde caché de tab** cuando sea posible
 ## 6. Orden de ejecución recomendado
 
 ```text
-Fase 0  Repro + export OBS-001 (§6) → confirmar H2 vs H1
-Fase 3  saveBatchGuard + ignore remove espurio   ← prioridad alta tras repro §1.1
+Fase 0  ✅ Repro OBS-001 — session-1781303360008-18448.ndjson (H2 confirmada)
+Fase 3  F3b apply_changes + F3a ignore temp + markSelfSave remove   ← siguiente paso
 Fase 1  Ctrl+S → saveDocument                  (reduce superficie de carrera)
 Fase 2  saveAll sin switch / restore
 Fase 4  closeTabs defensivo + selectedPath
@@ -376,4 +415,6 @@ Fase 6  Docs
 | Guard self-save | `src/lib/editor/fsSync.ts` |
 | Sync eventos al guardar | `src-tauri/src/entity/sync_event.rs` |
 | mark_ghost en remove | `src-tauri/src/fs/reconcile.rs` |
+| apply_changes batch kind | `src-tauri/src/fs/reconcile.rs` L58–134 |
+| Evidencia NDJSON | `_debug/logs/session-1781303360008-18448.ndjson` |
 | selectedPath explorador | `src/stores/useFileTreeStore.ts`, `FileTreeItem.tsx` |

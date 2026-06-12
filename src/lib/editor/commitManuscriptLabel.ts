@@ -1,5 +1,6 @@
 import type { ActiveEventContext } from "@/lib/editor/documentSync";
 import { segmentHasBarTime } from "@/lib/editor/manuscriptBlocks";
+import { audit } from "@/lib/audit";
 import type { BarTag } from "@/lib/types/manuscript";
 import type { PendingManuscriptLabel } from "@/stores/useManuscriptLabelDraftStore";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -83,25 +84,38 @@ export function commitManuscriptLabel(params: {
     ? [timeBarTag(timeDraft.timeTag, timeDraft.timeHour)]
     : [];
 
+  const logCommit = (ok: boolean): boolean => {
+    if (ok) {
+      audit.info("editor", "obs.editor.label.commit", {
+        segmentIndex: activeEventContext.segmentIndex,
+      });
+    }
+    return ok;
+  };
+
   if (
     hasEventName &&
     eventDraft &&
     eventDraftMatchesContext(pending, activeEventContext)
   ) {
     if (activeEventContext.inEvent && activeEventContext.segmentId) {
-      return updateEventAtCursor({
-        name: eventDraft.name.trim(),
-        description: eventDraft.description.trim(),
-        barTags: timeDraft ? barTags : null,
-      });
+      return logCommit(
+        updateEventAtCursor({
+          name: eventDraft.name.trim(),
+          description: eventDraft.description.trim(),
+          barTags: timeDraft ? barTags : null,
+        }),
+      );
     }
 
-    return commitEventAtCursor({
-      name: eventDraft.name.trim(),
-      description: eventDraft.description.trim(),
-      entityPath: entityPath.trim(),
-      barTags,
-    });
+    return logCommit(
+      commitEventAtCursor({
+        name: eventDraft.name.trim(),
+        description: eventDraft.description.trim(),
+        entityPath: entityPath.trim(),
+        barTags,
+      }),
+    );
   }
 
   if (timeDraft) {
@@ -117,12 +131,12 @@ export function commitManuscriptLabel(params: {
         segment?.kind === "event" && segmentHasBarTime(segment.barTags);
 
       if (!hasBarTime) {
-        return appendBarTimeToActiveEvent(timeValue, timeDraft.timeHour);
+        return logCommit(appendBarTimeToActiveEvent(timeValue, timeDraft.timeHour));
       }
-      return insertInlineTagAtCursor("time", timeValue);
+      return logCommit(insertInlineTagAtCursor("time", timeValue));
     }
 
-    return insertInlineTagAtCursor("time", timeValue);
+    return logCommit(insertInlineTagAtCursor("time", timeValue));
   }
 
   return false;

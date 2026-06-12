@@ -29,6 +29,23 @@ impl ProjectWatcher {
                 let Ok(events) = result else {
                     return;
                 };
+
+                for event in &events {
+                    if !event.path.starts_with(&root_for_filter)
+                        || reconcile::should_ignore(&event.path)
+                    {
+                        continue;
+                    }
+                    if let Ok(rel) = event.path.strip_prefix(&root_for_filter) {
+                        let rel_str = rel.to_string_lossy().replace('\\', "/");
+                        crate::audit::bridge::log_watcher_raw(
+                            &app_for_callback,
+                            &rel_str,
+                            event.path.exists(),
+                        );
+                    }
+                }
+
                 let changes = normalize_debounced(events, &root_for_filter);
                 if changes.is_empty() {
                     return;

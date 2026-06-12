@@ -1,11 +1,14 @@
 import type { FsChangeEvent } from "@/lib/types/fs";
 
+import { audit } from "@/lib/audit";
+
 const SELF_SAVE_GUARD_MS = 2_500;
 const recentSelfSaves = new Map<string, number>();
 
 /** Marca un guardado iniciado por la app para ignorar el `fs-changed` resultante. */
 export function markSelfSave(filePath: string): void {
   recentSelfSaves.set(filePath, Date.now());
+  audit.debug("fs", "obs.fs.self_save.mark", { path: filePath });
 }
 
 /** Evita recargar el editor justo después de un guardado propio (mantiene scroll). */
@@ -18,6 +21,7 @@ export function shouldIgnoreFsReload(filePath: string): boolean {
     recentSelfSaves.delete(filePath);
     return false;
   }
+  audit.debug("fs", "obs.fs.self_save.hit", { path: filePath });
   return true;
 }
 

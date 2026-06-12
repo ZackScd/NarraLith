@@ -180,7 +180,27 @@ pub fn save_manuscript(
 ) -> Result<ParsedManuscript, AppError> {
     let rel = crate::fs::paths::normalize_relative(&file_path)?;
     let parsed = build_manuscript_from_save(&rel, manuscript)?;
+    let segment_count = parsed.segments.len();
+    let entity_paths: Vec<String> = parsed
+        .segments
+        .iter()
+        .filter_map(|segment| {
+            if let ManuscriptSegment::Event(event) = segment {
+                let path = event.entity_path.trim();
+                if path.is_empty() {
+                    None
+                } else {
+                    Some(path.to_string())
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
     let result = state.with_db(|db, root| save_manuscript_and_persist(db, root, &rel, parsed))?;
+
+    #[cfg(debug_assertions)]
+    crate::audit::bridge::log_save_manuscript(&app, &rel, segment_count, &entity_paths);
 
     if let Ok(meta) = state.meta() {
         state.request_consistency_check(&app, std::path::Path::new(&meta.root_path));

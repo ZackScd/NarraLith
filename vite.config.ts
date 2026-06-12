@@ -7,6 +7,9 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [react()],
+  define: {
+    __AUDIT_ENABLED__: JSON.stringify(process.env.NODE_ENV !== "production"),
+  },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
@@ -30,7 +33,7 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: ["**/src-tauri/**", "**/_debug/**"],
     },
   },
 }));

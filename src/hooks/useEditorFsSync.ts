@@ -5,6 +5,7 @@ import {
   shouldIgnoreFsReload,
   tabPathsToReloadOnFsChange,
 } from "@/lib/editor/fsSync";
+import { audit } from "@/lib/audit";
 import type { FsChangeEvent } from "@/lib/types/fs";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useProjectStore } from "@/stores/useProjectStore";
@@ -32,6 +33,12 @@ export function useEditorFsSync() {
       const { paths, fromPath, kind } = event.payload;
       const editor = useEditorStore.getState();
 
+      audit.info("editor", "obs.editor.fs.sync", {
+        kind,
+        paths,
+        ...(fromPath ? { fromPath } : {}),
+      });
+
       if (kind === "remove") {
         editor.closeTabsRemovedFromDisk(paths);
         return;
@@ -55,6 +62,7 @@ export function useEditorFsSync() {
       const activePath = state.activeFilePath;
       if (activePath && toReload.includes(activePath)) {
         if (shouldIgnoreFsReload(activePath)) {
+          audit.debug("fs", "obs.fs.self_save.ignore", { path: activePath });
           return;
         }
         if (state.isDirty) {
@@ -69,6 +77,7 @@ export function useEditorFsSync() {
           continue;
         }
         if (shouldIgnoreFsReload(path)) {
+          audit.debug("fs", "obs.fs.self_save.ignore", { path });
           continue;
         }
         const tab = state.tabs[path];

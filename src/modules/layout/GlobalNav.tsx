@@ -1,4 +1,5 @@
 import { BookOpen, Clock, Globe, History, Map, Network, Settings } from "lucide-react";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ExplorerViewMode } from "@/lib/types/fs";
@@ -21,6 +22,14 @@ const EDITOR_MODES: {
   { id: "manuscript", icon: BookOpen },
   { id: "worldbuilding", icon: Globe },
 ];
+
+const DebugNavMenu = __AUDIT_ENABLED__
+  ? lazy(() =>
+      import("@/modules/debug/DebugNavMenu").then((mod) => ({
+        default: mod.DebugNavMenu,
+      })),
+    )
+  : null;
 
 export function GlobalNav({
   editorViewMode,
@@ -103,6 +112,11 @@ export function GlobalNav({
       </div>
 
       <div className="mt-auto flex flex-col items-center gap-1 px-1.5">
+        {DebugNavMenu ? (
+          <Suspense fallback={null}>
+            <DebugNavMenu navBtnClassName={navBtn} />
+          </Suspense>
+        ) : null}
         <button
           type="button"
           title={tVersions("title")}

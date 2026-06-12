@@ -89,6 +89,8 @@ pub fn apply_changes(
                 let rel = relative_path(project_root, &path)?;
                 mark_ghost(db, &rel)?;
                 mark_ghost_prefix(db, &rel)?;
+                #[cfg(debug_assertions)]
+                crate::audit::bridge::log_ghost(app, &rel, "watcher-remove");
                 let _ = blocks::delete_blocks_under_path(db, &rel);
                 touched.push(rel);
                 kind = "remove".to_string();
@@ -371,9 +373,11 @@ pub fn emit_fs_changed(
 ) -> Result<(), AppError> {
     let payload = FsChangeEvent {
         kind: kind.to_string(),
-        paths,
-        from_path,
+        paths: paths.clone(),
+        from_path: from_path.clone(),
     };
+    #[cfg(debug_assertions)]
+    crate::audit::bridge::log_fs_changed(app, kind, &paths, &from_path);
     app.emit("fs-changed", payload)
         .map_err(|e| AppError::database(e.to_string()))
 }

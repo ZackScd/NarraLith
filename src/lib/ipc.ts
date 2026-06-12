@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { auditInvoke } from "@/lib/audit/auditInvoke";
 
 /** Error IPC desde Rust (`AppError`). */
 export interface AppErrorPayload {
@@ -36,5 +36,5 @@ export async function invokeCommand<T>(
   cmd: string,
   args?: Record<string, unknown>,
 ): Promise<T> {
-  return invoke<T>(cmd, args);
+  return auditInvoke<T>(cmd, args);
 }

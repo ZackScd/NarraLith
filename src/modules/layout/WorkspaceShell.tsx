@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { useAutoSnapshotIndicator } from "@/hooks/useAutoSnapshotIndicator";
+import { useAuditBootstrap } from "@/hooks/useAuditBootstrap";
+import { useAuditLogShortcut } from "@/hooks/useAuditLogShortcut";
 import { useEditorAutoSave } from "@/hooks/useEditorAutoSave";
 import { useEditorFsSync } from "@/hooks/useEditorFsSync";
 import { usePersistManuscriptTabs } from "@/hooks/usePersistManuscriptTabs";
@@ -54,6 +56,8 @@ export function WorkspaceShell() {
   const rightPanelCollapsed = useLayoutStore((s) => s.rightPanelCollapsed);
 
   useEntityIndexBootstrap();
+  useAuditBootstrap();
+  useAuditLogShortcut();
   useFsWatcher();
   useEditorFsSync();
   usePersistManuscriptTabs();

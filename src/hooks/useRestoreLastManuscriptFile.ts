@@ -6,6 +6,7 @@ import {
   isPersistableManuscriptPath,
   setManuscriptTabsSession,
 } from "@/lib/editor/lastManuscriptFile";
+import { audit } from "@/lib/audit";
 import { normalizeProjectPath } from "@/lib/pathUtils";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
@@ -92,6 +93,12 @@ export function useRestoreLastManuscriptFile(): void {
 
       useFileTreeStore.getState().selectNode(activePath);
       expandAncestorFolders(activePath);
+
+      audit.info("editor", "obs.editor.session.restore", {
+        tabCount: openedPaths.length,
+        activePath,
+        paths: openedPaths,
+      });
     };
 
     void run();

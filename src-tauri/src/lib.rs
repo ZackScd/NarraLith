@@ -15,14 +15,22 @@ mod state;
 mod timeline;
 mod wikilink;
 
+#[cfg(debug_assertions)]
+mod audit;
+
 use state::ProjectState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(ProjectState::new())
+        .manage(ProjectState::new());
+
+    #[cfg(debug_assertions)]
+    let builder = builder.manage(audit::AuditState::new());
+
+    builder
         .invoke_handler(tauri::generate_handler![
             commands::project::create_project,
             commands::project::open_project,
@@ -91,6 +99,20 @@ pub fn run() {
             commands::graph::get_graph_data_cmd,
             commands::graph::rebuild_graph_index_cmd,
             commands::graph::rebuild_graph_index_async_cmd,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_bootstrap,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_get_config,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_set_enabled,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_patch_settings,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_clear_logs,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_append_entry,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_get_log_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

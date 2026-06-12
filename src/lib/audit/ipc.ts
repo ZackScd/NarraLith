@@ -1,0 +1,40 @@
+import { invoke } from "@tauri-apps/api/core";
+
+import type {
+  AuditConfigResponse,
+  AuditEntry,
+  AuditLogPathResponse,
+  AuditSettingsPatch,
+} from "@/lib/types/audit";
+
+/** Comandos `audit_*` — invocación directa (excluidos de `auditInvoke` en Fase 1). */
+
+export function auditBootstrap(): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_bootstrap");
+}
+
+export function auditGetConfig(): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_get_config");
+}
+
+export function auditSetEnabled(enabled: boolean): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_set_enabled", { enabled });
+}
+
+export function auditPatchSettings(
+  patch: AuditSettingsPatch,
+): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_patch_settings", { patch });
+}
+
+export function auditClearLogs(): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_clear_logs");
+}
+
+export function auditAppendEntry(entry: AuditEntry): Promise<void> {
+  return invoke<void>("audit_append_entry", { entry });
+}
+
+export function auditGetLogPath(): Promise<AuditLogPathResponse> {
+  return invoke<AuditLogPathResponse>("audit_get_log_path");
+}

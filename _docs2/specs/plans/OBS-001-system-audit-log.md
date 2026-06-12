@@ -1,7 +1,34 @@
 # OBS-001 — Módulo global de auditoría del sistema
 
-> Plan de diseño e implementación. **Estado:** 📋 Planificado · **Auditoría código:** §2.4, §12–14 (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Bajo–Medio  
+> Plan de diseño e implementación. **Estado:** ✅ COMPLETO (v1) · **Fases 0–6:** ✅ · **Auditoría código:** §2.4, §12–14 (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Bajo–Medio  
 > **Lista maestra:** [`implementation-plan.md`](../implementation-plan.md) Fase B · **Primer consumidor:** diagnóstico **FIX-012** (guardar / pestañas / `fs-changed`).
+
+### Progreso de implementación (jun 2026)
+
+| Fase | Estado | Entregables |
+|------|--------|-------------|
+| **0 — Esqueleto + bootstrap** | ✅ | `src/lib/audit/*`, `src-tauri/src/audit/*`, `useAuditBootstrap`, `useAuditStore`, `.gitignore` `_debug/`, tests Vitest (12), tests Rust (3), triple compuerta release |
+| **1 — Capas transversales** | ✅ | `auditInvoke`, editor store, fsSync, `useEditorFsSync`, Rust `bridge.rs`, correlación save |
+| **2 — Menú debug** | ✅ | `DebugNavMenu`, i18n `debug.json`, lazy en `GlobalNav` |
+| **3 — Visor + resto** | ✅ | `AuditLogViewer` (filtros + copiar), stores secundarios, `Ctrl+Shift+L` |
+| **4 — Huecos P0** | ✅ | `obs.fs.watcher.raw`, `obs.fs.self_save.ignore`, `touchedEntityPaths`, `reportDegraded`, sin `rootPath` absoluto en payloads |
+| **5 — Tests + verificación** | ✅ | `auditInvoke` + `bridge.rs` (sin macro `audited_command`); Vitest 95; Rust audit 3; `npm run build` sin strings debug en `dist/` |
+| **6 — Documentación** | ✅ | § Observabilidad en [`06-ARCHITECTURE.md`](../../06-ARCHITECTURE.md); este plan cerrado |
+
+**Fuera de v1 (documentado, no implementar):** `session-*.meta.json`, crate `tracing`, ring buffer Rust, macro `audited_command`, instrumentación `fs_ops` CRUD individual, `useWorkspaceStore` / `useCalendarViewStore` / `usePersistManuscriptTabs`.
+
+**Fase 0 — checklist:**
+
+- [x] Tipos `AuditEntry`, ring buffer TS, `audit.info/warn/error` (respeta `enabled`)
+- [x] `audit/stub.ts` + `audit/index.ts` + `__AUDIT_ENABLED__` en Vite
+- [x] Rust `src-tauri/src/audit/` bajo `#[cfg(debug_assertions)]`; `_debug/logs/` al bootstrap
+- [x] `useAuditBootstrap` idempotente; **antes** de `useFsWatcher` en `WorkspaceShell`
+- [x] Comandos IPC `audit_*` registrados (dev); excluidos en release
+- [x] Persistencia TS→Rust vía `audit_append_entry` + `setPersistHandler`
+- [x] Tipos IPC `src/lib/types/audit.ts`
+- [x] Tests Vitest: stub, disabled, truncado, correlación, persist handler
+- [x] Tests Rust: NDJSON append, settings round-trip, one-shot clear
+- [x] `vite.config.ts`: `watch.ignored` incluye `_debug/**`
 
 ---
 
@@ -35,9 +62,9 @@
 
 | Pieza | Situación |
 |-------|-----------|
-| [`invokeCommand`](../../../src/lib/ipc.ts) | Wrapper fino sobre `invoke`; **sin** trazas de ida/vuelta |
+| [`invokeCommand`](../../../src/lib/ipc.ts) | Envuelto por `auditInvoke` en dev (cmd, duration, error key) | ✅ Fase 1 |
 | Stores Zustand | Sin middleware de logging |
-| [`useEditorFsSync`](../../../src/hooks/useEditorFsSync.ts) | Escucha `fs-changed`; **sin** log estructurado |
+| [`useEditorFsSync`](../../../src/hooks/useEditorFsSync.ts) | `obs.editor.fs.sync` antes de side effects; bootstrap registra `obs.fs.changed` | ✅ Fase 1 |
 | [`useFsWatcher`](../../../src/hooks/useFsWatcher.ts) | Refresca árbol; solo resumen en `notifyFsChange` |
 | Errores puntuales | `console.error` en `useEditorStore`, `EditorShell` |
 | Settings | [`useSettingsStore`](../../../src/stores/useSettingsStore.ts) — autoguardado, tema; **sin** flags de debug |
@@ -48,9 +75,9 @@
 | Pieza | Situación |
 |-------|-----------|
 | ~50 comandos IPC en [`lib.rs`](../../../src-tauri/src/lib.rs) | Sin capa común de trace |
-| [`emit_fs_changed`](../../../src-tauri/src/fs/reconcile.rs) | Emite evento; no log local estructurado |
-| [`ProjectWatcher`](../../../src-tauri/src/fs/watcher.rs) | Debounce 250 ms; sin traza de eventos raw |
-| `mark_ghost` / `apply_changes` | Side effects silenciosos salvo error |
+| [`emit_fs_changed`](../../../src-tauri/src/fs/reconcile.rs) | `obs.fs.reconcile.emit` + `obs.fs.reconcile.ghost` (dev) | ✅ Fase 1 |
+| [`ProjectWatcher`](../../../src-tauri/src/fs/watcher.rs) | Debounce 250 ms; `obs.fs.watcher.raw` pre-debounce (nivel Debug) | ✅ |
+| `mark_ghost` / `apply_changes` | `obs.fs.reconcile.ghost` en remove watcher | ✅ Fase 1 |
 | Crates | **No** hay `tracing` / `log` en `Cargo.toml` hoy |
 
 ### 2.3 Eventos Tauri ya usados (candidatos a suscripción central)
@@ -125,11 +152,10 @@ No usar middleware global Zustand en v1 — demasiado ruido; hooks puntuales + f
 Orden actual ([`WorkspaceShell.tsx`](../../../src/modules/layout/WorkspaceShell.tsx)):
 
 ```text
-useEntityIndexBootstrap → useFsWatcher → useEditorFsSync → usePersistManuscriptTabs
-  → useRestoreLastManuscriptFile → useEditorAutoSave → …
+useEntityIndexBootstrap → useAuditBootstrap → useFsWatcher → useEditorFsSync → …
 ```
 
-**Requisito OBS-001:** insertar `useAuditBootstrap()` **antes** de `useFsWatcher` / `useEditorFsSync`. El bootstrap registra listeners de auditoría; la lógica de negocio **permanece** en los hooks existentes.
+**Requisito OBS-001:** ✅ `useAuditBootstrap()` insertado **antes** de `useFsWatcher` / `useEditorFsSync`.
 
 | Hook | Riesgo si audit mal hecho |
 |------|---------------------------|
@@ -163,7 +189,7 @@ Log permitido: `cmd`, keys de args, `durationMs`, `error.key`, contadores (`segm
 
 | Pieza | Estado actual | Acción OBS-001 |
 |-------|---------------|----------------|
-| [`vite.config.ts`](../../../vite.config.ts) | Sin `define` de audit; watch ignora `src-tauri` | Añadir `server.watch.ignored: ['**/_debug/**']` — evita HMR al escribir logs |
+| [`vite.config.ts`](../../../vite.config.ts) | `__AUDIT_ENABLED__`; watch ignora `src-tauri` y `_debug` | ✅ Hecho |
 | [`tauri.conf.json`](../../../src-tauri/tauri.conf.json) | `beforeBuildCommand: npm run build` → `import.meta.env.PROD` | Correcto para tree-shake UI debug |
 | [`src-tauri/.taurignore`](../../../src-tauri/.taurignore) | Excluye `_docs2/` del bundle | `_debug/` no entra al binario (está en repo root, no en resources) |
 | Rust release profile | `debug_assertions = false` por defecto | Módulo `audit` no compilado ✓ |
@@ -487,9 +513,9 @@ Acceso desde «Ver registro» o atajo `Ctrl+Shift+L`. No en Ajustes del build re
 | Función | Detalle |
 |---------|---------|
 | Lista en vivo | Tail del NDJSON de sesión + buffer RAM |
-| Filtros | dominio, nivel, texto, correlationId |
-| Detalle | Expandir payload JSON |
-| Copiar | Selección o últimas N líneas |
+| Filtros | texto libre + nivel mínimo (`trace`…`error`) | ✅ |
+| Detalle | Payload JSON inline en cada fila | ✅ |
+| Copiar | Entradas visibles (filtradas) como NDJSON | ✅ |
 
 ### 3.10 Configuración runtime (resumen)
 
@@ -504,56 +530,78 @@ Defaults: `enabled: true` al arrancar con `tauri dev` (usuario puede apagar desd
 
 ## 4. Plan de instrumentación por fases
 
-### Fase 0 — Esqueleto + carpeta debug + bootstrap
+### Fase 0 — Esqueleto + carpeta debug + bootstrap ✅
 
-- Tipos `AuditEntry`, ring buffer TS, `audit.info/warn/error` (respeta `enabled`).
-- **`audit/stub.ts`** + **`audit/index.ts`** — mismo contrato; alias Vite en prod.
-- Rust: `src-tauri/src/audit/` solo `#[cfg(debug_assertions)]`; crear `_debug/logs/` al init.
-- **`useAuditBootstrap`:** idempotente (StrictMode); one-shot; **antes** de `useFsWatcher`.
-- Gating triple §3.11.
-- IPC audit excluido de `auditInvoke` wrapper.
-- Tests Vitest: stub en prod mode, one-shot, no-op disabled, truncado payload.
+- [x] Tipos `AuditEntry`, ring buffer TS, `audit.info/warn/error` (respeta `enabled`).
+- [x] **`audit/stub.ts`** + **`audit/index.ts`** — mismo contrato; alias Vite en prod.
+- [x] Rust: `src-tauri/src/audit/` solo `#[cfg(debug_assertions)]`; crear `_debug/logs/` al init.
+- [x] **`useAuditBootstrap`:** idempotente (StrictMode); one-shot; **antes** de `useFsWatcher`.
+- [x] Gating triple §3.11.
+- [x] IPC audit excluido de `auditInvoke` wrapper (comandos directos en `lib/audit/ipc.ts`).
+- [x] Tests Vitest: stub en prod mode, one-shot, no-op disabled, truncado payload.
 
-### Fase 1 — Capas transversales (80 % del valor)
+### Fase 1 — Capas transversales (80 % del valor) ✅
 
-| Capa | Acción |
-|------|--------|
-| **IPC** | `auditInvoke` envuelve [`invokeCommand`](../../../src/lib/ipc.ts): cmd, args keys (no values sensibles), duration, error key |
-| **Tauri events** | Bootstrap único: `fs-changed`, eventos consistency/graph si existen |
-| **Editor store** | Hooks en acciones críticas: `openDocument`, `switchTab`, `closeTab`, `saveDocument`, `saveAllOpenTabs`, `closeTabsRemovedFromDisk`, `reloadDocumentFromDisk` |
-| **FS sync** | Log completo en [`useEditorFsSync`](../../../src/hooks/useEditorFsSync.ts) antes de side effects |
-| **Rust** | `tracing` en `emit_fs_changed`, `apply_changes` (remove/modify), `save_manuscript_and_persist` |
-| **Correlación** | `beginCorrelation()` / `endCorrelation()` en operaciones de guardado |
+| Capa | Acción | Estado |
+|------|--------|--------|
+| **IPC** | `auditInvoke` envuelve [`invokeCommand`](../../../src/lib/ipc.ts): cmd, args keys (no values sensibles), duration, error key | ✅ |
+| **Tauri events** | Bootstrap único: `fs-changed`, `consistency-updated`, `graph-index-updated` | ✅ |
+| **Editor store** | `openDocument`, `switchTab`, `saveDocument`, `saveAllOpenTabs`, `closeTabsRemovedFromDisk`, `reloadDocumentFromDisk` | ✅ |
+| **FS sync** | `obs.editor.fs.sync` en [`useEditorFsSync`](../../../src/hooks/useEditorFsSync.ts); `markSelfSave` / `hit` en [`fsSync.ts`](../../../src/lib/editor/fsSync.ts) | ✅ |
+| **Rust** | [`audit/bridge.rs`](../../../src-tauri/src/audit/bridge.rs): `emit_fs_changed`, `mark_ghost`, `save_manuscript` | ✅ |
+| **Correlación** | `beginCorrelation()` / `endCorrelation()` + `withCorrelationAsync` en guardado | ✅ |
 
-### Fase 2 — Menú debug en `GlobalNav`
+**Fase 1 — checklist:**
 
-- `DebugNavMenu.tsx` encima de icono **Historial** (`History`).
-- Toggle encender/apagar → `audit_set_enabled`.
-- «Eliminar registros» → confirm + `audit_clear_logs`.
-- «Sesión única al reiniciar» → `clearLogsOnNextBoot = true` en settings (one-shot §3.8).
-- i18n `debug.json`.
-- «Abrir carpeta debug» → opener SO.
+- [x] `auditInvoke` + exclusión `audit_*` y `list_dir_tree` (§13.3)
+- [x] Eventos editor P0 FIX-012: save, saveAll, tabs, reload, fs.sync, tab.close (fs-remove)
+- [x] `obs.fs.self_save.mark` / `obs.fs.self_save.hit`
+- [x] Rust: `obs.rust.save_manuscript`, `obs.fs.reconcile.emit`, `obs.fs.reconcile.ghost`
+- [x] Tests Vitest: correlación anidada, `buildAuditIpcPayload` (10 tests audit; 93 suite)
 
-### Fase 3 — Visor + instrumentación restante
+### Fase 2 — Menú debug en `GlobalNav` ✅
 
-- `AuditLogViewer` (drawer) desde menú.
-- Stores secundarios: file tree, project, markSelfSave.
-- Atajo opcional `Ctrl+Shift+L`.
+- [x] `DebugNavMenu.tsx` encima de icono **Historial** (`History`).
+- [x] Toggle encender/apagar → `audit_set_enabled` vía `useAuditStore`.
+- [x] «Eliminar registros» → confirm + `audit_clear_logs`.
+- [x] «Sesión única al reiniciar» → `clearLogsOnNextBoot` en settings (one-shot §3.8).
+- [x] i18n `debug.json` (es/en) registrado en [`i18n/config.ts`](../../../src/i18n/config.ts).
+- [x] «Abrir carpeta debug» → `@tauri-apps/plugin-opener` sobre `_debug/logs/`.
+- [x] Lazy import + `__AUDIT_ENABLED__` — ausente en `dist/` release.
 
-### Fase 4 — Instrumentación IPC/editor/FS (si no entró en Fase 1)
+**Pendiente Fase 3:** ~~«Ver registro» → `AuditLogViewer`~~ ✅
 
-- Completar hooks editor store, `useEditorFsSync`, Rust tracing.
+### Fase 3 — Visor + instrumentación restante ✅
 
-### Fase 5 — Rust wrapper genérico + tests
+- [x] `AuditLogViewer` (drawer lateral) desde menú debug + `useSyncExternalStore` / `audit.subscribe`.
+- [x] Stores secundarios: `useProjectStore` (open/close), `useFileTreeStore` (loadTree, notifyFsChange).
+- [x] Editor auxiliar: `useRestoreLastManuscriptFile`, unsaved/reload dialogs, `commitManuscriptLabel`.
+- [x] Atajo `Ctrl+Shift+L` (`useAuditLogShortcut` en `WorkspaceShell`).
+- [x] `markSelfSave` / `hit` ya instrumentados en Fase 1 (`fsSync.ts`).
 
-- Macro `audited_command` o middleware en invoke handler.
-- Tests Rust: append NDJSON, clear logs, one-shot boot.
+### Fase 4 — Huecos P0 (cerrados en v1) ✅
 
-### Fase 6 — Documentación y FIX-012
+- [x] `obs.fs.watcher.raw` en [`watcher.rs`](../../../src-tauri/src/fs/watcher.rs) + [`bridge.rs`](../../../src-tauri/src/audit/bridge.rs).
+- [x] `obs.fs.self_save.ignore` en [`useEditorFsSync`](../../../src/hooks/useEditorFsSync.ts).
+- [x] `touchedEntityPaths` en `obs.rust.save_manuscript` ([`commands/editor.rs`](../../../src-tauri/src/commands/editor.rs)).
+- [x] `obs.system.audit.degraded` vía `reportDegraded()` si falla persistencia.
+- [x] Sin `rootPath` absoluto del OS en `obs.project.open`.
 
-- [`06-ARCHITECTURE.md`](../../06-ARCHITECTURE.md): sección Observabilidad.
-- Regla en planes futuros: «añadir entradas `obs.*` si introduce flujo async/FS».
-- FIX-012 Fase 0: reproducir R8 con export adjunto al reporte de bug.
+> Instrumentación adicional de hooks editor / FS ya cubierta en Fase 1; no se duplicó.
+
+### Fase 5 — Tests + verificación release ✅
+
+- [x] Wrapper IPC: [`auditInvoke`](../../../src/lib/audit/auditInvoke.ts) en [`ipc.ts`](../../../src/lib/ipc.ts) — **no** macro `audited_command` (aceptado v1).
+- [x] Rust bridge: [`bridge.rs`](../../../src-tauri/src/audit/bridge.rs) para FS + save.
+- [x] Tests Rust: append NDJSON, settings round-trip, one-shot clear (`storage.rs`).
+- [x] Tests Vitest: stub, disabled, truncado, correlación, persist, `reportDegraded`, subscribe (12 tests audit; **95** suite).
+- [x] `npm run build`: `dist/` sin `DebugNavMenu` ni strings `obs.editor.*`.
+
+### Fase 6 — Documentación ✅
+
+- [x] [`06-ARCHITECTURE.md`](../../06-ARCHITECTURE.md): sección Observabilidad.
+- [x] Regla en planes futuros: «añadir entradas `obs.*` si introduce flujo async/FS» (catálogo §5).
+- [ ] FIX-012 Fase 0: reproducir R8 con export adjunto — **tarea FIX-012**, no bloquea cierre OBS-001.
 
 ---
 
@@ -604,14 +652,14 @@ Tras Fase 1 de OBS-001:
 
 ## 7. Criterios de aceptación OBS-001
 
-1. Botón debug en `GlobalNav` (**solo dev**) encima de Historial; **ausente en release**.
-2. Con registro **apagado**, no hay entradas en RAM ni en `_debug/logs/`.
-3. «Eliminar registros» vacía `_debug/logs/` y buffer.
-4. «Sesión única al reiniciar»: one-shot §3.8.
+1. Botón debug en `GlobalNav` (**solo dev**) encima de Historial; **ausente en release**. ✅ Fase 2
+2. Con registro **apagado**, no hay entradas en RAM ni en `_debug/logs/`. ✅ (API + toggle)
+3. «Eliminar registros» vacía `_debug/logs/` y buffer. ✅ Fase 2
+4. «Sesión única al reiniciar»: one-shot §3.8. ✅ Fase 2
 5. Archivo `session-*.ndjson` bajo `{repo_root}/_debug/logs/` mientras registro ON y `tauri dev`.
 6. **Release build:** sin botón debug, sin comandos `audit_*`, sin carpeta `_debug`.
-7. Instrumentación ≥5 puntos cuando dev + enabled.
-8. Tests Vitest + `npm run build` OK; verificación §3.11 (sin strings debug en `dist/`).
+7. Instrumentación ≥5 puntos cuando dev + enabled. ✅ Fase 1–3
+8. Tests Vitest + `npm run build` OK; verificación §3.11 (sin strings debug en `dist/`). ✅ (95 tests)
 9. Con registro ON, repro FIX-012 no altera comportamiento funcional (misma lógica; solo observación).
 10. Fallo de escritura en `_debug/` no impide guardar manuscrito ni abrir proyecto.
 
@@ -639,10 +687,8 @@ Tras Fase 1 de OBS-001:
 ## 9. Orden respecto a otras tareas
 
 ```text
-OBS-001 Fase 0–1  (carpeta debug + API + instrumentación)
-OBS-001 Fase 2    (menú GlobalNav — usable para QA)
-  → FIX-012 repro con `NarraLith/_debug/logs/session-*.ndjson`
-OBS-001 Fase 3–6  (visor, resto instrumentación, docs)
+OBS-001 v1  ✅  (módulo cerrado — no reabrir salvo bug crítico del propio audit)
+  → FIX-012 repro con `NarraLith/_debug/logs/session-*.ndjson` (tarea FIX-012)
 ```
 
 **No bloquea** FIX-007 ni FIX-008, pero **desbloquea** FIX-012 con certeza.
@@ -761,17 +807,17 @@ Rust implementa helpers en [`git/snapshot.rs`](../../../src-tauri/src/git/snapsh
 
 ### 13.4 i18n y registro
 
-Añadir `debug.json` (es/en) en [`i18n/config.ts`](../../../src/i18n/config.ts) namespace `debug` — solo importado desde `modules/debug/*` (chunk dev).
+Añadir `debug.json` (es/en) en [`i18n/config.ts`](../../../src/i18n/config.ts) namespace `debug` — solo importado desde `modules/debug/*` (chunk dev). ✅ Fase 2
 
 ---
 
 ## 14. Checklist «no romper nada» pre-merge OBS-001
 
-- [ ] `audit.*` nunca lanza; tests de regresión store/editor existentes verdes (83+ tests).
-- [ ] `save_manuscript` / guardado manual: misma latencia ±10 % con audit ON (smoke manual).
-- [ ] `npm run build` + grep `dist/` sin `DebugNavMenu`, `obs.editor`.
-- [ ] `tauri build` + smoke: sin botón debug; app abre proyecto y guarda.
-- [ ] StrictMode: un solo `session-*.ndjson` por arranque lógico (no dos por doble effect).
-- [ ] Escribir 1000 entradas `obs.ipc.*` no congela UI (buffer + async append).
-- [ ] `_debug/` en `.gitignore`; `git status` limpio tras sesión de debug.
-- [ ] FIX-012 repro con export NDJSON antes de fix funcional.
+- [x] `audit.*` nunca lanza; tests de regresión store/editor existentes verdes (95 tests).
+- [ ] `save_manuscript` / guardado manual: misma latencia ±10 % con audit ON — **smoke manual** (opcional antes de FIX-012).
+- [x] `npm run build` + grep `dist/` sin `DebugNavMenu`, `obs.editor`.
+- [ ] `tauri build` + smoke: sin botón debug; app abre proyecto y guarda — **smoke manual release**.
+- [x] StrictMode: `bootstrapPromise` singleton + guard `bootstrapped` en store → un solo IPC bootstrap por arranque lógico.
+- [ ] Escribir 1000 entradas `obs.ipc.*` no congela UI — **smoke manual** (ring buffer + append async).
+- [x] `_debug/` en `.gitignore`; `git status` limpio tras sesión de debug.
+- [ ] FIX-012 repro con export NDJSON — **tarea FIX-012** (consumidor del módulo).

@@ -1,0 +1,23 @@
+{
+  "menuTitle": "System debug",
+  "loggingEnabled": "System logging: on",
+  "loggingDisabled": "System logging: off",
+  "toggleLogging": "System logging",
+  "clearLogs": "Delete logs",
+  "clearLogsConfirmTitle": "Delete debug logs?",
+  "clearLogsConfirm": "This removes all files in _debug/logs/ and clears the in-memory buffer.",
+  "clearLogsConfirmAction": "Delete",
+  "cancel": "Cancel",
+  "singleSessionNextBoot": "Single session on next restart",
+  "singleSessionHint": "On the next app launch, existing logs are cleared once; then this option turns off automatically.",
+  "openFolder": "Open debug folder",
+  "openFolderFailed": "Could not open the debug folder.",
+  "bootstrapping": "Starting audit…",
+  "viewLog": "View log",
+  "viewerClose": "Close log viewer",
+  "viewerEmpty": "No entries in the buffer yet.",
+  "viewerEntryCount": "{{count}} entries",
+  "viewerShortcutHint": "Ctrl+Shift+L",
+  "viewerFilterPlaceholder": "Filter event, domain, correlation…",
+  "viewerCopy": "Copy visible entries"
+}

@@ -1,0 +1,23 @@
+{
+  "menuTitle": "Depuración del sistema",
+  "loggingEnabled": "Registro del sistema: activado",
+  "loggingDisabled": "Registro del sistema: desactivado",
+  "toggleLogging": "Registro del sistema",
+  "clearLogs": "Eliminar registros",
+  "clearLogsConfirmTitle": "¿Eliminar registros de depuración?",
+  "clearLogsConfirm": "Se borrarán todos los archivos en _debug/logs/ y se vaciará el buffer en memoria.",
+  "clearLogsConfirmAction": "Eliminar",
+  "cancel": "Cancelar",
+  "singleSessionNextBoot": "Sesión única al reiniciar",
+  "singleSessionHint": "En el próximo arranque se borran los logs una vez; después esta opción se desactiva sola.",
+  "openFolder": "Abrir carpeta debug",
+  "openFolderFailed": "No se pudo abrir la carpeta debug.",
+  "bootstrapping": "Iniciando auditoría…",
+  "viewLog": "Ver registro",
+  "viewerClose": "Cerrar visor de registro",
+  "viewerEmpty": "Aún no hay entradas en el buffer.",
+  "viewerEntryCount": "{{count}} entradas",
+  "viewerShortcutHint": "Ctrl+Shift+L",
+  "viewerFilterPlaceholder": "Filtrar evento, dominio, correlación…",
+  "viewerCopy": "Copiar entradas visibles"
+}

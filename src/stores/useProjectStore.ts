@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { invokeCommand, parseAppError } from "@/lib/ipc";
+import { audit } from "@/lib/audit";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useEntitySearchStore } from "@/stores/useEntitySearchStore";
@@ -100,6 +101,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         locale,
       });
       set({ activeProject: meta });
+      audit.info("project", "obs.project.open", { name: meta.name, created: true });
       await get().loadRecents();
       void useCalendarStore.getState().loadCalendar();
       return true;
@@ -118,6 +120,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       const meta = await invokeCommand<ProjectMeta>("open_project", { path });
       set({ activeProject: meta });
+      audit.info("project", "obs.project.open", { name: meta.name });
       await get().loadRecents();
       void useCalendarStore.getState().loadCalendar();
       return true;
@@ -144,6 +147,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   closeProject: async () => {
+    const projectName = get().activeProject?.name;
     set({ isLoading: true, lastErrorKey: null });
     try {
       await invokeCommand("close_project");
@@ -155,6 +159,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       useWorkspaceStore.getState().reset();
       useMapStore.getState().reset();
       set({ activeProject: null });
+      audit.info("project", "obs.project.close", { name: projectName ?? null });
     } catch (err) {
       set({
         lastErrorKey: parseAppError(err)?.key ?? "error.unknown",

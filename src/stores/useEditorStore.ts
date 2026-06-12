@@ -15,6 +15,7 @@ import {
 import { remapPathForRename, tabPathsToCloseOnRemove } from "@/lib/editor/fsSync";
 import { markSelfSave } from "@/lib/editor/fsSync";
 import { manuscriptToParsedDocument } from "@/lib/editor/manuscriptBlocks";
+import { audit } from "@/lib/audit";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import type { EntityDocument, EntityTabState } from "@/lib/types/entity";
 import type { EntityTemplate } from "@/lib/types/entityTemplate";
@@ -569,6 +570,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (state.activeFilePath === filePath) {
       return;
     }
+    const fromPath = state.activeFilePath;
     if (state.tabs[filePath]) {
       const flushed = flushActiveTabToCache(state);
       const tab = flushed.tabs[filePath];
@@ -582,6 +584,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         tabs: flushed.tabs,
         ...activateTabView(tab),
       });
+      audit.info("editor", "obs.editor.tab.switch", { from: fromPath, to: filePath });
       return;
     }
     await get().openDocument(filePath);
@@ -706,6 +709,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         tabs: { ...flushed.tabs, [filePath]: tab },
         ...activateTabView(tab),
       });
+      audit.info("editor", "obs.editor.tab.open", {
+        path: filePath,
+        kind: tab.kind,
+        existing: true,
+      });
       return true;
     }
 
@@ -744,6 +752,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           showExternalReloadDialog: false,
           ...activateTabView(tab),
         }));
+        audit.info("editor", "obs.editor.tab.open", {
+          path: filePath,
+          kind: "entity",
+          existing: false,
+        });
         return true;
       }
 
@@ -773,6 +786,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         showExternalReloadDialog: false,
         ...activateTabView(tab),
       }));
+      audit.info("editor", "obs.editor.tab.open", {
+        path: filePath,
+        kind: "manuscript",
+        existing: false,
+      });
       return true;
     } catch (err) {
       set({
@@ -849,7 +867,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   saveDocument: async () => {
     const { activeFilePath, activeTabKind, manuscript, isDirty } = get();
     if (activeTabKind === "entity") {
-      return get().saveEntity();
+      audit.beginCorrelation(`save-${Date.now()}`);
+      audit.info("editor", "obs.editor.save.start", {
+        path: activeFilePath,
+        kind: "entity",
+      });
+      const ok = await get().saveEntity();
+      audit.info("editor", "obs.editor.save.end", {
+        path: activeFilePath,
+        kind: "entity",
+        ok,
+      });
+      audit.endCorrelation();
+      return ok;
     }
     if (!activeFilePath || !manuscript || !isDirty) {
       return true;
@@ -864,6 +894,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       });
       return false;
     }
+
+    audit.beginCorrelation(`save-${Date.now()}`);
+    audit.info("editor", "obs.editor.save.start", {
+      path: activeFilePath,
+      kind: "manuscript",
+      segmentCount: extracted.segments.length,
+    });
 
     set({ saveStatus: "saving", lastErrorKey: null, lastErrorDetails: null });
     try {
@@ -887,6 +924,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           saveStatus: "saved",
         }),
       }));
+      audit.info("editor", "obs.editor.save.end", {
+        path: activeFilePath,
+        kind: "manuscript",
+        ok: true,
+      });
+      audit.endCorrelation();
       return true;
     } catch (err) {
       const parsed = parseAppError(err);
@@ -900,6 +943,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         lastErrorDetails: parsed?.details ?? null,
         saveStatus: "error",
       });
+      audit.info("editor", "obs.editor.save.end", {
+        path: activeFilePath,
+        kind: "manuscript",
+        ok: false,
+        errorKey: parsed?.key,
+      });
+      audit.endCorrelation();
       return false;
     }
   },
@@ -909,6 +959,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!activeFilePath) {
       return false;
     }
+
+    audit.info("editor", "obs.editor.reload", { path: activeFilePath });
 
     set({ isLoading: true, lastErrorKey: null });
     try {
@@ -946,7 +998,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
 
-  requestExternalReload: () => set({ showExternalReloadDialog: true }),
+  requestExternalReload: () => {
+    audit.info("editor", "obs.editor.reload.dialog", {
+      path: get().activeFilePath,
+    });
+    set({ showExternalReloadDialog: true });
+  },
 
   confirmExternalReload: async () => {
     set({ showExternalReloadDialog: false, isDirty: false });
@@ -1019,6 +1076,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       delete nextTabs[path];
       const nextOrder = useEditorStore.getState().tabOrder.filter((p) => p !== path);
       const wasActive = useEditorStore.getState().activeFilePath === path;
+      const nextActive = wasActive ? (nextOrder[nextOrder.length - 1] ?? null) : null;
+
+      audit.info("editor", "obs.editor.tab.close", {
+        path,
+        reason: "fs-remove",
+        wasActive,
+        nextActive: wasActive ? nextActive : useEditorStore.getState().activeFilePath,
+        removedPaths,
+      });
 
       if (!wasActive) {
         useEditorStore.setState({ tabs: nextTabs, tabOrder: nextOrder });
@@ -1026,7 +1092,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         continue;
       }
 
-      const nextActive = nextOrder[nextOrder.length - 1] ?? null;
       if (!nextActive) {
         extractManuscriptFn = null;
         useEditorStore.setState({
@@ -1129,6 +1194,10 @@ export function requestCloseEditorTab(filePath: string): void {
   }
 
   if (tab.isDirty) {
+    audit.info("editor", "obs.editor.unsaved.dialog", {
+      action: "close",
+      path: filePath,
+    });
     useEditorStore.setState({
       showUnsavedDialog: true,
       unsavedAction: "close",
@@ -1173,51 +1242,64 @@ export function requestCloseEditorTab(filePath: string): void {
 
 /** Guarda todas las pestañas con cambios y vuelve a la pestaña activa original. */
 export async function saveAllOpenTabs(): Promise<boolean> {
-  const initialActivePath = useEditorStore.getState().activeFilePath;
-  const dirtyPaths = useEditorStore
-    .getState()
-    .tabOrder.filter((path) => useEditorStore.getState().tabs[path]?.isDirty);
+  return audit.withCorrelationAsync(`save-all-${Date.now()}`, async () => {
+    const initialActivePath = useEditorStore.getState().activeFilePath;
+    const dirtyPaths = useEditorStore
+      .getState()
+      .tabOrder.filter((path) => useEditorStore.getState().tabs[path]?.isDirty);
 
-  if (dirtyPaths.length === 0) {
-    return true;
-  }
-
-  let allSaved = true;
-
-  for (const path of dirtyPaths) {
-    const stateBefore = useEditorStore.getState();
-    const tab = stateBefore.tabs[path];
-    if (!tab || !tab.isDirty) {
-      continue;
+    if (dirtyPaths.length === 0) {
+      return true;
     }
 
-    if (stateBefore.activeFilePath !== path) {
-      await stateBefore.switchTab(path);
+    audit.info("editor", "obs.editor.saveAll.start", {
+      dirtyPaths,
+      activePath: initialActivePath,
+    });
+
+    let allSaved = true;
+
+    for (const path of dirtyPaths) {
+      const stateBefore = useEditorStore.getState();
+      const tab = stateBefore.tabs[path];
+      if (!tab || !tab.isDirty) {
+        continue;
+      }
+
+      if (stateBefore.activeFilePath !== path) {
+        await stateBefore.switchTab(path);
+      }
+
+      const stateAfterSwitch = useEditorStore.getState();
+      const activeTab = stateAfterSwitch.tabs[path];
+      if (!activeTab || !activeTab.isDirty) {
+        continue;
+      }
+
+      const saved =
+        activeTab.kind === "entity"
+          ? await stateAfterSwitch.saveEntity()
+          : await stateAfterSwitch.saveDocument();
+
+      if (!saved) {
+        allSaved = false;
+      }
     }
 
-    const stateAfterSwitch = useEditorStore.getState();
-    const activeTab = stateAfterSwitch.tabs[path];
-    if (!activeTab || !activeTab.isDirty) {
-      continue;
+    if (
+      initialActivePath &&
+      useEditorStore.getState().activeFilePath !== initialActivePath &&
+      useEditorStore.getState().tabs[initialActivePath]
+    ) {
+      await useEditorStore.getState().switchTab(initialActivePath);
     }
 
-    const saved =
-      activeTab.kind === "entity"
-        ? await stateAfterSwitch.saveEntity()
-        : await stateAfterSwitch.saveDocument();
+    audit.info("editor", "obs.editor.saveAll.end", {
+      ok: allSaved,
+      activePath: useEditorStore.getState().activeFilePath,
+      dirtyPaths,
+    });
 
-    if (!saved) {
-      allSaved = false;
-    }
-  }
-
-  if (
-    initialActivePath &&
-    useEditorStore.getState().activeFilePath !== initialActivePath &&
-    useEditorStore.getState().tabs[initialActivePath]
-  ) {
-    await useEditorStore.getState().switchTab(initialActivePath);
-  }
-
-  return allSaved;
+    return allSaved;
+  });
 }

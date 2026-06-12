@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { invokeCommand, parseAppError } from "@/lib/ipc";
+import { audit } from "@/lib/audit";
 import {
   appendToParentOrderInMap,
   applyCustomOrder,
@@ -17,6 +18,17 @@ import type { ExplorerLayout, ExplorerViewMode, FileTreeNode } from "@/lib/types
 import type { ExplorerDialogState } from "@/modules/explorer/ExplorerDialogs";
 
 const LAYOUT_STORAGE_KEY = "narralith-explorer-layout";
+
+function countTreeNodes(nodes: FileTreeNode[]): number {
+  let count = 0;
+  for (const node of nodes) {
+    count += 1;
+    if (node.children?.length) {
+      count += countTreeNodes(node.children);
+    }
+  }
+  return count;
+}
 
 function loadExplorerLayout(): ExplorerLayout {
   try {
@@ -173,6 +185,10 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
         tree: orderedTree(tree, explorerOrder, viewMode),
         explorerOrder,
       });
+      audit.debug("explorer", "obs.explorer.tree.load", {
+        viewMode,
+        nodeCount: countTreeNodes(tree),
+      });
     } catch (err) {
       set({
         tree: [],
@@ -189,6 +205,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   },
 
   notifyFsChange: (summary) => {
+    audit.debug("explorer", "obs.explorer.fs.notify", { summary });
     set((s) => ({
       revision: s.revision + 1,
       lastFsEvent: summary,

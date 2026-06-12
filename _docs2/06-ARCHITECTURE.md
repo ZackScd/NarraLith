@@ -11,6 +11,7 @@ Mapa del repositorio al **jun 2026**. Actualizar al añadir módulos estructural
 
 ```
 NarraLith/
+├── _debug/             # Solo tauri dev — logs auditoría OBS-001 (gitignore)
 ├── _docs/              # Archivo histórico (ver _docs/README.md)
 ├── _docs2/             # Planificación vigente
 ├── src/                # Frontend React + TypeScript
@@ -19,12 +20,14 @@ NarraLith/
 │   ├── hooks/
 │   ├── i18n/
 │   ├── lib/
+│   │   ├── audit/              # OBS-001 — bus dev-only (stub en release)
 │   │   ├── ipc.ts
-│   │   ├── types/              # Contratos IPC (editor.ts, manuscript.ts, …)
+│   │   ├── types/              # Contratos IPC (editor.ts, manuscript.ts, audit.ts, …)
 │   │   ├── editor/             # documentSync, commitManuscriptLabel, calendar helpers
 │   │   ├── calendar/           # Motor fechas ficticias (Vitest)
 │   │   └── search/             # MiniSearch entidades
 │   ├── modules/
+│   │   ├── debug/              # OBS-001 — DebugNavMenu, AuditLogViewer (lazy, dev-only)
 │   │   ├── editor/             # Lexical, plugins, sidePanel
 │   │   ├── explorer/
 │   │   ├── layout/             # WorkspaceShell, GlobalNav
@@ -46,6 +49,7 @@ NarraLith/
 │   │   ├── fs/                 # CRUD, watcher, reconcile, maps_store
 │   │   ├── wikilink/, references/, refactor/
 │   │   ├── timeline/, checker/, graph/
+│   │   ├── audit/              # OBS-001 — NDJSON, settings, bridge (#[cfg(debug_assertions)])
 │   │   ├── git/                # init ✅; snapshot/diff no compilados
 │   │   └── models/, state/, error.rs
 │   └── resources/
@@ -264,10 +268,29 @@ Registro: `src-tauri/src/lib.rs`. Tipos TS: `src/lib/types/`.
 | DEV | `es` |
 | Producción | `en` |
 
-Namespaces: `global`, `project`, `explorer`, `editor`, `worldbuilding`, `references`, `timeline`, `calendar`, `maps`, `graph`, `settings`, …  
+Namespaces: `global`, `project`, `explorer`, `editor`, `worldbuilding`, `references`, `timeline`, `calendar`, `maps`, `graph`, `settings`, `debug` (solo dev), …  
 **Ausente:** `versions` (UI historial rota).
 
 Config: `src/i18n/config.ts`.
+
+---
+
+## Observabilidad (OBS-001)
+
+Módulo de auditoría **solo en `tauri dev`**. Triple compuerta: `import.meta.env.DEV` + `__AUDIT_ENABLED__` (Vite) + `#[cfg(debug_assertions)]` (Rust). En release, `src/lib/audit/stub.ts` y sin comandos `audit_*`.
+
+| Pieza | Ruta |
+|-------|------|
+| API frontend | `src/lib/audit/` — ring buffer RAM, `audit.info/warn/error`, correlación |
+| Wrapper IPC | `src/lib/audit/auditInvoke.ts` → `src/lib/ipc.ts` |
+| Bootstrap | `src/hooks/useAuditBootstrap.ts` — one-shot, listeners Tauri, persist TS→Rust |
+| UI | `src/modules/debug/` — menú 🐛 encima de Historial; visor `Ctrl+Shift+L` |
+| Backend | `src-tauri/src/audit/` — `settings.json`, `session-*.ndjson`, `bridge.rs` |
+| Persistencia | `{repo_root}/_debug/` — gitignore; **no** AppData ni carpeta de novela |
+
+**Eventos:** prefijo `obs.*` (catálogo en [`specs/plans/OBS-001-system-audit-log.md`](specs/plans/OBS-001-system-audit-log.md) §5). Nuevos flujos async/FS deben añadir filas allí, no APIs paralelas.
+
+**Consumidor inmediato:** repro FIX-012 con `_debug/logs/session-*.ndjson`.
 
 ---
 
@@ -279,4 +302,4 @@ npm test
 npm run build
 ```
 
-**Última actualización:** 2026-06-06
+**Última actualización:** 2026-06-11
