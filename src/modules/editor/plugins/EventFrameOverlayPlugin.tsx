@@ -1,0 +1,79 @@
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import {
+  measureEventFrames,
+  type EventFrameRect,
+} from "@/lib/editor/measureEventFrames";
+import { EventFrameOverlayLayer } from "@/modules/editor/components/EventFrameOverlayLayer";
+import { useLayoutStore } from "@/stores/useLayoutStore";
+
+/** Esquinas del marco de evento sobre el editor (fuera del árbol Lexical). */
+export function EventFrameOverlayPlugin() {
+  const [editor] = useLexicalComposerContext();
+  const [frames, setFrames] = useState<EventFrameRect[]>([]);
+  const rafRef = useRef<number | null>(null);
+  const inlineMetadataVisible = useLayoutStore((s) => s.inlineMetadataVisible);
+
+  const scheduleMeasure = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (!editor.getRootElement()) {
+          return;
+        }
+        setFrames(measureEventFrames(editor));
+      });
+    });
+  }, [editor]);
+
+  useEffect(() => {
+    scheduleMeasure();
+  }, [inlineMetadataVisible, scheduleMeasure]);
+
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      scheduleMeasure();
+    });
+  }, [editor, scheduleMeasure]);
+
+  useEffect(() => {
+    return editor.registerRootListener((rootElement) => {
+      if (!rootElement) {
+        setFrames([]);
+        return;
+      }
+
+      const scrollPanel = rootElement.closest<HTMLElement>(".scroll-panel");
+
+      const resizeObserver = new ResizeObserver(() => {
+        scheduleMeasure();
+      });
+      resizeObserver.observe(rootElement);
+
+      scrollPanel?.addEventListener("scroll", scheduleMeasure, { passive: true });
+      window.addEventListener("resize", scheduleMeasure, { passive: true });
+      scheduleMeasure();
+
+      return () => {
+        resizeObserver.disconnect();
+        scrollPanel?.removeEventListener("scroll", scheduleMeasure);
+        window.removeEventListener("resize", scheduleMeasure);
+        setFrames([]);
+      };
+    });
+  }, [editor, scheduleMeasure]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
+
+  return <EventFrameOverlayLayer frames={frames} />;
+}

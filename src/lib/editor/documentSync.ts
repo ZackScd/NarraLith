@@ -90,7 +90,11 @@ export function hydrateLexicalManuscript(
             segment.barTags ?? [],
           ),
         );
-        appendMultilineBody(root, segment.body);
+        if (segment.body.length === 0) {
+          root.append($createParagraphNode());
+        } else {
+          appendMultilineBody(root, segment.body);
+        }
         if (segment.closed) {
           root.append($createEventFrameBottomNode(segment.id));
         }

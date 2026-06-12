@@ -15,7 +15,7 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | ✅ |
 | 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
-| 7 | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | UX manuscrito | Medio | Pendiente |
+| 7 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | UX manuscrito | Medio–Alto | 🔄 · [plan](plans/FIX-006-event-frame-redesign.md) |
 | 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B 🔄 (FIX-005 implementado, QA pendiente) |
 | — | *(más tareas por definir)* | — | — | — |
 
@@ -814,6 +814,9 @@ Cada escenario documentado en 6.A, 6.B, … tiene: detector, indicador UI, prueb
 ---
 
 ## Tarea 7 — Rediseño visual del marco de evento (manuscrito)
+
+> **Plan de implementación vigente:** [`plans/FIX-006-event-frame-redesign.md`](plans/FIX-006-event-frame-redesign.md).  
+> La §7.3 de este backlog (esquinas dentro de `EventTagBar` / `EventFrameBottom`) queda **supersedida**: las esquinas van en **overlay sobre el editor**, fuera del árbol Lexical.
 
 ### Problema
 

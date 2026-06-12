@@ -51,7 +51,7 @@
 |----|--------|-------|----------|-------------------|
 | **FIX-004** | 🔄 | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/FIX-004-click-empty-focus.md) |
 | **FIX-005** | 🔄 | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/FIX-005-whitespace-persist.md) |
-| **FIX-006** | ⬜ | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | Medio | [`fix-backlog.md` §7](fix-backlog.md) |
+| **FIX-006** | 🔄 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [`fix-backlog.md` §7](fix-backlog.md) · [**plan detallado**](plans/FIX-006-event-frame-redesign.md) |
 | **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app (si no entró en FIX-005) | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
 
 > **FIX-004** y **FIX-005** son la tarea 8 del backlog; conviene hacerlas **juntas** o en secuencia inmediata (mismo módulo editor).
@@ -197,6 +197,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-06 | Plan detallado FIX-003 (`plans/FIX-003-open-folder-os.md`) |
 | 2026-06-06 | Plan detallado FIX-004 (`plans/FIX-004-click-empty-focus.md`) |
 | 2026-06-11 | Plan detallado FIX-005 (`plans/FIX-005-whitespace-persist.md`) |
+| 2026-06-11 | Plan detallado FIX-006 overlay (`plans/FIX-006-event-frame-redesign.md`) |
 
 ---
 

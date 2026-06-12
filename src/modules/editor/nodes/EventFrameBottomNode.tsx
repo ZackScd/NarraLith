@@ -8,16 +8,14 @@ import {
 } from "lexical";
 import type { JSX } from "react";
 
-import { EventFrameBottom } from "@/modules/editor/components/EventFrameBottom";
-
 export interface SerializedEventFrameBottomNode extends SerializedLexicalNode {
   type: "event-frame-bottom";
   version: 1;
   segmentId: string;
 }
 
-/** Cierre visual del marco de evento (`└ … ┘`). Sin hueco cuando etiquetas OFF (§1.3). */
-export class EventFrameBottomNode extends DecoratorNode<JSX.Element> {
+/** Marcador lógico de cierre de evento (`+++end-event`). Esquinas en overlay. */
+export class EventFrameBottomNode extends DecoratorNode<JSX.Element | null> {
   __segmentId: string;
 
   static getType(): string {
@@ -48,8 +46,9 @@ export class EventFrameBottomNode extends DecoratorNode<JSX.Element> {
   createDOM(): HTMLElement {
     const el = document.createElement("div");
     el.setAttribute("data-event-frame-bottom", "true");
+    el.setAttribute("data-event-segment-id", this.__segmentId);
     el.contentEditable = "false";
-    el.className = "narra-event-frame-bottom-host";
+    el.className = "narra-event-frame-marker";
     return el;
   }
 
@@ -65,8 +64,8 @@ export class EventFrameBottomNode extends DecoratorNode<JSX.Element> {
     return { element: document.createElement("span") };
   }
 
-  decorate(): JSX.Element {
-    return <EventFrameBottom segmentId={this.__segmentId} />;
+  decorate(): null {
+    return null;
   }
 
   exportJSON(): SerializedEventFrameBottomNode {

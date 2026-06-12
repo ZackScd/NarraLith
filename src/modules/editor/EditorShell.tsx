@@ -39,6 +39,8 @@ import { HydrateDocumentPlugin } from "@/modules/editor/plugins/HydrateDocumentP
 
 import { InsertInlineTagPlugin } from "@/modules/editor/plugins/InsertInlineTagPlugin";
 
+import { EventFrameOverlayPlugin } from "@/modules/editor/plugins/EventFrameOverlayPlugin";
+
 import { ManuscriptEventCommandsPlugin } from "@/modules/editor/plugins/ManuscriptEventCommandsPlugin";
 
 import { WikiLinkClickPlugin } from "@/modules/editor/plugins/WikiLinkClickPlugin";
@@ -101,16 +103,22 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
           !tagsVisible && "narra-tags-off",
         )}
       >
-        <RichTextPlugin
-          contentEditable={
-            <ContentEditable
-              className="narra-editor-input min-h-[max(17.5rem,100%)] flex-1 resize-none px-1 py-2 text-base outline-none"
-              aria-label="Editor"
+        <div className="narra-editor-surface relative min-h-full flex-1">
+          <div className="narra-editor-input-host relative">
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable
+                  className="narra-editor-input min-h-[max(17.5rem,100%)] resize-none px-1 py-2 text-base outline-none"
+                  aria-label="Editor"
+                />
+              }
+              placeholder={null}
+              ErrorBoundary={LexicalErrorBoundary}
             />
-          }
-          placeholder={null}
-          ErrorBoundary={LexicalErrorBoundary}
-        />
+          </div>
+
+          <EventFrameOverlayPlugin />
+        </div>
 
         <HistoryPlugin />
 

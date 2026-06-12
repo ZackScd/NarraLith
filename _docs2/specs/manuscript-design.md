@@ -31,15 +31,20 @@
 
 prosa libre
 
-┌ [Evento]: nombre | [10.1.0]  🏷️+ ─────────────────┐
-│  texto {{time:10.1.0}} …                            │
-│  al día siguiente {{time:11.1.0}}                   │
-└─────────────────────────────────────────────────────┘
+[eventTest]  [2026-01-17]  [2026-01-18 / 09:00]  [🏷️+]
+┌                                                    ┐
+│  texto {{time:10.1.0}} …                           │
+│  al día siguiente {{time:11.1.0}}                  │
+└                                                    ┘
 
 prosa libre
 ```
 
-**OFF:** sin barra, esquinas, chips ni hueco — solo texto plano.
+- **Chips** (evento, tiempos barra, botón +): fila encima del marco; ocultables con toggle.
+- **Esquinas** `┌ ┐ └ ┘`: overlay sobre el cuerpo del evento, **siempre visibles** (sin líneas horizontales).
+- **UI de fechas:** `AAAA-MM-DD` o `AAAA-MM-DD / HH:00`; en disco sigue `d.m.aaaa`.
+
+**OFF:** sin chips ni botón +; **esquinas del marco siguen visibles**; solo texto plano editable dentro del evento.
 
 ---
 

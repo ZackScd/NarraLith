@@ -23,7 +23,7 @@ export interface SerializedEventTagBarNode extends SerializedLexicalNode {
 }
 
 /**
- * Barra de evento §1.3: `[Evento]: nombre | chips` + 🏷️+ entre esquinas superiores.
+ * Barra de evento: chips de metadata encima del marco (esquinas en overlay).
  * Sustituye `BlockMetadataNode` + etiqueta «BLOQUE N».
  */
 export class EventTagBarNode extends DecoratorNode<JSX.Element> {
@@ -121,6 +121,7 @@ export class EventTagBarNode extends DecoratorNode<JSX.Element> {
   createDOM(): HTMLElement {
     const el = document.createElement("div");
     el.setAttribute("data-event-tag-bar", "true");
+    el.setAttribute("data-event-segment-id", this.__segmentId);
     el.contentEditable = "false";
     el.className = "narra-event-tag-bar";
     return el;
