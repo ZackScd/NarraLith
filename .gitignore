@@ -26,5 +26,8 @@ dist-ssr
 # Tauri / Rust
 src-tauri/target
 
-# NarraLith project data (local dev)
+# NarraLith project data (local dev + SQLite index when testing novels in-repo)
 .narralith/
+
+# OBS-001 — registro debug del entorno de desarrollo (no versionar)
+_debug/

@@ -6,7 +6,7 @@
 | Campo | Valor |
 |-------|--------|
 | **Estado** | 📋 Activo |
-| **Convención ID** | `FIX-###` fixes · `ERAII-###` manuscrito · `MAP-###` mapas · `WB-###` post-worldbuilding |
+| **Convención ID** | `FIX-###` fixes · `OBS-###` observabilidad · `ERAII-###` manuscrito · `MAP-###` mapas · `WB-###` post-worldbuilding |
 | **Regla** | Fixes pequeños → fixes medianos → épica transversal → refactor Era II → refactor Era III → Era IV+ |
 
 ---
@@ -26,7 +26,7 @@
 | Fase | Rango ID | Qué | Tareas |
 |------|----------|-----|--------|
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
-| **B** | FIX-004…007 | Fixes medianos (editor + UX) | 4 |
+| **B** | FIX-004…007, OBS-001, FIX-012 | Fixes medianos (editor + UX) + observabilidad | 7 |
 | **C** | FIX-008…009 | Fixes explorador / timeline | 2 |
 | **D** | FIX-010…011 | Épica «eliminar no rompe» (primeros escenarios) | 2 |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
@@ -49,13 +49,15 @@
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-004** | 🔄 | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/FIX-004-click-empty-focus.md) |
-| **FIX-005** | 🔄 | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/FIX-005-whitespace-persist.md) |
-| **FIX-006** | 🔄 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [FIX-006](plans/FIX-006-event-frame-redesign.md) · QA §9 pendiente |
-| **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/FIX-006.5-event-frame-interactions.md) · QA manual pendiente |
-| **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app (si no entró en FIX-005) | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
+| **FIX-004** | ✅ | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/FIX-004-click-empty-focus.md) |
+| **FIX-005** | ✅ | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/FIX-005-whitespace-persist.md) |
+| **FIX-006** | ✅ | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [FIX-006](plans/FIX-006-event-frame-redesign.md) |
+| **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/FIX-006.5-event-frame-interactions.md) |
+| **OBS-001** | ⬜ | Módulo global de auditoría / registro del sistema (IPC, FS, stores, eventos) | Medio | [**plan detallado**](plans/OBS-001-system-audit-log.md) |
+| **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
+| **FIX-012** | ⬜ | Guardar no debe cambiar pestaña ni **cerrar** tabs abiertas; sin `ghost` espurio en SQLite | Medio | [**plan detallado**](plans/FIX-012-save-tab-navigation.md) |
 
-> **FIX-004** y **FIX-005** son la tarea 8 del backlog; conviene hacerlas **juntas** o en secuencia inmediata (mismo módulo editor).
+> **OBS-001 antes de FIX-012:** diagnosticar con evidencia en `NarraLith/_debug/` (solo `tauri dev`; release sin debug).
 
 ---
 
@@ -151,29 +153,31 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2 | FIX-002 | Quitar panel Referencias ✅ |
 | 3 | FIX-003 | Abrir raíz proyecto en SO ✅ |
 | 4 | FIX-004 | Clic zona vacía editor ✅ |
-| 5 | FIX-005 | Guardado sin recortar espacios/saltos 🔄 |
-| 6 | FIX-006 | Marco evento rediseño |
-| 7 | FIX-007 | Borrador sucio al cerrar app |
-| 8 | FIX-008 | Explorador inline VS Code |
-| 9 | FIX-009 | Timeline chips + conectores |
-| 10 | FIX-010 | Épica 6.A calendario obsoleto |
-| 11 | FIX-011 | Épica 6.B evento WB huérfano |
-| 12 | ERAII-001 | M7 un solo modelo manuscrito |
-| 13 | ERAII-002 | M8 QA manual §7 |
-| 14 | ERAII-003 | Cierre v0.10.0 Era II |
-| 15 | MAP-000 | Inventario purga mapas |
-| 16 | MAP-001 | Persistencia mapas |
-| 17 | MAP-002 | Multi-mundo |
-| 18 | MAP-003 | Lienzo crear/expandir/recortar |
-| 19 | MAP-004 | Modos interactivo / edición |
-| 20 | MAP-005 | Estudio Sketchbook |
-| 21 | MAP-006 | Capas internas |
-| 22 | MAP-007 | Dibujo principal + Desde |
-| 23 | MAP-008 | Secundarios temporales |
-| 24 | MAP-009 | Compositor + timeline T |
-| 25 | MAP-010 | Navegación hotspots |
-| 26 | MAP-011 | Marcas X ubicación (stub) |
-| 27 | MAP-012 | Smoke + purga legacy mapas |
+| 5 | FIX-005 | Guardado sin recortar espacios/saltos ✅ |
+| 6 | FIX-006 | Marco evento rediseño ✅ |
+| 7 | OBS-001 | Auditoría global del sistema (logs reutilizables) |
+| 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, sin ghost SQLite |
+| 9 | FIX-007 | Borrador sucio al cerrar app |
+| 10 | FIX-008 | Explorador inline VS Code |
+| 11 | FIX-009 | Timeline chips + conectores |
+| 12 | FIX-010 | Épica 6.A calendario obsoleto |
+| 13 | FIX-011 | Épica 6.B evento WB huérfano |
+| 14 | ERAII-001 | M7 un solo modelo manuscrito |
+| 15 | ERAII-002 | M8 QA manual §7 |
+| 16 | ERAII-003 | Cierre v0.10.0 Era II |
+| 17 | MAP-000 | Inventario purga mapas |
+| 18 | MAP-001 | Persistencia mapas |
+| 19 | MAP-002 | Multi-mundo |
+| 20 | MAP-003 | Lienzo crear/expandir/recortar |
+| 21 | MAP-004 | Modos interactivo / edición |
+| 22 | MAP-005 | Estudio Sketchbook |
+| 23 | MAP-006 | Capas internas |
+| 24 | MAP-007 | Dibujo principal + Desde |
+| 25 | MAP-008 | Secundarios temporales |
+| 26 | MAP-009 | Compositor + timeline T |
+| 27 | MAP-010 | Navegación hotspots |
+| 28 | MAP-011 | Marcas X ubicación (stub) |
+| 29 | MAP-012 | Smoke + purga legacy mapas |
 | — | WB-* | Post-WB (aplazado) |
 
 ---
@@ -202,6 +206,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | Plan FIX-006.5 interacciones marco — auditoría + fases (`plans/FIX-006.5-event-frame-interactions.md`); sin implementación |
 | 2026-06-11 | Plan detallado FIX-005 (`plans/FIX-005-whitespace-persist.md`) |
 | 2026-06-11 | Plan detallado FIX-006 overlay (`plans/FIX-006-event-frame-redesign.md`) |
+| 2026-06-11 | FIX-012 planificado: guardar cierra pestañas / salta documento; repro QA `meow`+`eventoTest` → `skanlnsklnals` (`plans/FIX-012-save-tab-navigation.md`) |
+| 2026-06-11 | FIX-004…006 marcados ✅; eliminada nota obsoleta backlog §8; añadido OBS-001 (auditoría global) antes de FIX-012 |
+| 2026-06-11 | OBS-001: auditoría código §2.4, inventario IPC, reglas release/payload (`plans/OBS-001-system-audit-log.md`) |
 
 ---
 
