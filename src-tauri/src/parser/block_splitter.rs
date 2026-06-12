@@ -61,11 +61,8 @@ pub fn split_manuscript(raw: &str) -> SplitManuscript {
         .find(raw);
 
     let (header_raw, tail) = match first_event {
-        Some(m) => (
-            raw[..m.start()].trim_end().to_string(),
-            &raw[m.end()..],
-        ),
-        None => (raw.trim_end().to_string(), ""),
+        Some(m) => (raw[..m.start()].to_string(), &raw[m.end()..]),
+        None => (raw.to_string(), ""),
     };
 
     let mut segments = Vec::new();
@@ -91,7 +88,6 @@ fn split_manuscript_tail(tail: &str) -> Vec<RawManuscriptSegment> {
     let mut rest = tail;
 
     loop {
-        rest = rest.trim_start_matches(['\r', '\n']);
         if rest.is_empty() {
             break;
         }
@@ -110,7 +106,7 @@ fn split_manuscript_tail(tail: &str) -> Vec<RawManuscriptSegment> {
         }
 
         let (free, next) = take_until_marker(rest);
-        if !free.trim().is_empty() {
+        if !free.is_empty() {
             segments.push(RawManuscriptSegment::FreeText(free));
         }
         if next.is_empty() {
@@ -256,5 +252,26 @@ sigue abierto";
         let split = split_manuscript(raw);
         assert_eq!(split.segments.len(), 3);
         assert!(matches!(split.segments[1], RawManuscriptSegment::FreeText(_)));
+    }
+
+    #[test]
+    fn manuscript_header_preserves_trailing_newlines() {
+        let raw = "---\ntitle: T\n---\nprosa\n\n+++event\n---\nevent: e\nentity: p/e.md\n---\ncuerpo\n+++end-event\n";
+        let split = split_manuscript(raw);
+        assert!(split.header_raw.contains("prosa\n\n"));
+    }
+
+    #[test]
+    fn manuscript_whitespace_only_free_text_between_events() {
+        let raw = "---\ntitle: T\n---\n\
++++event\n---\nevent: a\nentity: p/a.md\n---\nuno\n+++end-event\n\
+\n\n\
++++event\n---\nevent: b\nentity: p/b.md\n---\ndos\n+++end-event";
+        let split = split_manuscript(raw);
+        assert_eq!(split.segments.len(), 3);
+        match &split.segments[1] {
+            RawManuscriptSegment::FreeText(body) => assert_eq!(body, "\n\n"),
+            _ => panic!("expected whitespace free text"),
+        }
     }
 }

@@ -107,8 +107,13 @@ export function hydrateLexicalManuscript(
   );
 }
 
+/** Une líneas de párrafos top-level sin normalizar whitespace. */
+export function joinManuscriptParagraphLines(lines: string[]): string {
+  return lines.join("\n");
+}
+
 function appendMultilineBody(root: ReturnType<typeof $getRoot>, text: string): void {
-  if (!text.trim()) {
+  if (text.length === 0) {
     return;
   }
   const lines = text.split("\n");
@@ -148,15 +153,15 @@ export function extractManuscriptFromEditor(
   let nextSegmentIndex = 0;
 
   const flushFree = () => {
-    const body = freeLines.join("\n").trim();
-    if (body.length > 0) {
-      segments.push({
-        kind: "freeText",
-        segmentIndex: nextSegmentIndex,
-        body,
-      });
-      nextSegmentIndex += 1;
+    if (freeLines.length === 0) {
+      return;
     }
+    segments.push({
+      kind: "freeText",
+      segmentIndex: nextSegmentIndex,
+      body: joinManuscriptParagraphLines(freeLines),
+    });
+    nextSegmentIndex += 1;
     freeLines = [];
   };
 

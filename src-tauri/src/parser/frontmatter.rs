@@ -38,7 +38,7 @@ pub fn parse_segment(segment: &str) -> SegmentParts {
     };
 
     let yaml_str = &after_open[..yaml_end];
-    let body = after_open[body_start..].trim().to_string();
+    let body = body_after_yaml_fence(&after_open[body_start..]);
 
     if yaml_str.trim().is_empty() {
         return SegmentParts {
@@ -66,6 +66,17 @@ pub fn parse_segment(segment: &str) -> SegmentParts {
             )),
         },
     }
+}
+
+/// Quita como máximo un salto de línea estructural tras la valla `---`; preserva trailing del autor.
+fn body_after_yaml_fence(raw: &str) -> String {
+    let mut body = raw.to_string();
+    if body.starts_with("\r\n") {
+        body = body[2..].to_string();
+    } else if body.starts_with('\n') {
+        body = body[1..].to_string();
+    }
+    body
 }
 
 fn find_closing_fence(text: &str) -> Option<(usize, usize)> {
@@ -205,5 +216,23 @@ prosa";
         assert!(opening.bar_tags.is_empty());
         assert_eq!(opening.name, "solo");
         assert_eq!(body, "prosa");
+    }
+
+    #[test]
+    fn body_after_yaml_fence_preserves_trailing_newlines() {
+        let raw = "---\ntitle: T\n---\nprosa\n\n";
+        let parts = parse_segment(raw);
+        assert_eq!(parts.body, "prosa\n\n");
+    }
+
+    #[test]
+    fn event_opening_preserves_trailing_newlines_in_body() {
+        let raw = "---\nevent: ev\n\
+description:\n\
+entity: Worldbuilding/Eventos/ev.md\n\
+---\n\
+cuerpo\n\n";
+        let (_, body) = parse_event_opening(raw);
+        assert_eq!(body, "cuerpo\n\n");
     }
 }

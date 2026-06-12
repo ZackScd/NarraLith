@@ -33,12 +33,7 @@ pub fn serialize_manuscript(doc: &ParsedManuscript) -> Result<String, AppError> 
 
     for (i, segment) in doc.segments.iter().enumerate() {
         if i > 0 || !doc.file_header.body.is_empty() {
-            if !out.is_empty() && !out.ends_with('\n') {
-                out.push('\n');
-            }
-            if !out.ends_with("\n\n") && !out.is_empty() {
-                out.push('\n');
-            }
+            push_manuscript_segment_separator(&mut out, segment);
         }
         match segment {
             ManuscriptSegment::FreeText(seg) => {
@@ -51,6 +46,25 @@ pub fn serialize_manuscript(doc: &ParsedManuscript) -> Result<String, AppError> 
     }
 
     Ok(out)
+}
+
+fn push_manuscript_segment_separator(out: &mut String, segment: &ManuscriptSegment) {
+    if out.is_empty() {
+        return;
+    }
+    if !out.ends_with('\n') {
+        out.push('\n');
+    }
+    match segment {
+        ManuscriptSegment::Event(_) => {
+            if !out.ends_with("\n\n") {
+                out.push('\n');
+            }
+        }
+        ManuscriptSegment::FreeText(_) => {
+            // Una sola newline tras el bloque anterior; el cuerpo conserva su whitespace.
+        }
+    }
 }
 
 fn serialize_file_header(header: &ManuscriptFileHeader) -> Result<String, AppError> {
@@ -82,10 +96,10 @@ fn serialize_event_segment(event: &EventSegment) -> Result<String, AppError> {
     out.push_str(&yaml_fence_from_map(&map)?);
     out.push_str(&event.body);
     if event.closed {
-        if !event.body.is_empty() && !event.body.ends_with('\n') {
+        if !out.ends_with('\n') {
             out.push('\n');
         }
-        out.push_str("\n+++end-event");
+        out.push_str("+++end-event");
     }
     Ok(out)
 }
@@ -183,7 +197,8 @@ a la semana siguiente {{time:18.1.0}}";
 
         let doc = parse_manuscript_str("Manuscrito/Escena.md", raw).unwrap();
         assert_eq!(doc.file_header.title, "Escena 1");
-        assert_eq!(doc.segments.len(), 4);
+        assert_eq!(doc.file_header.body, "texto fuera\n\n");
+        assert_eq!(doc.segments.len(), 5);
 
         let events: Vec<_> = doc
             .segments

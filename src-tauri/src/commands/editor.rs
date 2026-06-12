@@ -317,14 +317,13 @@ fn build_manuscript_from_save(
                 segment_index,
                 body,
             } => {
-                let trimmed = body.trim().to_string();
-                if trimmed.is_empty() {
+                if body.is_empty() {
                     continue;
                 }
                 segments.push(ManuscriptSegment::FreeText(FreeTextSegment::new(
                     file_path,
                     segment_index,
-                    trimmed,
+                    body,
                 )));
             }
             SaveManuscriptSegmentPayload::Event {

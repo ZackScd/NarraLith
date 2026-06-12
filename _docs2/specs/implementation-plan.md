@@ -50,7 +50,7 @@
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
 | **FIX-004** | 🔄 | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/FIX-004-click-empty-focus.md) |
-| **FIX-005** | ⬜ | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) |
+| **FIX-005** | 🔄 | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/FIX-005-whitespace-persist.md) |
 | **FIX-006** | ⬜ | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | Medio | [`fix-backlog.md` §7](fix-backlog.md) |
 | **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app (si no entró en FIX-005) | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
 
@@ -150,7 +150,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2 | FIX-002 | Quitar panel Referencias ✅ |
 | 3 | FIX-003 | Abrir raíz proyecto en SO ✅ |
 | 4 | FIX-004 | Clic zona vacía editor ✅ |
-| 5 | FIX-005 | Guardado sin recortar espacios/saltos |
+| 5 | FIX-005 | Guardado sin recortar espacios/saltos 🔄 |
 | 6 | FIX-006 | Marco evento rediseño |
 | 7 | FIX-007 | Borrador sucio al cerrar app |
 | 8 | FIX-008 | Explorador inline VS Code |
@@ -196,7 +196,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-06 | Plan detallado FIX-002 (`plans/FIX-002-remove-references-panel.md`) |
 | 2026-06-06 | Plan detallado FIX-003 (`plans/FIX-003-open-folder-os.md`) |
 | 2026-06-06 | Plan detallado FIX-004 (`plans/FIX-004-click-empty-focus.md`) |
+| 2026-06-11 | Plan detallado FIX-005 (`plans/FIX-005-whitespace-persist.md`) |
 
 ---
 
-**Última actualización:** 2026-06-06
+**Última actualización:** 2026-06-11

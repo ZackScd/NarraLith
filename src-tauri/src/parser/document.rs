@@ -60,14 +60,13 @@ pub fn parse_manuscript_str(file_path: &str, raw: &str) -> Result<ParsedManuscri
     for raw_seg in split.segments {
         match raw_seg {
             RawManuscriptSegment::FreeText(body) => {
-                let trimmed = body.trim().to_string();
-                if trimmed.is_empty() {
+                if body.is_empty() {
                     continue;
                 }
                 segments.push(ManuscriptSegment::FreeText(FreeTextSegment::new(
                     file_path,
                     segment_index,
-                    trimmed,
+                    body,
                 )));
                 segment_index += 1;
             }
@@ -251,14 +250,13 @@ pub fn document_to_manuscript(
             }));
             segment_index += 1;
         } else {
-            let body = block.body.trim().to_string();
-            if body.is_empty() {
+            if block.body.is_empty() {
                 continue;
             }
             segments.push(ManuscriptSegment::FreeText(FreeTextSegment::new(
                 file_path,
                 segment_index,
-                body,
+                block.body.clone(),
             )));
             segment_index += 1;
         }
@@ -753,7 +751,7 @@ mod tests {
                    entre\n\
                    +++event\n---\nevent: e2\nentity: p/e2.md\n---\ncuerpo2";
         let doc = parse_manuscript_str("Manuscrito/T.md", raw).unwrap();
-        assert_eq!(doc.file_header.body, "antes");
+        assert_eq!(doc.file_header.body, "antes\n\n");
         assert_eq!(doc.segments.len(), 3);
         assert!(matches!(doc.segments[1], ManuscriptSegment::FreeText(_)));
     }
@@ -775,16 +773,17 @@ mod tests {
                    +++event\n---\nevent: e1\nentity: p/e1.md\n---\ncuerpo\n+++end-event\n\n\
                    +++event\n---\nevent: e2\nentity: p/e2.md\n---\nabierto";
         let manuscript = parse_manuscript_str("Manuscrito/T.md", raw).unwrap();
-        let closed_first = matches!(
-            &manuscript.segments[0],
-            ManuscriptSegment::Event(e) if e.closed
-        );
-        let open_second = matches!(
-            &manuscript.segments[1],
-            ManuscriptSegment::Event(e) if !e.closed
-        );
-        assert!(closed_first);
-        assert!(open_second);
+        let events: Vec<_> = manuscript
+            .segments
+            .iter()
+            .filter_map(|s| match s {
+                ManuscriptSegment::Event(e) => Some(e),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(events.len(), 2);
+        assert!(events[0].closed);
+        assert!(!events[1].closed);
 
         let doc = manuscript_to_document(&manuscript);
         let restored = document_to_manuscript("Manuscrito/T.md", &doc.blocks, Some(&manuscript))
@@ -792,18 +791,18 @@ mod tests {
         let serialized = serialize_manuscript(&restored).unwrap();
         let again = parse_manuscript_str("Manuscrito/T.md", &serialized).unwrap();
 
-        assert!(matches!(
-            &again.segments[0],
-            ManuscriptSegment::Event(e) if e.closed
-        ));
-        assert!(matches!(
-            &again.segments[1],
-            ManuscriptSegment::Event(e) if !e.closed
-        ));
-        assert!(matches!(
-            &again.segments[0],
-            ManuscriptSegment::Event(e) if e.body == "cuerpo"
-        ));
+        let again_events: Vec<_> = again
+            .segments
+            .iter()
+            .filter_map(|s| match s {
+                ManuscriptSegment::Event(e) => Some(e),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(again_events.len(), 2);
+        assert!(again_events[0].closed);
+        assert!(!again_events[1].closed);
+        assert_eq!(again_events[0].body, "cuerpo\n");
     }
 
     #[test]
@@ -952,5 +951,96 @@ mod tests {
             &closed.segments[0],
             ManuscriptSegment::Event(e) if e.closed
         ));
+    }
+
+    #[test]
+    fn parse_manuscript_preserves_trailing_newlines_in_header() {
+        let raw = "---\ntitle: T\n---\nprosa\n\n";
+        let doc = parse_manuscript_str("Manuscrito/T.md", raw).unwrap();
+        assert_eq!(doc.file_header.body, "prosa\n\n");
+    }
+
+    #[test]
+    fn parse_manuscript_preserves_trailing_newlines_in_free_segment() {
+        let raw = "---\ntitle: T\n---\ndespues\n\n\
++++event\n---\nevent: e\nentity: p/e.md\n---\ncuerpo\n+++end-event\n";
+        let doc = parse_manuscript_str("Manuscrito/T.md", raw).unwrap();
+        assert_eq!(doc.file_header.body, "despues\n\n");
+    }
+
+    #[test]
+    fn parse_manuscript_preserves_trailing_newlines_in_event_body() {
+        let raw = "---\ntitle: T\n---\n\
++++event\n---\nevent: e\nentity: p/e.md\n---\ncuerpo\n\n+++end-event\n";
+        let doc = parse_manuscript_str("Manuscrito/T.md", raw).unwrap();
+        let ManuscriptSegment::Event(event) = &doc.segments[0] else {
+            panic!("expected event");
+        };
+        assert_eq!(event.body, "cuerpo\n\n");
+    }
+
+    #[test]
+    fn save_manuscript_round_trip_preserves_trailing_newlines() {
+        use crate::db::ProjectDb;
+        use crate::parser::types::{ManuscriptFileHeader, ManuscriptFormat};
+        use tempfile::TempDir;
+
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        let rel = "Manuscrito/Escena.md";
+        std::fs::create_dir_all(root.join("Manuscrito")).unwrap();
+        std::fs::write(root.join(rel), "---\ntitle: Escena\n---\n\n").unwrap();
+
+        let db = ProjectDb::open(root).unwrap();
+        let entity_path = "Worldbuilding/Eventos/ev.md".to_string();
+        let manuscript = ParsedManuscript {
+            file_path: rel.to_string(),
+            format: ManuscriptFormat::EventSegments,
+            file_header: ManuscriptFileHeader {
+                title: "Escena".to_string(),
+                body: "intro\n\n".to_string(),
+            },
+            segments: vec![
+                ManuscriptSegment::Event(EventSegment {
+                    id: ParsedManuscript::stable_segment_id(rel, 0),
+                    segment_index: 0,
+                    name: "ev".to_string(),
+                    description: String::new(),
+                    entity_path: entity_path.clone(),
+                    bar_tags: Vec::new(),
+                    body: "cuerpo\n\n".to_string(),
+                    inline_tags: Vec::new(),
+                    closed: true,
+                }),
+                ManuscriptSegment::FreeText(FreeTextSegment::new(
+                    rel,
+                    1,
+                    "cola\n\n".to_string(),
+                )),
+            ],
+        };
+
+        let saved = save_manuscript_and_persist(&db, root, rel, manuscript).unwrap();
+        assert_eq!(saved.file_header.body, "intro\n\n");
+        match &saved.segments[0] {
+            ManuscriptSegment::Event(event) => assert_eq!(event.body, "cuerpo\n\n"),
+            _ => panic!("expected event"),
+        }
+        match &saved.segments[1] {
+            ManuscriptSegment::FreeText(seg) => assert_eq!(seg.body, "cola\n\n"),
+            _ => panic!("expected free text"),
+        }
+
+        let on_disk = std::fs::read_to_string(root.join(rel)).unwrap();
+        let reparsed = parse_manuscript_str(rel, &on_disk).unwrap();
+        assert_eq!(reparsed.file_header.body, "intro\n\n");
+        match &reparsed.segments[0] {
+            ManuscriptSegment::Event(event) => assert_eq!(event.body, "cuerpo\n\n"),
+            _ => panic!("expected event"),
+        }
+        match &reparsed.segments[1] {
+            ManuscriptSegment::FreeText(seg) => assert_eq!(seg.body, "cola\n\n"),
+            _ => panic!("expected free text"),
+        }
     }
 }

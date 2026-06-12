@@ -16,7 +16,7 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
 | 7 | Rediseño marco de evento: chips unificados, fecha ISO, solo esquinas | UX manuscrito | Medio | Pendiente |
-| 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B pendiente (FIX-005) |
+| 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B 🔄 (FIX-005 implementado, QA pendiente) |
 | — | *(más tareas por definir)* | — | — | — |
 
 ---
