@@ -13,6 +13,8 @@ import { beginEditorSession } from "@/lib/editor/editorSyncGuard";
 import {
   clearManuscriptTabsSession,
   isPersistableManuscriptPath,
+  type ManuscriptTabDraft,
+  type ManuscriptTabsSession,
 } from "@/lib/editor/lastManuscriptFile";
 import {
   beginSaveBatch,
@@ -28,7 +30,7 @@ import {
 import { manuscriptToParsedDocument } from "@/lib/editor/manuscriptBlocks";
 import { audit } from "@/lib/audit";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
-import { projectPathsEqual } from "@/lib/pathUtils";
+import { normalizeProjectPath, projectPathsEqual } from "@/lib/pathUtils";
 import type { EntityDocument, EntityTabState } from "@/lib/types/entity";
 import type { EntityTemplate } from "@/lib/types/entityTemplate";
 import type { ParsedDocument } from "@/lib/types/editor";
@@ -191,6 +193,10 @@ interface EditorState {
   reorderTabs: (fromIndex: number, toIndex: number) => void;
   closeDocument: () => void;
   reset: () => void;
+  /** Snapshot para localStorage: pestañas + borradores sucios (FIX-007). */
+  getManuscriptSessionSnapshot: () => ManuscriptTabsSession | null;
+  /** Restaura borrador sucio sobre pestaña ya abierta desde disco. */
+  applyPersistedTabDraft: (filePath: string, draft: ManuscriptTabDraft) => void;
 }
 
 let extractManuscriptFn: ExtractManuscriptFn | null = null;
@@ -1301,6 +1307,88 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   closeDocument: () => {
     extractManuscriptFn = null;
     set({ ...initialState });
+  },
+
+  getManuscriptSessionSnapshot: () => {
+    const state = get();
+    const { tabs } = flushActiveTabToCache(state);
+    const tabOrder = state.tabOrder
+      .filter(isPersistableManuscriptPath)
+      .map((path) => normalizeProjectPath(path));
+
+    if (tabOrder.length === 0) {
+      return null;
+    }
+
+    const activeCandidate = state.activeFilePath
+      ? normalizeProjectPath(state.activeFilePath)
+      : null;
+    const activeFilePath =
+      activeCandidate && tabOrder.includes(activeCandidate)
+        ? activeCandidate
+        : (tabOrder[tabOrder.length - 1] ?? null);
+
+    const drafts: Record<string, ManuscriptTabDraft> = {};
+    for (const path of tabOrder) {
+      const tab = tabs[path];
+      if (tab?.kind !== "manuscript" || !tab.isDirty || !tab.manuscript) {
+        continue;
+      }
+      drafts[path] = {
+        manuscript: { ...tab.manuscript, filePath: path },
+        savedBodyFingerprint: tab.savedBodyFingerprint,
+      };
+    }
+
+    return {
+      tabOrder,
+      activeFilePath,
+      ...(Object.keys(drafts).length > 0 ? { drafts } : {}),
+    };
+  },
+
+  applyPersistedTabDraft: (filePath, draft) => {
+    const path = normalizeProjectPath(filePath);
+    if (!isPersistableManuscriptPath(path)) {
+      return;
+    }
+
+    const manuscript: ParsedManuscript = {
+      ...draft.manuscript,
+      filePath: path,
+    };
+    const document = manuscriptToParsedDocument(manuscript);
+
+    set((state) => {
+      const tab = state.tabs[path];
+      if (!tab || tab.kind !== "manuscript") {
+        return state;
+      }
+
+      const tabs = syncTabInMap(state.tabs, path, {
+        manuscript,
+        document,
+        savedBodyFingerprint: draft.savedBodyFingerprint,
+        isDirty: true,
+        saveStatus: "idle",
+      });
+
+      const updated = tabs[path];
+      if (!updated) {
+        return { tabs };
+      }
+
+      if (projectPathsEqual(state.activeFilePath, path)) {
+        return {
+          tabs,
+          ...activateTabView(updated),
+          isDirty: true,
+          saveStatus: "idle" as SaveStatus,
+        };
+      }
+
+      return { tabs };
+    });
   },
 
   reset: () => {

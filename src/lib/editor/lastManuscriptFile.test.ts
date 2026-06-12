@@ -121,4 +121,74 @@ describe("lastManuscriptFile", () => {
     expect(isPersistableManuscriptPath("Worldbuilding/Personajes/a.md")).toBe(false);
     expect(isPersistableManuscriptPath("Manuscrito/a.txt")).toBe(false);
   });
+
+  it("stores and restores dirty drafts for open tabs", () => {
+    const manuscript = {
+      filePath: "Manuscrito/a.md",
+      format: "eventSegments" as const,
+      fileHeader: { title: "A", body: "draft body" },
+      segments: [],
+    };
+    setManuscriptTabsSession(PROJECT, {
+      tabOrder: ["Manuscrito/a.md", "Manuscrito/b.md"],
+      activeFilePath: "Manuscrito/a.md",
+      drafts: {
+        "Manuscrito/a.md": {
+          manuscript,
+          savedBodyFingerprint: "baseline-a",
+        },
+        "Manuscrito/b.md": {
+          manuscript: {
+            ...manuscript,
+            filePath: "Manuscrito/b.md",
+            fileHeader: { title: "B", body: "other" },
+          },
+          savedBodyFingerprint: "baseline-b",
+        },
+      },
+    });
+
+    expect(getManuscriptTabsSession(PROJECT)).toEqual({
+      tabOrder: ["Manuscrito/a.md", "Manuscrito/b.md"],
+      activeFilePath: "Manuscrito/a.md",
+      drafts: {
+        "Manuscrito/a.md": {
+          manuscript: { ...manuscript, filePath: "Manuscrito/a.md" },
+          savedBodyFingerprint: "baseline-a",
+        },
+        "Manuscrito/b.md": {
+          manuscript: {
+            filePath: "Manuscrito/b.md",
+            format: "eventSegments",
+            fileHeader: { title: "B", body: "other" },
+            segments: [],
+          },
+          savedBodyFingerprint: "baseline-b",
+        },
+      },
+    });
+  });
+
+  it("drops drafts for paths not in tabOrder", () => {
+    const manuscript = {
+      filePath: "Manuscrito/a.md",
+      format: "eventSegments" as const,
+      fileHeader: { title: "A", body: "" },
+      segments: [],
+    };
+    setManuscriptTabsSession(PROJECT, {
+      tabOrder: ["Manuscrito/a.md"],
+      activeFilePath: "Manuscrito/a.md",
+      drafts: {
+        "Manuscrito/a.md": { manuscript, savedBodyFingerprint: "x" },
+        "Manuscrito/orphan.md": { manuscript, savedBodyFingerprint: "y" },
+      },
+    });
+    expect(getManuscriptTabsSession(PROJECT)?.drafts).toEqual({
+      "Manuscrito/a.md": {
+        manuscript: { ...manuscript, filePath: "Manuscrito/a.md" },
+        savedBodyFingerprint: "x",
+      },
+    });
+  });
 });

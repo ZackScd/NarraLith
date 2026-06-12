@@ -19,7 +19,7 @@
 | Evento sin etiquetas | Válido; barra solo `[Evento]: nombre` |
 | Sin tiempo | Sin filas en timeline para ese evento |
 | Commit etiqueta | Aplica al editor en RAM; disco con guardado manual (§1.1) |
-| Borrador sucio | **Debe persistir al cerrar** la app (pendiente II.4+) |
+| Borrador sucio | **Debe persistir al cerrar** la app (FIX-007 ✅) |
 | Ubicación | Era III+; parser tolera `{{location:…}}` sin UI en Era II |
 
 ### 1.1 Guardado y pestañas (FIX-012)
@@ -126,7 +126,7 @@ Prioridad resolver `[[…]]`: `Worldbuilding/Eventos/` sobre homónimos en `Manu
 - [ ] `title` ↔ rename archivo
 - [ ] Evento solo nombre → sin `barTags`; sin timeline por tiempo
 - [ ] Tiempo en staging → solo lo confirmado en `barTags`
-- [ ] Guardado manual; borrador sucio persistente al cerrar app
+- [x] Guardado manual; borrador sucio persistente al cerrar app
 - [ ] Botón único `[-]`/`[+]` según §3
 - [ ] Shift+Enter conserva saltos de línea al guardar
 - [ ] Guardar con evento nuevo no falla (sync WB + round-trip §4)

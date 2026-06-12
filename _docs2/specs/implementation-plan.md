@@ -54,7 +54,7 @@
 | **FIX-006** | ✅ | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [FIX-006](plans/FIX-006-event-frame-redesign.md) |
 | **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/FIX-006.5-event-frame-interactions.md) |
 | **OBS-001** | ✅ | Módulo global de auditoría / registro del sistema (IPC, FS, stores, eventos) | Medio | [**plan detallado**](plans/OBS-001-system-audit-log.md) |
-| **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
+| **FIX-007** | ✅ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [**plan detallado**](plans/FIX-007-dirty-draft-persist.md) |
 | **FIX-012** | ✅ | Guardar: tabs estables, sin ghost, save-all sin switch (2b) | Medio | [**plan detallado**](plans/FIX-012-save-tab-navigation.md) |
 
 > **OBS-001 antes de FIX-012:** diagnosticar con evidencia en `NarraLith/_debug/` (solo `tauri dev`; release sin debug).
@@ -65,7 +65,7 @@
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-008** | ⬜ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) |
+| **FIX-008** | ⬜ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan detallado**](plans/FIX-008-explorer-inline-create.md) |
 | **FIX-009** | ⬜ | Timeline: chip doble (archivo + evento) y conectores por evento | Medio–Alto | [`fix-backlog.md` §3](fix-backlog.md) |
 
 ---
@@ -157,7 +157,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 6 | FIX-006 | Marco evento rediseño ✅ |
 | 7 | OBS-001 | Auditoría global del sistema (logs reutilizables) ✅ |
 | 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, save-all sin switch ✅ |
-| 9 | FIX-007 | Borrador sucio al cerrar app |
+| 9 | FIX-007 | Borrador sucio al cerrar app ✅ |
 | 10 | FIX-008 | Explorador inline VS Code |
 | 11 | FIX-009 | Timeline chips + conectores |
 | 12 | FIX-010 | Épica 6.A calendario obsoleto |
@@ -211,6 +211,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | OBS-001 implementado v1: audit TS+Rust, menú debug, visor, `_debug/logs/`; plan marcado ✅ |
 | 2026-06-11 | FIX-012 implementado: reconcile por kind, guard self-save en remove, Ctrl+S/Ctrl+Shift+S, saveAll restore |
 | 2026-06-11 | FIX-012 Fase 2b: save-all desde caché sin switchTab; AtPath saves + batch saveStatus |
+| 2026-06-11 | FIX-007: borrador sucio manuscrito en localStorage al cerrar; restore drafts (`plans/FIX-007-dirty-draft-persist.md`) |
+| 2026-06-11 | FIX-007 QA cerrado: NDJSON `session-1781307782589-1952` (cierre) + `session-1781307807051-26148` (reopen, `draftCount: 2`) |
 
 ---
 

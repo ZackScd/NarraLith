@@ -79,6 +79,18 @@ export function useRestoreLastManuscriptFile(): void {
           ? activeCandidate
           : openedPaths[openedPaths.length - 1]!;
 
+      const draftPaths: string[] = [];
+      if (session.drafts) {
+        const { applyPersistedTabDraft } = useEditorStore.getState();
+        for (const path of openedPaths) {
+          const draft = session.drafts[path];
+          if (draft) {
+            applyPersistedTabDraft(path, draft);
+            draftPaths.push(path);
+          }
+        }
+      }
+
       await switchTab(activePath);
       if (cancelled) {
         return;
@@ -88,6 +100,7 @@ export function useRestoreLastManuscriptFile(): void {
         setManuscriptTabsSession(rootPath, {
           tabOrder: openedPaths,
           activeFilePath: activePath,
+          drafts: session.drafts,
         });
       }
 
@@ -98,6 +111,8 @@ export function useRestoreLastManuscriptFile(): void {
         tabCount: openedPaths.length,
         activePath,
         paths: openedPaths,
+        draftCount: draftPaths.length,
+        draftPaths,
       });
     };
 

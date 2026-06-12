@@ -1,54 +1,79 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-import {
-  isPersistableManuscriptPath,
-  setManuscriptTabsSession,
-} from "@/lib/editor/lastManuscriptFile";
+import { audit } from "@/lib/audit";
+import { setManuscriptTabsSession } from "@/lib/editor/lastManuscriptFile";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 
-function deriveManuscriptSession(tabOrder: string[], activeFilePath: string | null) {
-  const manuscriptOrder = tabOrder.filter(isPersistableManuscriptPath);
-  if (manuscriptOrder.length === 0) {
-    return null;
-  }
-
-  const active =
-    activeFilePath && isPersistableManuscriptPath(activeFilePath)
-      ? activeFilePath
-      : (manuscriptOrder[manuscriptOrder.length - 1] ?? null);
-
-  return { tabOrder: manuscriptOrder, activeFilePath: active };
-}
+const PERSIST_DEBOUNCE_MS = 400;
 
 /**
- * Persiste en localStorage las pestañas de manuscrito abiertas (orden + activa).
+ * Persiste en localStorage pestañas de manuscrito (orden + activa + borradores sucios, FIX-007).
  */
 export function usePersistManuscriptTabs(): void {
   const rootPath = useProjectStore((s) => s.activeProject?.rootPath);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!rootPath) {
       return;
     }
 
-    const persist = () => {
-      const { tabOrder, activeFilePath } = useEditorStore.getState();
-      const session = deriveManuscriptSession(tabOrder, activeFilePath);
+    const persistNow = () => {
+      const session = useEditorStore.getState().getManuscriptSessionSnapshot();
       if (!session) {
         return;
       }
       setManuscriptTabsSession(rootPath, session);
+      audit.debug("editor", "obs.editor.session.persist", {
+        tabCount: session.tabOrder.length,
+        draftCount: session.drafts ? Object.keys(session.drafts).length : 0,
+        activePath: session.activeFilePath,
+      });
     };
 
-    return useEditorStore.subscribe((state, prev) => {
-      if (
-        state.tabOrder === prev.tabOrder &&
-        state.activeFilePath === prev.activeFilePath
-      ) {
-        return;
+    const persistDebounced = () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
       }
-      persist();
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        persistNow();
+      }, PERSIST_DEBOUNCE_MS);
+    };
+
+    const unsub = useEditorStore.subscribe((state, prev) => {
+      if (
+        state.tabOrder !== prev.tabOrder ||
+        state.activeFilePath !== prev.activeFilePath ||
+        state.tabs !== prev.tabs ||
+        state.isDirty !== prev.isDirty ||
+        state.manuscript !== prev.manuscript
+      ) {
+        persistDebounced();
+      }
     });
+
+    const flushOnHide = () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      persistNow();
+    };
+
+    window.addEventListener("pagehide", flushOnHide);
+    window.addEventListener("beforeunload", flushOnHide);
+
+    return () => {
+      unsub();
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      window.removeEventListener("pagehide", flushOnHide);
+      window.removeEventListener("beforeunload", flushOnHide);
+      flushOnHide();
+    };
   }, [rootPath]);
 }
