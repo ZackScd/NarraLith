@@ -39,6 +39,8 @@ import { HydrateDocumentPlugin } from "@/modules/editor/plugins/HydrateDocumentP
 
 import { InsertInlineTagPlugin } from "@/modules/editor/plugins/InsertInlineTagPlugin";
 
+import { EventFrameDeletePlugin, EventFramePendingClearPlugin } from "@/modules/editor/plugins/EventFrameDeletePlugin";
+
 import { EventFrameOverlayPlugin } from "@/modules/editor/plugins/EventFrameOverlayPlugin";
 
 import { ManuscriptEventCommandsPlugin } from "@/modules/editor/plugins/ManuscriptEventCommandsPlugin";
@@ -131,6 +133,10 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <ExtractBlocksPlugin />
 
         <ManuscriptEventCommandsPlugin />
+
+        <EventFrameDeletePlugin />
+
+        <EventFramePendingClearPlugin />
 
         <InsertInlineTagPlugin />
 

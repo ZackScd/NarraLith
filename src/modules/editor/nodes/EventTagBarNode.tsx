@@ -196,5 +196,5 @@ export function $createEventTagBarNode(
 export function $isEventTagBarNode(
   node: LexicalNode | null | undefined,
 ): node is EventTagBarNode {
-  return node instanceof EventTagBarNode;
+  return node != null && node.getType() === EventTagBarNode.getType();
 }

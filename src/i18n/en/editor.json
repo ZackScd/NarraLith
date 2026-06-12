@@ -76,6 +76,12 @@
     "eventCloseBlock": "Close event block",
     "eventExpandBlock": "Expand event block"
   },
+  "eventFrame": {
+    "deleteEventPending": "Click to mark event for deletion",
+    "deleteEventConfirm": "Click again to remove event from manuscript",
+    "removeEndPending": "Click to remove event end",
+    "removeEndConfirm": "Click again to open the event"
+  },
   "metadata": {
     "time": "Time",
     "location": "Location",

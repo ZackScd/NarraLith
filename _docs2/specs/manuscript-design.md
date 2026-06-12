@@ -53,10 +53,15 @@ prosa libre
 | Acción | Comportamiento |
 |--------|----------------|
 | Crear evento | Panel → nombre/descripción → «Añadir etiqueta al documento»; solo evento crea bloque; sync WB `Eventos/` |
-| `[-]` / `[+]` | **Un solo botón** según contexto: abierto → `[-]` cierra en cursor; cerrado → `[+]` expande hasta fin o siguiente evento |
+| `[-]` | Evento **abierto** → cierra en el párrafo del cursor + párrafo libre debajo (D3). Evento **cerrado** sin prosa que absorber → **reposiciona** el cierre en el párrafo del cursor (los párrafos inferiores pasan a prosa libre) |
+| `[+]` | Evento **cerrado**, cursor en cuerpo, hay prosa libre debajo → baja el margen inferior hasta EOF o siguiente evento |
+| Borrar chip evento | Two-step (rojo → confirmar): quita barra + cuerpo + cierre del **manuscrito**; la ficha WB **no** se borra (queda huérfana → FIX-011 §6.B) |
+| Quitar cierre | Two-step en esquinas inferiores `└`/`┘`: solo elimina `+++end-event` lógico; el evento pasa a abierto |
 | Toggle etiquetas | Persistente en `localStorage` (ON/OFF al reiniciar) |
 | Tiempo | Inline en cursor o `barTags` en staging — **no** inserta `+++` |
-| Escribir en evento cerrado | Sin `[+]` — escribir dentro del marco |
+| Escribir en evento cerrado | Sin `[+]` disponible si no hay prosa absorbible debajo — escribir dentro del marco |
+
+**Panel:** un solo botón `[-]` / `[+]` — abierto o cerrado sin margen que bajar → `[-]`; cerrado con prosa absorbible debajo → `[+]`.
 
 ---
 

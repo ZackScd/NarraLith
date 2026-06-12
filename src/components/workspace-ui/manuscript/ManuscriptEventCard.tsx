@@ -83,12 +83,13 @@ export function ManuscriptEventCard({
 
   const canClose =
     activeEventContext.inEvent &&
-    !activeEventContext.eventClosed &&
+    (!activeEventContext.eventClosed || !activeEventContext.canExpandMargin) &&
     Boolean(activeFilePath);
 
   const canExpand =
     activeEventContext.inEvent &&
     activeEventContext.eventClosed &&
+    activeEventContext.canExpandMargin &&
     Boolean(activeFilePath);
 
   const toggleEventSpan = canClose || canExpand;

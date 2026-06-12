@@ -6,6 +6,8 @@ import {
   type EventFrameRect,
 } from "@/lib/editor/measureEventFrames";
 import { EventFrameOverlayLayer } from "@/modules/editor/components/EventFrameOverlayLayer";
+import { useEditorStore } from "@/stores/useEditorStore";
+import { useEventFramePendingStore } from "@/stores/useEventFramePendingStore";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 
 /** Esquinas del marco de evento sobre el editor (fuera del árbol Lexical). */
@@ -14,6 +16,20 @@ export function EventFrameOverlayPlugin() {
   const [frames, setFrames] = useState<EventFrameRect[]>([]);
   const rafRef = useRef<number | null>(null);
   const inlineMetadataVisible = useLayoutStore((s) => s.inlineMetadataVisible);
+  const pendingEndDelete = useEventFramePendingStore((s) => s.pendingEndDelete);
+  const setPendingEndDelete = useEventFramePendingStore((s) => s.setPendingEndDelete);
+  const removeEventEndFromEditor = useEditorStore((s) => s.removeEventEndFromEditor);
+
+  const handleBottomCornerClick = useCallback(
+    (segmentId: string) => {
+      if (pendingEndDelete === segmentId) {
+        removeEventEndFromEditor(segmentId);
+        return;
+      }
+      setPendingEndDelete(segmentId);
+    },
+    [pendingEndDelete, removeEventEndFromEditor, setPendingEndDelete],
+  );
 
   const scheduleMeasure = useCallback(() => {
     if (rafRef.current !== null) {
@@ -75,5 +91,11 @@ export function EventFrameOverlayPlugin() {
     };
   }, []);
 
-  return <EventFrameOverlayLayer frames={frames} />;
+  return (
+    <EventFrameOverlayLayer
+      frames={frames}
+      pendingEndDelete={pendingEndDelete}
+      onBottomCornerClick={handleBottomCornerClick}
+    />
+  );
 }

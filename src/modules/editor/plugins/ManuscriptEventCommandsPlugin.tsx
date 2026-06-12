@@ -81,6 +81,7 @@ export function ManuscriptEventCommandsPlugin() {
         { discrete: true },
       );
       if (ok) {
+        editor.focus();
         useEditorStore.getState().markDirty();
         useEditorStore.getState().reconcileManuscriptFromEditor();
       }

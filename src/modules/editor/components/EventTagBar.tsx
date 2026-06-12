@@ -31,7 +31,7 @@ export function EventTagBar({ segmentId, eventName, barTags }: EventTagBarProps)
       className="narra-event-tags-row flex flex-wrap items-center gap-1.5 py-1"
       data-event-segment-id={segmentId}
     >
-      <EventTagChip eventName={eventName} />
+      <EventTagChip segmentId={segmentId} eventName={eventName} />
       {timeTags.map((tag) => (
         <TimeTagChip
           key={`${tag.type}-${tag.value}-${tag.hour ?? ""}`}

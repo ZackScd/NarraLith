@@ -51,7 +51,8 @@
 |----|--------|-------|----------|-------------------|
 | **FIX-004** | 🔄 | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/FIX-004-click-empty-focus.md) |
 | **FIX-005** | 🔄 | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/FIX-005-whitespace-persist.md) |
-| **FIX-006** | 🔄 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [`fix-backlog.md` §7](fix-backlog.md) · [**plan detallado**](plans/FIX-006-event-frame-redesign.md) |
+| **FIX-006** | 🔄 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [FIX-006](plans/FIX-006-event-frame-redesign.md) · QA §9 pendiente |
+| **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/FIX-006.5-event-frame-interactions.md) · QA manual pendiente |
 | **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app (si no entró en FIX-005) | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
 
 > **FIX-004** y **FIX-005** son la tarea 8 del backlog; conviene hacerlas **juntas** o en secuencia inmediata (mismo módulo editor).
@@ -196,6 +197,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-06 | Plan detallado FIX-002 (`plans/FIX-002-remove-references-panel.md`) |
 | 2026-06-06 | Plan detallado FIX-003 (`plans/FIX-003-open-folder-os.md`) |
 | 2026-06-06 | Plan detallado FIX-004 (`plans/FIX-004-click-empty-focus.md`) |
+| 2026-06-11 | FIX-006.5 implementado: contexto evento, `[-]`/`[+]`, borrado chip/cierre two-step, tests Vitest |
+| 2026-06-11 | FIX-006.5: decisiones D1–D3 cerradas en plan (huérfano WB, expand absorb, cursor post-[-]) |
+| 2026-06-11 | Plan FIX-006.5 interacciones marco — auditoría + fases (`plans/FIX-006.5-event-frame-interactions.md`); sin implementación |
 | 2026-06-11 | Plan detallado FIX-005 (`plans/FIX-005-whitespace-persist.md`) |
 | 2026-06-11 | Plan detallado FIX-006 overlay (`plans/FIX-006-event-frame-redesign.md`) |
 

@@ -33,6 +33,7 @@ const emptyEventContext: ActiveEventContext = {
   segmentIndex: null,
   inEvent: false,
   eventClosed: false,
+  canExpandMargin: false,
 };
 
 export interface EditorTab {
@@ -67,6 +68,8 @@ type UpdateEventFn = (params: {
   barTags: BarTag[] | null;
 }) => boolean;
 type AppendBarTimeFn = (timeTag: string, hour?: number | null) => boolean;
+type RemoveEventFn = (segmentId: string) => boolean;
+type RemoveEventEndFn = (segmentId: string) => boolean;
 
 type UnsavedAction = "open" | "close";
 
@@ -100,6 +103,8 @@ interface EditorState {
   setCommitEventFn: (fn: CommitEventFn | null) => void;
   setUpdateEventFn: (fn: UpdateEventFn | null) => void;
   setAppendBarTimeFn: (fn: AppendBarTimeFn | null) => void;
+  setRemoveEventFn: (fn: RemoveEventFn | null) => void;
+  setRemoveEventEndFn: (fn: RemoveEventEndFn | null) => void;
   /** Sincroniza `manuscript` desde Lexical sin escribir a disco. */
   reconcileManuscriptFromEditor: () => boolean;
   setActiveEventContext: (
@@ -122,6 +127,8 @@ interface EditorState {
     barTags: BarTag[] | null;
   }) => boolean;
   appendBarTimeToActiveEvent: (timeTag: string, hour?: number | null) => boolean;
+  removeEventFromEditor: (segmentId: string) => boolean;
+  removeEventEndFromEditor: (segmentId: string) => boolean;
   labelCommitDepth: number;
   autosaveSuppressUntil: number;
   beginLabelCommit: () => void;
@@ -165,6 +172,8 @@ let expandEventFn: ExpandEventFn | null = null;
 let commitEventFn: CommitEventFn | null = null;
 let updateEventFn: UpdateEventFn | null = null;
 let appendBarTimeFn: AppendBarTimeFn | null = null;
+let removeEventFn: RemoveEventFn | null = null;
+let removeEventEndFn: RemoveEventEndFn | null = null;
 
 function manuscriptTabFields(manuscript: ParsedManuscript) {
   return {
@@ -395,6 +404,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     appendBarTimeFn = fn;
   },
 
+  setRemoveEventFn: (fn) => {
+    removeEventFn = fn;
+  },
+
+  setRemoveEventEndFn: (fn) => {
+    removeEventEndFn = fn;
+  },
+
   reconcileManuscriptFromEditor: () => {
     const { activeFilePath, activeTabKind, manuscript } = get();
     if (!activeFilePath || activeTabKind === "entity" || !manuscript) {
@@ -450,6 +467,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   appendBarTimeToActiveEvent: (timeTag, hour) =>
     appendBarTimeFn?.(timeTag, hour) ?? false,
+
+  removeEventFromEditor: (segmentId) => removeEventFn?.(segmentId) ?? false,
+
+  removeEventEndFromEditor: (segmentId) => removeEventEndFn?.(segmentId) ?? false,
 
   setActiveBlockIndex: (index) => {
     const path = get().activeFilePath;

@@ -89,5 +89,5 @@ export function $createEventFrameBottomNode(segmentId: string): EventFrameBottom
 export function $isEventFrameBottomNode(
   node: LexicalNode | null | undefined,
 ): node is EventFrameBottomNode {
-  return node instanceof EventFrameBottomNode;
+  return node != null && node.getType() === EventFrameBottomNode.getType();
 }

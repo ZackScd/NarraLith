@@ -10,6 +10,7 @@ export default defineConfig(async () => ({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    environmentMatchGlobs: [["src/lib/editor/documentSync*.test.ts", "jsdom"]],
   },
   resolve: {
     alias: {

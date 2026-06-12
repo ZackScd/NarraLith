@@ -19,7 +19,6 @@ import {
 import {
   $createEventTagBarNode,
   $isEventTagBarNode,
-  type EventTagBarNode,
 } from "@/modules/editor/nodes/EventTagBarNode";
 import type { SaveManuscriptSegmentPayload } from "@/lib/types/editor";
 import type {
@@ -34,7 +33,25 @@ export interface ActiveEventContext {
   segmentIndex: number | null;
   inEvent: boolean;
   eventClosed: boolean;
+  /** Hay prosa libre absorbible bajo el marcador de cierre (botón `[+]`). */
+  canExpandMargin: boolean;
 }
+
+export interface EventSpanSnapshot {
+  segmentId: string;
+  segmentIndex: number;
+  barKey: string;
+  bodyParagraphKeys: string[];
+  bottomKey: string | null;
+}
+
+const emptyEventContext: ActiveEventContext = {
+  segmentId: null,
+  segmentIndex: null,
+  inEvent: false,
+  eventClosed: false,
+  canExpandMargin: false,
+};
 
 /** Huella del manuscrito para detectar cambios de cuerpo. */
 export function bodyFingerprintFromManuscript(manuscript: ParsedManuscript): string {
@@ -277,35 +294,106 @@ export function applyExtractedManuscript(
   };
 }
 
-/** Contexto de evento según el nodo top-level bajo el cursor. */
-export function getEventContextAtTopLevel(topLevelKey: string): ActiveEventContext {
-  const root = $getRoot();
-  let inEvent = false;
-  let eventClosed = false;
-  let segmentId: string | null = null;
-  let segmentIndex: number | null = null;
+/** Escanea hijos top-level y devuelve un tramo por `EventTagBarNode`. */
+export function scanEventSpans(root: ReturnType<typeof $getRoot>): EventSpanSnapshot[] {
+  const spans: EventSpanSnapshot[] = [];
+  let current: EventSpanSnapshot | null = null;
 
   for (const child of root.getChildren()) {
     if ($isEventTagBarNode(child)) {
-      inEvent = true;
-      eventClosed = false;
-      segmentId = child.getSegmentId();
-      segmentIndex = child.getSegmentIndex();
-    } else if ($isEventFrameBottomNode(child)) {
-      if (inEvent) {
-        eventClosed = true;
+      if (current) {
+        spans.push(current);
       }
-      inEvent = false;
-      segmentId = null;
-      segmentIndex = null;
+      current = {
+        segmentId: child.getSegmentId(),
+        segmentIndex: child.getSegmentIndex(),
+        barKey: child.getKey(),
+        bodyParagraphKeys: [],
+        bottomKey: null,
+      };
+      continue;
     }
 
-    if (child.getKey() === topLevelKey) {
-      return { segmentId, segmentIndex, inEvent, eventClosed };
+    if ($isEventFrameBottomNode(child)) {
+      if (current && child.getSegmentId() === current.segmentId) {
+        current.bottomKey = child.getKey();
+      }
+      if (current) {
+        spans.push(current);
+        current = null;
+      }
+      continue;
+    }
+
+    if ($isParagraphNode(child) && current) {
+      current.bodyParagraphKeys.push(child.getKey());
     }
   }
 
-  return { segmentId, segmentIndex, inEvent, eventClosed };
+  if (current) {
+    spans.push(current);
+  }
+
+  return spans;
+}
+
+function countAbsorbableParagraphsAfterBottom(segmentId: string): number {
+  const root = $getRoot();
+  const children = root.getChildren();
+  let bottomIndex = -1;
+  let nextBarIndex = children.length;
+
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if ($isEventFrameBottomNode(child) && child.getSegmentId() === segmentId) {
+      bottomIndex = i;
+    } else if (bottomIndex >= 0 && $isEventTagBarNode(child)) {
+      nextBarIndex = i;
+      break;
+    }
+  }
+
+  if (bottomIndex < 0) {
+    return 0;
+  }
+
+  let count = 0;
+  for (let i = bottomIndex + 1; i < nextBarIndex; i++) {
+    if ($isParagraphNode(children[i])) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+/** Contexto de evento según el nodo top-level bajo el cursor. */
+export function getEventContextAtTopLevel(topLevelKey: string): ActiveEventContext {
+  const spans = scanEventSpans($getRoot());
+
+  for (const span of spans) {
+    if (span.barKey === topLevelKey || span.bottomKey === topLevelKey) {
+      return {
+        segmentId: span.segmentId,
+        segmentIndex: span.segmentIndex,
+        inEvent: false,
+        eventClosed: span.bottomKey !== null,
+        canExpandMargin: false,
+      };
+    }
+
+    if (span.bodyParagraphKeys.includes(topLevelKey)) {
+      const closed = span.bottomKey !== null;
+      return {
+        segmentId: span.segmentId,
+        segmentIndex: span.segmentIndex,
+        inEvent: true,
+        eventClosed: closed,
+        canExpandMargin: closed && countAbsorbableParagraphsAfterBottom(span.segmentId) > 0,
+      };
+    }
+  }
+
+  return emptyEventContext;
 }
 
 /** Índice de bloque legacy (adaptador) para paneles no migrados. */
@@ -316,44 +404,95 @@ export function legacyBlockIndexFromContext(ctx: ActiveEventContext): number {
   return 0;
 }
 
-/** Inserta `+++end-event` lógico tras el párrafo del cursor si el evento está abierto. */
+/** Inserta o reposiciona el cierre lógico tras el párrafo del cursor. */
 export function $closeEventAtParagraph(paragraphKey: string): boolean {
-  const root = $getRoot();
-  let activeBar: EventTagBarNode | null = null;
-  let insertAfter: LexicalNode | null = null;
-  let foundTarget = false;
-
-  for (const child of root.getChildren()) {
-    if ($isEventTagBarNode(child)) {
-      activeBar = child;
-      insertAfter = null;
-      continue;
-    }
-    if ($isEventFrameBottomNode(child)) {
-      activeBar = null;
-      insertAfter = child;
-      continue;
-    }
-    if ($isParagraphNode(child)) {
-      if (activeBar) {
-        insertAfter = child;
-      }
-      if (child.getKey() === paragraphKey) {
-        foundTarget = true;
-      }
-    }
-  }
-
-  if (!foundTarget || !activeBar) {
+  const ctx = getEventContextAtTopLevel(paragraphKey);
+  if (!ctx.inEvent || !ctx.segmentId) {
     return false;
   }
 
-  const bottom = $createEventFrameBottomNode(activeBar.getSegmentId());
-  if (insertAfter) {
-    insertAfter.insertAfter(bottom);
-  } else {
-    root.append(bottom);
+  if (ctx.eventClosed) {
+    if (ctx.canExpandMargin) {
+      return false;
+    }
+    return $repositionEventCloseAtParagraph(paragraphKey, ctx.segmentId);
   }
+
+  const root = $getRoot();
+  let targetParagraph: LexicalNode | null = null;
+
+  for (const child of root.getChildren()) {
+    if (child.getKey() === paragraphKey && $isParagraphNode(child)) {
+      targetParagraph = child;
+      break;
+    }
+  }
+
+  if (!targetParagraph) {
+    return false;
+  }
+
+  const bottom = $createEventFrameBottomNode(ctx.segmentId);
+  targetParagraph.insertAfter(bottom);
+
+  const freeParagraph = $createParagraphNode();
+  bottom.insertAfter(freeParagraph);
+  freeParagraph.select();
+  return true;
+}
+
+function $selectOrInsertFreeParagraphAfterBottom(bottomNode: LexicalNode): void {
+  const next = bottomNode.getNextSibling();
+  if ($isParagraphNode(next)) {
+    next.select();
+    return;
+  }
+
+  const freeParagraph = $createParagraphNode();
+  bottomNode.insertAfter(freeParagraph);
+  freeParagraph.select();
+}
+
+/** Mueve el marcador de cierre a otro párrafo del cuerpo (evento ya cerrado, sin prosa que absorber). */
+function $repositionEventCloseAtParagraph(
+  paragraphKey: string,
+  segmentId: string,
+): boolean {
+  const root = $getRoot();
+  const children = root.getChildren();
+  let bottomNode: LexicalNode | null = null;
+  let targetParagraph: LexicalNode | null = null;
+  let targetIndex = -1;
+  let bottomIndex = -1;
+
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (child.getKey() === paragraphKey && $isParagraphNode(child)) {
+      targetParagraph = child;
+      targetIndex = i;
+    }
+    if ($isEventFrameBottomNode(child) && child.getSegmentId() === segmentId) {
+      bottomNode = child;
+      bottomIndex = i;
+    }
+  }
+
+  if (!targetParagraph || !bottomNode || targetIndex < 0 || bottomIndex < 0) {
+    return false;
+  }
+
+  if (targetIndex >= bottomIndex) {
+    return false;
+  }
+
+  if (bottomIndex === targetIndex + 1) {
+    $selectOrInsertFreeParagraphAfterBottom(bottomNode);
+    return true;
+  }
+
+  bottomNode.remove();
+  targetParagraph.insertAfter(bottomNode);
+  $selectOrInsertFreeParagraphAfterBottom(bottomNode);
   return true;
 }
 
@@ -405,16 +544,92 @@ export function $updateEventBarAtSegment(
   return false;
 }
 
-/** Expande tramo: quita el `EventFrameBottomNode` del evento bajo el cursor. */
+/** Baja el margen inferior del evento cerrado absorbiendo prosa libre (D2). */
 export function $expandEventAtParagraph(paragraphKey: string): boolean {
   const ctx = getEventContextAtTopLevel(paragraphKey);
-  if (!ctx.inEvent || !ctx.eventClosed || !ctx.segmentId) {
+  if (!ctx.inEvent || !ctx.eventClosed || !ctx.segmentId || !ctx.canExpandMargin) {
     return false;
   }
 
   const root = $getRoot();
-  for (const child of root.getChildren()) {
+  const children = root.getChildren();
+  let bottomNode: LexicalNode | null = null;
+  let bottomIndex = -1;
+  let nextBarIndex = children.length;
+
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
     if ($isEventFrameBottomNode(child) && child.getSegmentId() === ctx.segmentId) {
+      bottomNode = child;
+      bottomIndex = i;
+    } else if (bottomIndex >= 0 && $isEventTagBarNode(child)) {
+      nextBarIndex = i;
+      break;
+    }
+  }
+
+  if (!bottomNode || bottomIndex < 0) {
+    return false;
+  }
+
+  let lastAbsorbed: LexicalNode | null = null;
+  for (let i = bottomIndex + 1; i < nextBarIndex; i++) {
+    if ($isParagraphNode(children[i])) {
+      lastAbsorbed = children[i];
+    }
+  }
+
+  if (!lastAbsorbed) {
+    return false;
+  }
+
+  bottomNode.remove();
+  lastAbsorbed.insertAfter(bottomNode);
+  return true;
+}
+
+/** Quita barra, cuerpo y marcador del evento en el editor (ficha WB queda en disco — D1). */
+export function $removeEventAtSegment(segmentId: string): boolean {
+  const root = $getRoot();
+  const children = root.getChildren();
+  let startIndex = -1;
+
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if ($isEventTagBarNode(child) && child.getSegmentId() === segmentId) {
+      startIndex = i;
+      break;
+    }
+  }
+
+  if (startIndex < 0) {
+    return false;
+  }
+
+  let endIndex = startIndex;
+  for (let i = startIndex + 1; i < children.length; i++) {
+    const child = children[i];
+    if ($isEventTagBarNode(child)) {
+      break;
+    }
+    endIndex = i;
+    if ($isEventFrameBottomNode(child) && child.getSegmentId() === segmentId) {
+      break;
+    }
+  }
+
+  for (let i = endIndex; i >= startIndex; i--) {
+    children[i].remove();
+  }
+
+  return true;
+}
+
+/** Quita solo el cierre lógico (`EventFrameBottomNode`); el evento pasa a abierto. */
+export function $removeEventEndAtSegment(segmentId: string): boolean {
+  const root = $getRoot();
+  for (const child of root.getChildren()) {
+    if ($isEventFrameBottomNode(child) && child.getSegmentId() === segmentId) {
       child.remove();
       return true;
     }

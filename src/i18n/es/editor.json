@@ -76,6 +76,12 @@
     "eventCloseBlock": "Cerrar bloque de evento",
     "eventExpandBlock": "Expandir bloque de evento"
   },
+  "eventFrame": {
+    "deleteEventPending": "Clic para marcar borrado del evento",
+    "deleteEventConfirm": "Clic de nuevo para quitar el evento del manuscrito",
+    "removeEndPending": "Clic para quitar el cierre del evento",
+    "removeEndConfirm": "Clic de nuevo para abrir el evento"
+  },
   "metadata": {
     "time": "Tiempo",
     "location": "Ubicación",
