@@ -65,9 +65,10 @@ pub fn apply_changes(
         return Ok(());
     }
 
-    let mut touched = Vec::new();
-    let mut kind = "modify".to_string();
-    let mut from_path: Option<String> = None;
+    let mut upsert_paths: Vec<String> = Vec::new();
+    let mut remove_paths: Vec<String> = Vec::new();
+    let mut rename_from: Option<String> = None;
+    let mut rename_to: Option<String> = None;
 
     for change in changes {
         match change {
@@ -78,8 +79,10 @@ pub fn apply_changes(
                 if path.extension().and_then(|e| e.to_str()) == Some("md") {
                     upsert_file(db, project_root, &path)?;
                     let _ = parse_full_path_and_persist(db, project_root, &path);
-                    touched.push(relative_path(project_root, &path)?);
-                    kind = "create".to_string();
+                    let rel = relative_path(project_root, &path)?;
+                    if !upsert_paths.contains(&rel) {
+                        upsert_paths.push(rel);
+                    }
                 }
             }
             FsChange::Remove(path) => {
@@ -87,13 +90,18 @@ pub fn apply_changes(
                     continue;
                 }
                 let rel = relative_path(project_root, &path)?;
+                let full = project_root.join(&rel);
+                if full.exists() {
+                    continue;
+                }
                 mark_ghost(db, &rel)?;
                 mark_ghost_prefix(db, &rel)?;
                 #[cfg(debug_assertions)]
                 crate::audit::bridge::log_ghost(app, &rel, "watcher-remove");
                 let _ = blocks::delete_blocks_under_path(db, &rel);
-                touched.push(rel);
-                kind = "remove".to_string();
+                if !remove_paths.contains(&rel) {
+                    remove_paths.push(rel);
+                }
             }
             FsChange::Rename { from, to } => {
                 if should_ignore(&from) || should_ignore(&to) {
@@ -107,8 +115,8 @@ pub fn apply_changes(
                     refactor_wikilinks_if_stem_changed(db, project_root, &from_rel, &to_rel)
                 {
                     for path in refactored {
-                        if !touched.contains(&path) {
-                            touched.push(path);
+                        if !upsert_paths.contains(&path) {
+                            upsert_paths.push(path);
                         }
                     }
                 }
@@ -117,15 +125,30 @@ pub fn apply_changes(
                 } else if from_rel.ends_with(".md") {
                     let _ = blocks::delete_blocks_under_path(db, &from_rel);
                 }
-                touched.push(to_rel.clone());
-                kind = "rename".to_string();
-                from_path = Some(from_rel);
+                rename_from = Some(from_rel);
+                rename_to = Some(to_rel);
             }
         }
     }
 
-    if !touched.is_empty() {
-        emit_fs_changed(app, &kind, touched, from_path)?;
+    let mut emitted = false;
+
+    if !upsert_paths.is_empty() {
+        emit_fs_changed(app, "create", upsert_paths, None)?;
+        emitted = true;
+    }
+
+    if !remove_paths.is_empty() {
+        emit_fs_changed(app, "remove", remove_paths, None)?;
+        emitted = true;
+    }
+
+    if let (Some(from_rel), Some(to_rel)) = (rename_from, rename_to) {
+        emit_fs_changed(app, "rename", vec![to_rel], Some(from_rel))?;
+        emitted = true;
+    }
+
+    if emitted {
         let state = app.state::<crate::state::ProjectState>();
         state.request_consistency_check(app, project_root);
     }
@@ -348,6 +371,14 @@ fn collect_md_paths(
 }
 
 pub fn should_ignore(path: &Path) -> bool {
+    if path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .is_some_and(|name| name.starts_with(".narralith-write-"))
+    {
+        return true;
+    }
+
     path.components().any(|c| {
         if let std::path::Component::Normal(seg) = c {
             let s = seg.to_string_lossy();
@@ -399,6 +430,12 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap()
+    }
+
+    #[test]
+    fn should_ignore_atomic_write_temp() {
+        let path = Path::new("Worldbuilding/Eventos/.narralith-write-12345");
+        assert!(should_ignore(path));
     }
 
     #[test]

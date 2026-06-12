@@ -1,14 +1,41 @@
 import type { FsChangeEvent } from "@/lib/types/fs";
+import type { ManuscriptSegment } from "@/lib/types/manuscript";
 
 import { audit } from "@/lib/audit";
 
 const SELF_SAVE_GUARD_MS = 2_500;
 const recentSelfSaves = new Map<string, number>();
+let saveBatchDepth = 0;
+
+/** Archivo temporal de escritura atómica WB (`.narralith-write-{pid}`). */
+export function isNarralithWriteTempPath(path: string): boolean {
+  const base = path.split("/").pop() ?? path.split("\\").pop() ?? path;
+  return base.startsWith(".narralith-write-");
+}
 
 /** Marca un guardado iniciado por la app para ignorar el `fs-changed` resultante. */
 export function markSelfSave(filePath: string): void {
   recentSelfSaves.set(filePath, Date.now());
   audit.debug("fs", "obs.fs.self_save.mark", { path: filePath });
+}
+
+/** Marca varias rutas antes de un batch de guardado (p. ej. «Guardar todo»). */
+export function markSelfSavePaths(filePaths: string[]): void {
+  for (const filePath of filePaths) {
+    markSelfSave(filePath);
+  }
+}
+
+export function beginSaveBatch(): void {
+  saveBatchDepth += 1;
+}
+
+export function endSaveBatch(): void {
+  saveBatchDepth = Math.max(0, saveBatchDepth - 1);
+}
+
+export function isSaveBatchInProgress(): boolean {
+  return saveBatchDepth > 0;
 }
 
 /** Evita recargar el editor justo después de un guardado propio (mantiene scroll). */
@@ -23,6 +50,56 @@ export function shouldIgnoreFsReload(filePath: string): boolean {
   }
   audit.debug("fs", "obs.fs.self_save.hit", { path: filePath });
   return true;
+}
+
+/** Rutas de fichas WB referenciadas por segmentos de evento en un guardado. */
+export function entityPathsFromSegments(segments: ManuscriptSegment[]): string[] {
+  const paths: string[] = [];
+  for (const segment of segments) {
+    if (segment.kind !== "event") {
+      continue;
+    }
+    const path = segment.entityPath.trim();
+    if (path && !paths.includes(path)) {
+      paths.push(path);
+    }
+  }
+  return paths;
+}
+
+/**
+ * Filtra rutas `remove` espurias (temp atómico WB o pestañas recién guardadas).
+ * Devuelve solo las rutas que deben cerrar pestañas.
+ */
+export function filterFsRemovePaths(
+  removedPaths: string[],
+  openTabPaths: string[],
+): string[] {
+  if (isSaveBatchInProgress()) {
+    audit.debug("fs", "obs.fs.remove.skip_batch", { removedPaths });
+    return [];
+  }
+
+  return removedPaths.filter((removed) => {
+    if (isNarralithWriteTempPath(removed)) {
+      audit.debug("fs", "obs.fs.remove.skip_temp", { path: removed });
+      return false;
+    }
+
+    const affectedTabs = tabPathsToCloseOnRemove([removed], openTabPaths);
+    if (affectedTabs.length === 0) {
+      return true;
+    }
+
+    const spurious = affectedTabs.some((tab) => shouldIgnoreFsReload(tab));
+    if (spurious) {
+      audit.debug("fs", "obs.fs.remove.skip_self_save", {
+        removed,
+        affectedTabs,
+      });
+    }
+    return !spurious;
+  });
 }
 
 /** Ruta de pestaña bajo un prefijo (igual o hijo directo/indirecto). */

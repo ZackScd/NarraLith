@@ -17,7 +17,7 @@
     "saving": "Saving…",
     "saved": "Saved",
     "unsaved": "Unsaved changes",
-    "manualSaveHint": "Ctrl+S to save"
+    "manualSaveHint": "Ctrl+S to save · Ctrl+Shift+S to save all"
   },
   "panel": {
     "title": "Inspector",

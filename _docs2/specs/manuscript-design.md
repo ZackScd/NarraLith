@@ -18,9 +18,20 @@
 | Sin inferencias | El sistema no rellena tiempos, ubicaciones ni timeline |
 | Evento sin etiquetas | Válido; barra solo `[Evento]: nombre` |
 | Sin tiempo | Sin filas en timeline para ese evento |
-| Commit etiqueta | Aplica al editor en RAM; disco con Ctrl+S / «Guardar todo» |
+| Commit etiqueta | Aplica al editor en RAM; disco con guardado manual (§1.1) |
 | Borrador sucio | **Debe persistir al cerrar** la app (pendiente II.4+) |
 | Ubicación | Era III+; parser tolera `{{location:…}}` sin UI en Era II |
+
+### 1.1 Guardado y pestañas (FIX-012)
+
+| Atajo / acción | Efecto |
+|----------------|--------|
+| **Ctrl+S** | Guarda **solo** la pestaña activa (manuscrito o entidad WB). No cambia de pestaña. |
+| **Ctrl+Shift+S** | Guarda **todas** las pestañas sucias **sin** cambiar la activa ni recorrer la barra (caché de tab; FIX-012 2b). |
+| Botón «Guardar todo» (panel 💾) | Igual que Ctrl+Shift+S. |
+| Autoguardado (configuración) | Solo la pestaña activa, sin iterar el resto. |
+
+Al guardar un manuscrito con eventos, el sync de fichas `Worldbuilding/Eventos/` es transparente: no debe cerrar pestañas ni marcar archivos como `ghost` en SQLite.
 
 ---
 

@@ -55,7 +55,7 @@
 | **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/FIX-006.5-event-frame-interactions.md) |
 | **OBS-001** | ✅ | Módulo global de auditoría / registro del sistema (IPC, FS, stores, eventos) | Medio | [**plan detallado**](plans/OBS-001-system-audit-log.md) |
 | **FIX-007** | ⬜ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [`module-replan.md`](module-replan.md) |
-| **FIX-012** | ⬜ | Guardar no debe cambiar pestaña ni **cerrar** tabs abiertas; sin `ghost` espurio en SQLite | Medio | [**plan detallado**](plans/FIX-012-save-tab-navigation.md) |
+| **FIX-012** | ✅ | Guardar: tabs estables, sin ghost, save-all sin switch (2b) | Medio | [**plan detallado**](plans/FIX-012-save-tab-navigation.md) |
 
 > **OBS-001 antes de FIX-012:** diagnosticar con evidencia en `NarraLith/_debug/` (solo `tauri dev`; release sin debug).
 
@@ -156,7 +156,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 5 | FIX-005 | Guardado sin recortar espacios/saltos ✅ |
 | 6 | FIX-006 | Marco evento rediseño ✅ |
 | 7 | OBS-001 | Auditoría global del sistema (logs reutilizables) ✅ |
-| 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, sin ghost SQLite |
+| 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, save-all sin switch ✅ |
 | 9 | FIX-007 | Borrador sucio al cerrar app |
 | 10 | FIX-008 | Explorador inline VS Code |
 | 11 | FIX-009 | Timeline chips + conectores |
@@ -209,6 +209,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-012 planificado: guardar cierra pestañas / salta documento; repro QA `meow`+`eventoTest` → `skanlnsklnals` (`plans/FIX-012-save-tab-navigation.md`) |
 | 2026-06-11 | FIX-004…006 marcados ✅; eliminada nota obsoleta backlog §8; añadido OBS-001 (auditoría global) antes de FIX-012 |
 | 2026-06-11 | OBS-001 implementado v1: audit TS+Rust, menú debug, visor, `_debug/logs/`; plan marcado ✅ |
+| 2026-06-11 | FIX-012 implementado: reconcile por kind, guard self-save en remove, Ctrl+S/Ctrl+Shift+S, saveAll restore |
+| 2026-06-11 | FIX-012 Fase 2b: save-all desde caché sin switchTab; AtPath saves + batch saveStatus |
 
 ---
 

@@ -2,8 +2,10 @@ import { create } from "zustand";
 
 import {
   applyExtractedManuscript,
+  assertCacheSaveable,
   bodyFingerprintFromExtractedManuscript,
   bodyFingerprintFromManuscript,
+  manuscriptToSavePayload,
   type ActiveEventContext,
   type ExtractedManuscriptPayload,
 } from "@/lib/editor/documentSync";
@@ -12,17 +14,28 @@ import {
   clearManuscriptTabsSession,
   isPersistableManuscriptPath,
 } from "@/lib/editor/lastManuscriptFile";
-import { remapPathForRename, tabPathsToCloseOnRemove } from "@/lib/editor/fsSync";
-import { markSelfSave } from "@/lib/editor/fsSync";
+import {
+  beginSaveBatch,
+  endSaveBatch,
+  entityPathsFromSegments,
+  isSaveBatchInProgress,
+  markSelfSave,
+  markSelfSavePaths,
+  remapPathForRename,
+  shouldIgnoreFsReload,
+  tabPathsToCloseOnRemove,
+} from "@/lib/editor/fsSync";
 import { manuscriptToParsedDocument } from "@/lib/editor/manuscriptBlocks";
 import { audit } from "@/lib/audit";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
+import { projectPathsEqual } from "@/lib/pathUtils";
 import type { EntityDocument, EntityTabState } from "@/lib/types/entity";
 import type { EntityTemplate } from "@/lib/types/entityTemplate";
 import type { ParsedDocument } from "@/lib/types/editor";
 import type { BarTag, ParsedManuscript } from "@/lib/types/manuscript";
 import { entityFingerprint } from "@/lib/worldbuilding/entityFingerprint";
 import { isEntityPath } from "@/lib/worldbuilding/entityPath";
+import { useFileTreeStore } from "@/stores/useFileTreeStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -73,6 +86,10 @@ type RemoveEventFn = (segmentId: string) => boolean;
 type RemoveEventEndFn = (segmentId: string) => boolean;
 
 type UnsavedAction = "open" | "close";
+
+interface SaveAtPathOptions {
+  batch?: boolean;
+}
 
 interface EditorState {
   tabs: Record<string, EditorTab>;
@@ -146,6 +163,16 @@ interface EditorState {
   openDocument: (filePath: string) => Promise<boolean>;
   saveDocument: () => Promise<boolean>;
   saveEntity: () => Promise<boolean>;
+  saveManuscriptAtPath: (
+    filePath: string,
+    manuscript: ParsedManuscript,
+    options?: SaveAtPathOptions,
+  ) => Promise<boolean>;
+  saveEntityAtPath: (
+    filePath: string,
+    entity: EntityTabState,
+    options?: SaveAtPathOptions,
+  ) => Promise<boolean>;
   patchEntityField: (key: string, value: unknown) => void;
   setEntityBody: (body: string) => void;
   reloadDocumentFromDisk: () => Promise<boolean>;
@@ -361,17 +388,25 @@ function patchSavedBaseline(
   state: EditorState,
   filePath: string,
   fingerprint: string,
+  options?: SaveAtPathOptions,
 ): Partial<EditorState> {
-  return {
+  const tabs = syncTabInMap(state.tabs, filePath, {
     savedBodyFingerprint: fingerprint,
     isDirty: false,
     saveStatus: "saved",
-    tabs: syncTabInMap(state.tabs, filePath, {
-      savedBodyFingerprint: fingerprint,
-      isDirty: false,
-      saveStatus: "saved",
-    }),
+  });
+  if (!projectPathsEqual(state.activeFilePath, filePath)) {
+    return { tabs };
+  }
+  const patch: Partial<EditorState> = {
+    tabs,
+    savedBodyFingerprint: fingerprint,
+    isDirty: false,
   };
+  if (!options?.batch) {
+    patch.saveStatus = "saved";
+  }
+  return patch;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -824,42 +859,139 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => markEntityDirty(state, path, next));
   },
 
-  saveEntity: async () => {
-    const { activeFilePath, entity, isDirty, activeTabKind } = get();
-    if (!activeFilePath || !entity || activeTabKind !== "entity" || !isDirty) {
+  saveEntityAtPath: async (filePath, entity, options = {}) => {
+    const tab = get().tabs[filePath];
+    if (!tab || tab.kind !== "entity") {
+      return false;
+    }
+    if (!tab.isDirty) {
       return true;
     }
 
-    set({ saveStatus: "saving", lastErrorKey: null });
+    if (!options.batch) {
+      set({ saveStatus: "saving", lastErrorKey: null });
+    }
+
+    markSelfSave(filePath);
     try {
       const saved = await invokeCommand<EntityDocument>("save_entity", {
-        filePath: activeFilePath,
+        filePath,
         payload: {
           frontmatter: entity.frontmatter,
           body: entity.body,
         },
       });
-      const template = entity.template;
-      const nextEntity = entityTabFromDocument(saved, template);
+      const nextEntity = entityTabFromDocument(saved, entity.template);
       const fingerprint = nextEntity.savedFingerprint;
-      set((state) => ({
-        entity: nextEntity,
-        documentSyncKey: state.documentSyncKey + 1,
-        ...patchSavedBaseline(state, activeFilePath, fingerprint),
-        tabs: syncTabInMap(state.tabs, activeFilePath, {
+      const isActive = projectPathsEqual(get().activeFilePath, filePath);
+
+      set((state) => {
+        const documentSyncKey = isActive ? state.documentSyncKey + 1 : tab.documentSyncKey;
+        const nextTabs = syncTabInMap(state.tabs, filePath, {
           entity: { ...nextEntity, savedFingerprint: fingerprint },
           savedBodyFingerprint: fingerprint,
           isDirty: false,
           saveStatus: "saved",
-          documentSyncKey: state.documentSyncKey + 1,
-        }),
-      }));
+          documentSyncKey,
+        });
+        if (!isActive) {
+          return { tabs: nextTabs };
+        }
+        const patch: Partial<EditorState> = {
+          tabs: nextTabs,
+          entity: nextEntity,
+          documentSyncKey,
+          savedBodyFingerprint: fingerprint,
+          isDirty: false,
+        };
+        if (!options.batch) {
+          patch.saveStatus = "saved";
+        }
+        return patch;
+      });
       return true;
     } catch (err) {
-      set({
-        lastErrorKey: parseAppError(err)?.key ?? "error.entity.save_failed",
-        saveStatus: "error",
+      if (!options.batch) {
+        set({
+          lastErrorKey: parseAppError(err)?.key ?? "error.entity.save_failed",
+          saveStatus: "error",
+        });
+      }
+      return false;
+    }
+  },
+
+  saveEntity: async () => {
+    const { activeFilePath, entity, isDirty, activeTabKind } = get();
+    if (!activeFilePath || !entity || activeTabKind !== "entity" || !isDirty) {
+      return true;
+    }
+    return get().saveEntityAtPath(activeFilePath, entity);
+  },
+
+  saveManuscriptAtPath: async (filePath, manuscript, options = {}) => {
+    const tab = get().tabs[filePath];
+    if (!tab || tab.kind === "entity") {
+      return false;
+    }
+    if (!tab.isDirty) {
+      return true;
+    }
+
+    if (!options.batch) {
+      set({ saveStatus: "saving", lastErrorKey: null, lastErrorDetails: null });
+    }
+
+    markSelfSavePaths([
+      filePath,
+      ...entityPathsFromSegments(manuscript.segments),
+    ]);
+
+    try {
+      const saved = await invokeCommand<ParsedManuscript>("save_manuscript", {
+        filePath,
+        manuscript: manuscriptToSavePayload(manuscript),
       });
+      const fields = manuscriptTabFields(saved);
+      const fingerprint = fields.savedBodyFingerprint;
+      const isActive = projectPathsEqual(get().activeFilePath, filePath);
+
+      set((state) => {
+        const nextTabs = syncTabInMap(state.tabs, filePath, {
+          ...fields,
+          isDirty: false,
+          saveStatus: "saved",
+        });
+        if (!isActive) {
+          return { tabs: nextTabs };
+        }
+        const patch: Partial<EditorState> = {
+          tabs: nextTabs,
+          manuscript: saved,
+          document: fields.document,
+          savedBodyFingerprint: fingerprint,
+          isDirty: false,
+        };
+        if (!options.batch) {
+          patch.saveStatus = "saved";
+        }
+        return patch;
+      });
+      return true;
+    } catch (err) {
+      const parsed = parseAppError(err);
+      if (parsed?.details) {
+        console.error("[save_manuscript]", parsed.key, parsed.details);
+      } else {
+        console.error("[save_manuscript]", err);
+      }
+      if (!options.batch) {
+        set({
+          lastErrorKey: parsed?.key ?? "error.save_failed",
+          lastErrorDetails: parsed?.details ?? null,
+          saveStatus: "error",
+        });
+      }
       return false;
     }
   },
@@ -902,56 +1034,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       segmentCount: extracted.segments.length,
     });
 
-    set({ saveStatus: "saving", lastErrorKey: null, lastErrorDetails: null });
-    try {
-      markSelfSave(activeFilePath);
-      const saved = await invokeCommand<ParsedManuscript>("save_manuscript", {
-        filePath: activeFilePath,
-        manuscript: {
-          fileHeader: extracted.fileHeader,
-          segments: extracted.segments,
-        },
-      });
-      const fields = manuscriptTabFields(saved);
-      const fingerprint = fields.savedBodyFingerprint;
-      set((state) => ({
-        manuscript: saved,
-        document: fields.document,
-        ...patchSavedBaseline(state, activeFilePath, fingerprint),
-        tabs: syncTabInMap(state.tabs, activeFilePath, {
-          ...fields,
-          isDirty: false,
-          saveStatus: "saved",
-        }),
-      }));
-      audit.info("editor", "obs.editor.save.end", {
-        path: activeFilePath,
-        kind: "manuscript",
-        ok: true,
-      });
-      audit.endCorrelation();
-      return true;
-    } catch (err) {
-      const parsed = parseAppError(err);
-      if (parsed?.details) {
-        console.error("[save_manuscript]", parsed.key, parsed.details);
-      } else {
-        console.error("[save_manuscript]", err);
-      }
-      set({
-        lastErrorKey: parsed?.key ?? "error.save_failed",
-        lastErrorDetails: parsed?.details ?? null,
-        saveStatus: "error",
-      });
-      audit.info("editor", "obs.editor.save.end", {
-        path: activeFilePath,
-        kind: "manuscript",
-        ok: false,
-        errorKey: parsed?.key,
-      });
-      audit.endCorrelation();
-      return false;
-    }
+    const payload = applyExtractedManuscript(manuscript, extracted);
+    const ok = await get().saveManuscriptAtPath(activeFilePath, payload);
+
+    audit.info("editor", "obs.editor.save.end", {
+      path: activeFilePath,
+      kind: "manuscript",
+      ok,
+    });
+    audit.endCorrelation();
+    return ok;
   },
 
   reloadDocumentFromDisk: async () => {
@@ -1067,15 +1159,38 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   closeTabsRemovedFromDisk: (removedPaths) => {
-    const toClose = tabPathsToCloseOnRemove(
-      removedPaths,
-      useEditorStore.getState().tabOrder,
+    if (isSaveBatchInProgress()) {
+      audit.debug("fs", "obs.fs.remove.skip_batch_close", { removedPaths });
+      return;
+    }
+
+    const state = get();
+    const toClose = tabPathsToCloseOnRemove(removedPaths, state.tabOrder).filter(
+      (path) => {
+        if (!shouldIgnoreFsReload(path)) {
+          return true;
+        }
+        audit.debug("fs", "obs.fs.self_save.ignore_remove", { path, removedPaths });
+        if (projectPathsEqual(state.activeFilePath, path)) {
+          console.warn(
+            `[fsSync] Ignored spurious remove for active tab ${path} (recent self-save)`,
+          );
+        }
+        return false;
+      },
     );
+    if (toClose.length === 0) {
+      return;
+    }
+
     for (const path of toClose) {
       const nextTabs = { ...useEditorStore.getState().tabs };
       delete nextTabs[path];
       const nextOrder = useEditorStore.getState().tabOrder.filter((p) => p !== path);
-      const wasActive = useEditorStore.getState().activeFilePath === path;
+      const wasActive = projectPathsEqual(
+        useEditorStore.getState().activeFilePath,
+        path,
+      );
       const nextActive = wasActive ? (nextOrder[nextOrder.length - 1] ?? null) : null;
 
       audit.info("editor", "obs.editor.tab.close", {
@@ -1112,6 +1227,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...activateTabView(nextTab),
       });
       syncManuscriptTabsClear(nextOrder);
+    }
+
+    const { activeFilePath, tabOrder } = useEditorStore.getState();
+    const { selectedPath } = useFileTreeStore.getState();
+    if (
+      selectedPath &&
+      !tabOrder.some((openPath) => projectPathsEqual(openPath, selectedPath))
+    ) {
+      useFileTreeStore.setState({ selectedPath: activeFilePath });
     }
   },
 
@@ -1240,7 +1364,126 @@ export function requestCloseEditorTab(filePath: string): void {
   syncManuscriptTabsClear(nextOrder);
 }
 
-/** Guarda todas las pestañas con cambios y vuelve a la pestaña activa original. */
+/** Guarda la pestaña activa (manuscrito o entidad). */
+export async function saveActiveTab(): Promise<boolean> {
+  return useEditorStore.getState().saveDocument();
+}
+
+async function saveDirtyTabWithFallback(
+  path: string,
+  initialActivePath: string | null,
+  stats: { cacheSaveCount: number; fallbackCount: number; switchCount: number },
+): Promise<boolean> {
+  audit.info("editor", "obs.editor.saveAll.fallback_switch", {
+    path,
+    reason: "cache_not_saveable",
+  });
+  stats.fallbackCount += 1;
+
+  await useEditorStore.getState().switchTab(path);
+  stats.switchCount += 1;
+
+  const afterSwitch = useEditorStore.getState();
+  const tab = afterSwitch.tabs[path];
+  if (!tab?.isDirty) {
+    return true;
+  }
+
+  const batchOpts: SaveAtPathOptions = { batch: true };
+  let ok = false;
+  if (tab.kind === "entity") {
+    if (afterSwitch.entity) {
+      ok = await afterSwitch.saveEntityAtPath(path, afterSwitch.entity, batchOpts);
+    }
+  } else {
+    const extracted = extractManuscriptFn?.();
+    if (extracted && afterSwitch.manuscript) {
+      ok = await afterSwitch.saveManuscriptAtPath(
+        path,
+        applyExtractedManuscript(afterSwitch.manuscript, extracted),
+        batchOpts,
+      );
+    }
+  }
+
+  if (
+    initialActivePath &&
+    !projectPathsEqual(path, initialActivePath) &&
+    useEditorStore.getState().tabs[initialActivePath]
+  ) {
+    await useEditorStore.getState().switchTab(initialActivePath);
+    stats.switchCount += 1;
+  }
+
+  return ok;
+}
+
+async function saveDirtyTabInBatch(
+  path: string,
+  initialActivePath: string | null,
+  stats: { cacheSaveCount: number; fallbackCount: number; switchCount: number },
+): Promise<boolean> {
+  const store = useEditorStore.getState();
+  const tab = store.tabs[path];
+  if (!tab?.isDirty) {
+    return true;
+  }
+
+  const batchOpts: SaveAtPathOptions = { batch: true };
+  const isActive =
+    initialActivePath != null && projectPathsEqual(path, initialActivePath);
+
+  if (isActive) {
+    if (tab.kind === "entity") {
+      if (!store.entity) {
+        return saveDirtyTabWithFallback(path, initialActivePath, stats);
+      }
+      audit.info("editor", "obs.editor.saveAll.cache_save", {
+        path,
+        kind: "entity",
+        active: true,
+      });
+      stats.cacheSaveCount += 1;
+      return store.saveEntityAtPath(path, store.entity, batchOpts);
+    }
+
+    const extracted = extractManuscriptFn?.();
+    if (!extracted || !store.manuscript) {
+      return saveDirtyTabWithFallback(path, initialActivePath, stats);
+    }
+    audit.info("editor", "obs.editor.saveAll.cache_save", {
+      path,
+      kind: "manuscript",
+      active: true,
+    });
+    stats.cacheSaveCount += 1;
+    return store.saveManuscriptAtPath(
+      path,
+      applyExtractedManuscript(store.manuscript, extracted),
+      batchOpts,
+    );
+  }
+
+  if (tab.kind === "entity") {
+    if (!tab.entity) {
+      return saveDirtyTabWithFallback(path, initialActivePath, stats);
+    }
+    audit.info("editor", "obs.editor.saveAll.cache_save", { path, kind: "entity" });
+    stats.cacheSaveCount += 1;
+    return store.saveEntityAtPath(path, tab.entity, batchOpts);
+  }
+
+  const cacheCheck = assertCacheSaveable(tab);
+  if (cacheCheck.ok && tab.manuscript) {
+    audit.info("editor", "obs.editor.saveAll.cache_save", { path, kind: "manuscript" });
+    stats.cacheSaveCount += 1;
+    return store.saveManuscriptAtPath(path, tab.manuscript, batchOpts);
+  }
+
+  return saveDirtyTabWithFallback(path, initialActivePath, stats);
+}
+
+/** Guarda todas las pestañas con cambios sin cambiar la pestaña activa (Fase 2b). */
 export async function saveAllOpenTabs(): Promise<boolean> {
   return audit.withCorrelationAsync(`save-all-${Date.now()}`, async () => {
     const initialActivePath = useEditorStore.getState().activeFilePath;
@@ -1252,54 +1495,63 @@ export async function saveAllOpenTabs(): Promise<boolean> {
       return true;
     }
 
+    markSelfSavePaths(dirtyPaths);
+    beginSaveBatch();
+
+    const stats = { cacheSaveCount: 0, fallbackCount: 0, switchCount: 0 };
+    let allSaved = true;
+
     audit.info("editor", "obs.editor.saveAll.start", {
       dirtyPaths,
       activePath: initialActivePath,
     });
 
-    let allSaved = true;
-
-    for (const path of dirtyPaths) {
-      const stateBefore = useEditorStore.getState();
-      const tab = stateBefore.tabs[path];
-      if (!tab || !tab.isDirty) {
-        continue;
-      }
-
-      if (stateBefore.activeFilePath !== path) {
-        await stateBefore.switchTab(path);
-      }
-
-      const stateAfterSwitch = useEditorStore.getState();
-      const activeTab = stateAfterSwitch.tabs[path];
-      if (!activeTab || !activeTab.isDirty) {
-        continue;
-      }
-
-      const saved =
-        activeTab.kind === "entity"
-          ? await stateAfterSwitch.saveEntity()
-          : await stateAfterSwitch.saveDocument();
-
-      if (!saved) {
-        allSaved = false;
-      }
-    }
-
-    if (
-      initialActivePath &&
-      useEditorStore.getState().activeFilePath !== initialActivePath &&
-      useEditorStore.getState().tabs[initialActivePath]
-    ) {
-      await useEditorStore.getState().switchTab(initialActivePath);
-    }
-
-    audit.info("editor", "obs.editor.saveAll.end", {
-      ok: allSaved,
-      activePath: useEditorStore.getState().activeFilePath,
-      dirtyPaths,
+    useEditorStore.setState({
+      saveStatus: "saving",
+      lastErrorKey: null,
+      lastErrorDetails: null,
     });
 
-    return allSaved;
+    try {
+      const state = useEditorStore.getState();
+      const flushed = flushActiveTabToCache(state);
+      const flushPatch: Partial<EditorState> = { tabs: flushed.tabs };
+      if (
+        initialActivePath &&
+        projectPathsEqual(state.activeFilePath, initialActivePath)
+      ) {
+        if (state.activeTabKind === "manuscript") {
+          flushPatch.manuscript = flushed.manuscript;
+          flushPatch.document = flushed.document;
+        } else if (state.activeTabKind === "entity") {
+          flushPatch.entity = flushed.entity;
+        }
+      }
+      useEditorStore.setState(flushPatch);
+
+      for (const path of dirtyPaths) {
+        const ok = await saveDirtyTabInBatch(path, initialActivePath, stats);
+        if (!ok) {
+          allSaved = false;
+        }
+      }
+
+      return allSaved;
+    } finally {
+      endSaveBatch();
+
+      useEditorStore.setState({
+        saveStatus: allSaved ? "saved" : "error",
+      });
+
+      audit.info("editor", "obs.editor.saveAll.end", {
+        ok: allSaved,
+        activePath: useEditorStore.getState().activeFilePath,
+        dirtyPaths,
+        cacheSaveCount: stats.cacheSaveCount,
+        fallbackCount: stats.fallbackCount,
+        switchCount: stats.switchCount,
+      });
+    }
   });
 }

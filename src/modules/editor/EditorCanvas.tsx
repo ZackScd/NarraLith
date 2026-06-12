@@ -1,10 +1,9 @@
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { normalizeEditorErrorKey } from "@/lib/editor/editorErrors";
 import { EditorShell } from "@/modules/editor/EditorShell";
 import { EntityWorkspace } from "@/modules/worldbuilding/EntityWorkspace";
-import { saveAllOpenTabs, useEditorStore } from "@/stores/useEditorStore";
+import { useEditorStore } from "@/stores/useEditorStore";
 
 export function EditorCanvas() {
   const { t } = useTranslation("editor");
@@ -15,17 +14,6 @@ export function EditorCanvas() {
   const lastErrorKey = useEditorStore((s) => s.lastErrorKey);
   const lastErrorDetails = useEditorStore((s) => s.lastErrorDetails);
   const documentSyncKey = useEditorStore((s) => s.documentSyncKey);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        void saveAllOpenTabs();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   if (isLoading) {
     return (

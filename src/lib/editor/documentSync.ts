@@ -20,7 +20,7 @@ import {
   $createEventTagBarNode,
   $isEventTagBarNode,
 } from "@/modules/editor/nodes/EventTagBarNode";
-import type { SaveManuscriptSegmentPayload } from "@/lib/types/editor";
+import type { SaveManuscriptPayload, SaveManuscriptSegmentPayload } from "@/lib/types/editor";
 import type {
   BarTag,
   EventSegment,
@@ -77,6 +77,56 @@ export function bodyFingerprintFromExtractedManuscript(
         : ["event", s.name, s.body, s.closed, s.barTags ?? []],
     ),
   ]);
+}
+
+/** Convierte manuscrito en memoria al payload IPC `save_manuscript`. */
+export function manuscriptToSavePayload(manuscript: ParsedManuscript): SaveManuscriptPayload {
+  const segments: SaveManuscriptSegmentPayload[] = manuscript.segments.map((seg) => {
+    if (seg.kind === "freeText") {
+      return {
+        kind: "freeText",
+        segmentIndex: seg.segmentIndex,
+        body: seg.body,
+      };
+    }
+    return {
+      kind: "event",
+      segmentIndex: seg.segmentIndex,
+      name: seg.name,
+      description: seg.description,
+      entityPath: seg.entityPath,
+      barTags: seg.barTags,
+      body: seg.body,
+      closed: seg.closed,
+    };
+  });
+  return {
+    fileHeader: manuscript.fileHeader,
+    segments,
+  };
+}
+
+export interface CacheSaveableTab {
+  manuscript?: ParsedManuscript;
+  savedBodyFingerprint: string;
+  isDirty: boolean;
+}
+
+/** Valida si una pestaña inactiva puede guardarse desde caché (sin switch). */
+export function assertCacheSaveable(
+  tab: CacheSaveableTab,
+): { ok: true } | { ok: false; reason: string } {
+  if (!tab.manuscript) {
+    return { ok: false, reason: "no_manuscript" };
+  }
+  if (!tab.isDirty) {
+    return { ok: false, reason: "not_dirty" };
+  }
+  const fingerprint = bodyFingerprintFromManuscript(tab.manuscript);
+  if (fingerprint === tab.savedBodyFingerprint) {
+    return { ok: false, reason: "fingerprint_matches_baseline" };
+  }
+  return { ok: true };
 }
 
 /** Carga un `ParsedManuscript` en el árbol Lexical (§1.4, sin `+++` visibles). */

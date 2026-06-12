@@ -17,7 +17,7 @@
     "saving": "Guardando…",
     "saved": "Guardado",
     "unsaved": "Cambios sin guardar",
-    "manualSaveHint": "Ctrl+S para guardar"
+    "manualSaveHint": "Ctrl+S para guardar · Ctrl+Shift+S para guardar todo"
   },
   "panel": {
     "title": "Inspector",

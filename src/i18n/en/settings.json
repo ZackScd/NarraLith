@@ -20,7 +20,7 @@
     "debounceHint": "After you stop typing for this long (5–600 s).",
     "intervalLabel": "Save every X seconds (0 = off)",
     "intervalHint": "Optional periodic save. Use 0 for idle-only saves.",
-    "manualHint": "With autosave off, use Save or Ctrl+S. Tabs show a dot when there are unsaved changes."
+    "manualHint": "With autosave off: Ctrl+S saves the active tab; Ctrl+Shift+S or Save all saves every dirty tab. Tabs show a dot when there are unsaved changes."
   },
   "graph": {
     "sectionTitle": "Knowledge graph",

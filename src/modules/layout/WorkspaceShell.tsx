@@ -7,6 +7,7 @@ import { useEditorAutoSave } from "@/hooks/useEditorAutoSave";
 import { useEditorFsSync } from "@/hooks/useEditorFsSync";
 import { usePersistManuscriptTabs } from "@/hooks/usePersistManuscriptTabs";
 import { useRestoreLastManuscriptFile } from "@/hooks/useRestoreLastManuscriptFile";
+import { useSaveShortcut } from "@/hooks/useSaveShortcut";
 import { useEntityIndexBootstrap } from "@/hooks/useEntityIndexBootstrap";
 import { useFsWatcher } from "@/hooks/useFsWatcher";
 import { EditorCanvas } from "@/modules/editor/EditorCanvas";
@@ -58,6 +59,7 @@ export function WorkspaceShell() {
   useEntityIndexBootstrap();
   useAuditBootstrap();
   useAuditLogShortcut();
+  useSaveShortcut();
   useFsWatcher();
   useEditorFsSync();
   usePersistManuscriptTabs();

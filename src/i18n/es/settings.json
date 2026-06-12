@@ -20,7 +20,7 @@
     "debounceHint": "Tras dejar de escribir durante este tiempo (5–600 s).",
     "intervalLabel": "Guardar cada X segundos (0 = desactivado)",
     "intervalHint": "Guardado periódico adicional. Usa 0 para solo guardar tras la pausa.",
-    "manualHint": "Con el autoguardado desactivado, usa el botón Guardar o Ctrl+S. Las pestañas muestran un punto cuando hay cambios sin guardar."
+    "manualHint": "Con el autoguardado desactivado: Ctrl+S guarda la pestaña activa; Ctrl+Shift+S o el botón Guardar todo guardan todas las sucias. Las pestañas muestran un punto cuando hay cambios sin guardar."
   },
   "graph": {
     "sectionTitle": "Grafo de conocimiento",

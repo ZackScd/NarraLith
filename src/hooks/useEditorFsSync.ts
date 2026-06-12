@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 
 import {
+  filterFsRemovePaths,
   shouldIgnoreFsReload,
   tabPathsToReloadOnFsChange,
 } from "@/lib/editor/fsSync";
@@ -40,7 +41,10 @@ export function useEditorFsSync() {
       });
 
       if (kind === "remove") {
-        editor.closeTabsRemovedFromDisk(paths);
+        const filtered = filterFsRemovePaths(paths, editor.tabOrder);
+        if (filtered.length > 0) {
+          editor.closeTabsRemovedFromDisk(filtered);
+        }
         return;
       }
 

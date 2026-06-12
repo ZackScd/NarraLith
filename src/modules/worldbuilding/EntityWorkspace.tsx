@@ -1,10 +1,9 @@
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { normalizeEntityErrorKey } from "@/lib/worldbuilding/entityErrors";
 import { EntityFormRenderer } from "@/modules/worldbuilding/EntityFormRenderer";
 import { LocationInhabitantsPanel } from "@/modules/worldbuilding/LocationInhabitantsPanel";
-import { saveAllOpenTabs, useEditorStore } from "@/stores/useEditorStore";
+import { useEditorStore } from "@/stores/useEditorStore";
 
 export function EntityWorkspace() {
   const { t } = useTranslation("worldbuilding");
@@ -14,17 +13,6 @@ export function EntityWorkspace() {
   const lastErrorKey = useEditorStore((s) => s.lastErrorKey);
   const patchEntityField = useEditorStore((s) => s.patchEntityField);
   const setEntityBody = useEditorStore((s) => s.setEntityBody);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        void saveAllOpenTabs();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   if (isLoading) {
     return (
