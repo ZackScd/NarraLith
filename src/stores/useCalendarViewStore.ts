@@ -12,6 +12,7 @@ import { invokeCommand, parseAppError } from "@/lib/ipc";
 import type { SpecialMonthExpand } from "@/modules/calendar/SpecialYearMonthsEditor";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import { useCalendarStore, validateCalendarDraft } from "@/stores/useCalendarStore";
+import { useProjectTimelineStore } from "@/stores/useProjectTimelineStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 
 export type CalendarUnsavedContext = "leave" | "section";
@@ -39,6 +40,8 @@ interface CalendarViewState {
   deleteDialogOpen: boolean;
   pendingNavigation: (() => void) | null;
   monthDeletePending: number | null;
+  /** Incrementa tras reset calendario para invalidar memo de vistas. */
+  dataRevision: number;
   returnView: "timeline" | "editor";
   setReturnView: (view: "timeline" | "editor") => void;
   setViewYear: (year: number) => void;
@@ -99,6 +102,7 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
   deleteDialogOpen: false,
   pendingNavigation: null,
   monthDeletePending: null,
+  dataRevision: 0,
   returnView: "timeline",
 
   setReturnView: (returnView) => set({ returnView }),
@@ -282,7 +286,13 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
       });
       useCalendarStore.setState({ config, lastErrorKey: null });
       get().initFromConfig(config);
-      set({ deleteDialogOpen: false, editExpanded: true, draftValidationKey: null });
+      void useProjectTimelineStore.getState().load();
+      set({
+        deleteDialogOpen: false,
+        editExpanded: true,
+        draftValidationKey: null,
+        dataRevision: get().dataRevision + 1,
+      });
       return true;
     } catch (err) {
       set({
@@ -305,7 +315,13 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
       });
       useCalendarStore.setState({ config, lastErrorKey: null });
       get().initFromConfig(config);
-      set({ deleteDialogOpen: false, editExpanded: true, draftValidationKey: null });
+      void useProjectTimelineStore.getState().load();
+      set({
+        deleteDialogOpen: false,
+        editExpanded: true,
+        draftValidationKey: null,
+        dataRevision: get().dataRevision + 1,
+      });
       return true;
     } catch (err) {
       set({

@@ -1,6 +1,6 @@
 # FIX-010c — Calendario mensual + mini-timeline
 
-> **Estado:** 📋 Planificado · **Esfuerzo:** Medio · **Riesgo:** Bajo  
+> **Estado:** ✅ Cerrado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Bajo  
 > **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** [010a](FIX-010a-classify-red-chips.md)
 
 ---
@@ -20,18 +20,22 @@ Entradas inválidas/obsoletas visibles en vista calendario y mini-timeline later
 
 ## 2. Calendario mensual
 
-- Flag `includeInvalid` o función dedicada.
-- Entradas: `category: "invalid" | "stale"`, token `--destructive` / `--cal-invalid`.
-- `CalendarMonthToolPanel` / `TimeEntryRow`: borde rojo.
+- [x] `CalendarTimeEntry.timeStatus` + helpers (`calendarEntryColor`, tooltip)
+- [x] `buildStaleCalendarEntriesOutsideYear` — marcas obsoletas fuera del año visible
+- [x] `TimeEntryRow` — borde/fondo destructive + tooltip
+- [x] `CalendarMonthToolPanel` + `CalendarSidePanel` — sección «Marcas obsoletas»
+- [x] `buildMarkedDaysForYear` — celdas rojas en mini-grid (`mark.stale`)
+- [x] `CalendarMonthDetail` — pasa `baselineConfig`
 
-> **Infra ya en 010b:** `buildCalendarTimeEntries` usa `resolveMarkerPlacement` + `isRenderableAbsoluteDay` (no congela; aún omite entradas fuera de año visible). Falta UI roja en filas.
+> Tras reset a calendario mínimo, las marcas con timestamp antiguo suelen caer en **fuera de año** y aparecen en la sección inferior del panel lateral (no en la cuadrícula del mes actual).
 
 ---
 
 ## 3. Mini-timeline + side panel
 
-- `TimeTagMiniTimeline`: ítems en `placedMinimized` con SVG rojo.
-- `SideTimeSection`: badge opcional si última fecha ≠ valid.
+- [x] `TimeTagMiniTimeline`: pins rojos (010b) + hover overlay destructive
+- [x] `TimeTagDayEventList`: filas rojas + baseline
+- [ ] `SideTimeSection`: badge opcional si última fecha ≠ valid *(diferido)*
 
 ---
 
@@ -39,9 +43,9 @@ Entradas inválidas/obsoletas visibles en vista calendario y mini-timeline later
 
 En `resetCalendarToDefault` / `Blank` (`useCalendarViewStore.ts`):
 
-1. `useProjectTimelineStore.getState().load()`
-2. Invalidar memo vistas (React key / store revision)
-3. *(Opcional)* `audit.info("calendar", "obs.calendar.config.reset", { mode })`
+1. [x] `useProjectTimelineStore.getState().load()`
+2. [x] `dataRevision++` (key en `CalendarMonthGrid` / `CalendarMonthDetail`)
+3. *(Opcional)* audit — no implementado
 
 ---
 
@@ -49,20 +53,37 @@ En `resetCalendarToDefault` / `Blank` (`useCalendarViewStore.ts`):
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/lib/calendar/calendarEntries.ts` | Incluir invalid |
-| `src/modules/calendar/CalendarMonthToolPanel.tsx` | Estilo fila |
-| `src/modules/editor/sidePanel/TimeTagMiniTimeline.tsx` | Chips rojos |
-| `src/stores/useCalendarViewStore.ts` | Recarga timeline |
+| `src/lib/calendar/calendarEntries.ts` | `timeStatus`, stale fuera de año, tests |
+| `src/modules/calendar/CalendarMonthToolPanel.tsx` | Estilo fila + sección stale |
+| `src/modules/calendar/CalendarStaleEntriesSection.tsx` | **Nuevo** |
+| `src/modules/calendar/CalendarSidePanel.tsx` | Sección stale |
+| `src/components/workspace-ui/calendar/TimeEntryRow.tsx` | Variante destructive |
+| `src/lib/calendar/calendarMarkers.ts` | `mark.stale` en grid · `eventSortKey` (hotfix crash) |
+| `src/modules/editor/sidePanel/TimeTagMiniTimeline.tsx` | Hover rojo |
+| `src/modules/editor/sidePanel/TimeTagDayEventList.tsx` | Filas rojas |
+| `src/stores/useCalendarViewStore.ts` | Recarga timeline + `dataRevision` |
 
 ---
 
 ## 6. QA
 
-| # | Acción | Esperado |
-|---|--------|----------|
-| C1 | Vista calendario tras reset | Entradas obsoletas listadas en rojo |
-| C2 | Mini-timeline en diálogo tiempo | Chips stale visibles |
-| C3 | Reset → timeline | Sin crash; datos refrescados |
+| # | Acción | Esperado | Resultado sesión `2156` |
+|---|--------|----------|-------------------------|
+| C1 | Vista calendario tras reset | Entradas obsoletas listadas en rojo | ✅ Año 15: sección «Marcas obsoletas (5)» + celdas rojas (Agosto 14/16) |
+| C2 | Mini-timeline en diálogo tiempo | Chips stale visibles | ⏭️ no probado explícito · `markerCount: 9` estable en panel |
+| C3 | Reset → timeline | Sin crash; datos refrescados | ✅ `viewChange` timeline↔calendar sin corte · sesión previa reset OK |
+
+**Logs:** `_debug/render-logs/ui-session-1781345228544-2156.ndjson` · `_debug/logs/session-1781345228544-2156.ndjson`
+
+**Hotfix post-QA inicial:** `calendarMarkers.ts` — `resolveTimeSortKey` eliminado por error rompía `CalendarTopBar` (pantalla blanca al abrir calendario).
+
+---
+
+## 7. Cierre
+
+**Estado:** ✅ Cerrado (jun 2026) · Tests: `calendarEntries.test.ts` (3).
+
+**Diferido:** badge `SideTimeSection` si última fecha ≠ valid.
 
 ---
 

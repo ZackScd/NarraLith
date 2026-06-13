@@ -58,6 +58,11 @@
     "openMonth": "Abrir mes"
   },
 
+  "staleEntries": {
+    "title": "Marcas obsoletas ({{count}})",
+    "hint": "Fuera del año visible; posición conservada por marca original."
+  },
+
   "legend": {
     "manuscript": "Manuscrito",
 

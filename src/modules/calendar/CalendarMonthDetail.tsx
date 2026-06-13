@@ -19,6 +19,7 @@ import { resolveWeekDayHeaders } from "@/lib/calendar/weekDays";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import type { TimelineEvent } from "@/lib/types/timeline";
 import { useCalendarViewStore } from "@/stores/useCalendarViewStore";
+import { useCalendarStore } from "@/stores/useCalendarStore";
 import type { TimelineFilterState } from "@/stores/useTimelineStore";
 
 interface CalendarMonthDetailProps {
@@ -37,6 +38,7 @@ export function CalendarMonthDetail({
   filters,
 }: CalendarMonthDetailProps) {
   const { t } = useTranslation("calendarView");
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const shiftMonth = useCalendarViewStore((s) => s.shiftMonth);
   const selectedDay = useCalendarViewStore((s) => s.selectedDay);
   const selectDay = useCalendarViewStore((s) => s.selectDay);
@@ -51,9 +53,15 @@ export function CalendarMonthDetail({
   );
 
   const byDay = useMemo(() => {
-    const all = buildCalendarTimeEntries(year, events, config, filters);
+    const all = buildCalendarTimeEntries(
+      year,
+      events,
+      config,
+      filters,
+      baselineConfig,
+    );
     return entriesByDayInMonth(all, monthNumber);
-  }, [year, events, config, filters, monthNumber]);
+  }, [year, events, config, filters, baselineConfig, monthNumber]);
 
   const weekdayLabels = useMemo(() => resolveWeekDayHeaders(config), [config]);
 

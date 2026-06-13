@@ -1,4 +1,6 @@
-import { fromAbsoluteDay, isRenderableAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
+import { fromAbsoluteDay, isRenderableAbsoluteDay, toAbsoluteDay } from "@/lib/calendar";
+import { resolveMarkerPlacement } from "@/lib/calendar/markerPlacement";
+import { isStaleTimeTagStatus } from "@/lib/calendar/timeTagUi";
 import { isManuscriptPath, isTimedEventPath } from "@/modules/timeline/timelineModel";
 import type { CalendarConfig, CalendarAnnualEvent } from "@/lib/types/calendar";
 import type { TimelineEvent } from "@/lib/types/timeline";
@@ -10,6 +12,7 @@ export interface MarkedCalendarDay {
   month: number;
   day: number;
   categories: CalendarLegendCategory[];
+  stale?: boolean;
 }
 
 function partsInYear(
@@ -27,31 +30,25 @@ function dayKey(month: number, day: number): string {
   return `${month}-${day}`;
 }
 
+function eventSortKey(
+  event: TimelineEvent,
+  config: CalendarConfig,
+  baselineConfig?: CalendarConfig | null,
+): bigint | null {
+  const placement = resolveMarkerPlacement(event, config, baselineConfig);
+  if (placement === null || !isRenderableAbsoluteDay(placement.sortKey)) return null;
+  return placement.sortKey;
+}
+
 export function yearsWithFileEntries(
   events: TimelineEvent[],
   config: CalendarConfig,
+  baselineConfig?: CalendarConfig | null,
 ): number[] {
   const years = new Set<number>();
   for (const event of events) {
-    let sortKey: bigint | null = null;
-    if (event.timestamp) {
-      try {
-        sortKey = BigInt(event.timestamp);
-      } catch {
-        sortKey = null;
-      }
-    }
-    if (sortKey === null) {
-      const resolved = resolveTimeSortKey(event.rawTime, config);
-      if (resolved) {
-        try {
-          sortKey = BigInt(resolved);
-        } catch {
-          sortKey = null;
-        }
-      }
-    }
-    if (sortKey === null || !isRenderableAbsoluteDay(sortKey)) continue;
+    const sortKey = eventSortKey(event, config, baselineConfig);
+    if (sortKey === null) continue;
     const parts = fromAbsoluteDay(sortKey, config);
     years.add(parts.year);
   }
@@ -63,6 +60,7 @@ export function buildMarkedDaysForYear(
   events: TimelineEvent[],
   config: CalendarConfig,
   filters?: TimelineFilterState,
+  baselineConfig?: CalendarConfig | null,
 ): Map<string, MarkedCalendarDay> {
   const map = new Map<string, MarkedCalendarDay>();
 
@@ -70,6 +68,7 @@ export function buildMarkedDaysForYear(
     month: number,
     day: number,
     category: CalendarLegendCategory,
+    stale = false,
   ) => {
     const key = dayKey(month, day);
     const existing = map.get(key);
@@ -77,42 +76,28 @@ export function buildMarkedDaysForYear(
       if (!existing.categories.includes(category)) {
         existing.categories.push(category);
       }
+      if (stale) existing.stale = true;
       return;
     }
-    map.set(key, { month, day, categories: [category] });
+    map.set(key, { month, day, categories: [category], stale: stale || undefined });
   };
 
   for (const event of events) {
-    let sortKey: bigint | null = null;
-    if (event.timestamp) {
-      try {
-        sortKey = BigInt(event.timestamp);
-      } catch {
-        sortKey = null;
-      }
-    }
-    if (sortKey === null) {
-      const resolved = resolveTimeSortKey(event.rawTime, config);
-      if (resolved) {
-        try {
-          sortKey = BigInt(resolved);
-        } catch {
-          sortKey = null;
-        }
-      }
-    }
-    if (sortKey === null) continue;
+    const placement = resolveMarkerPlacement(event, config, baselineConfig);
+    if (placement === null || !isRenderableAbsoluteDay(placement.sortKey)) continue;
 
-    const inYear = partsInYear(sortKey, year, config);
+    const inYear = partsInYear(placement.sortKey, year, config);
     if (!inYear) continue;
+
+    const stale = isStaleTimeTagStatus(placement.timeStatus);
 
     if (isManuscriptPath(event.path)) {
       if (!filters || filters.manuscript) {
-        addCategory(inYear.month, inYear.day, "manuscript");
+        addCategory(inYear.month, inYear.day, "manuscript", stale);
       }
     } else if (isTimedEventPath(event.path)) {
       if (!filters || filters.events) {
-        addCategory(inYear.month, inYear.day, "event");
+        addCategory(inYear.month, inYear.day, "event", stale);
       }
     }
   }
@@ -138,30 +123,14 @@ export function historyMarkedDaysForYear(
   year: number,
   events: TimelineEvent[],
   config: CalendarConfig,
+  baselineConfig?: CalendarConfig | null,
 ): Map<string, { month: number; day: number }> {
   const map = new Map<string, { month: number; day: number }>();
 
   for (const event of events) {
     if (!isManuscriptPath(event.path)) continue;
 
-    let sortKey: bigint | null = null;
-    if (event.timestamp) {
-      try {
-        sortKey = BigInt(event.timestamp);
-      } catch {
-        sortKey = null;
-      }
-    }
-    if (sortKey === null) {
-      const resolved = resolveTimeSortKey(event.rawTime, config);
-      if (resolved) {
-        try {
-          sortKey = BigInt(resolved);
-        } catch {
-          sortKey = null;
-        }
-      }
-    }
+    const sortKey = eventSortKey(event, config, baselineConfig);
     if (sortKey === null) continue;
 
     const inYear = partsInYear(sortKey, year, config);
@@ -182,6 +151,7 @@ export function historyMarkedHoursForDay(
   day: number,
   events: TimelineEvent[],
   config: CalendarConfig,
+  baselineConfig?: CalendarConfig | null,
 ): Set<number> {
   const hours = new Set<number>();
 
@@ -189,24 +159,7 @@ export function historyMarkedHoursForDay(
     if (!isManuscriptPath(event.path)) continue;
     if (event.timeHour === null || event.timeHour === undefined) continue;
 
-    let sortKey: bigint | null = null;
-    if (event.timestamp) {
-      try {
-        sortKey = BigInt(event.timestamp);
-      } catch {
-        sortKey = null;
-      }
-    }
-    if (sortKey === null) {
-      const resolved = resolveTimeSortKey(event.rawTime, config);
-      if (resolved) {
-        try {
-          sortKey = BigInt(resolved);
-        } catch {
-          sortKey = null;
-        }
-      }
-    }
+    const sortKey = eventSortKey(event, config, baselineConfig);
     if (sortKey === null) continue;
 
     const inYear = partsInYear(sortKey, year, config);

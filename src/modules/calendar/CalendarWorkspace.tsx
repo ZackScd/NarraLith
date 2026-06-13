@@ -2,7 +2,10 @@ import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useProjectTimeline } from "@/hooks/useProjectTimeline";
-import { buildCalendarTimeEntries } from "@/lib/calendar/calendarEntries";
+import {
+  buildCalendarTimeEntries,
+  buildStaleCalendarEntriesOutsideYear,
+} from "@/lib/calendar/calendarEntries";
 import { resolveInitialCalendarYear } from "@/lib/calendar/lastProjectTime";
 import { CalendarMonthDetail } from "@/modules/calendar/CalendarMonthDetail";
 import { CalendarMonthGrid } from "@/modules/calendar/CalendarMonthGrid";
@@ -42,10 +45,22 @@ export function CalendarWorkspace() {
   const { events, lastAdded, hasLoaded: timelineReady } = useProjectTimeline();
   const activeProject = useProjectStore((s) => s.activeProject);
   const filters = useTimelineStore((s) => s.filters);
+  const dataRevision = useCalendarViewStore((s) => s.dataRevision);
 
   const allEntries = useMemo(() => {
     if (!draft) return [];
     return buildCalendarTimeEntries(viewYear, events, draft, filters, baselineConfig);
+  }, [viewYear, events, draft, filters, baselineConfig]);
+
+  const staleOutsideYear = useMemo(() => {
+    if (!draft) return [];
+    return buildStaleCalendarEntriesOutsideYear(
+      viewYear,
+      events,
+      draft,
+      filters,
+      baselineConfig,
+    );
   }, [viewYear, events, draft, filters, baselineConfig]);
 
   useEffect(() => {
@@ -125,6 +140,7 @@ export function CalendarWorkspace() {
         <CalendarTopBar config={draft} events={events} />
         {monthOpen ? (
           <CalendarMonthDetail
+            key={dataRevision}
             year={viewYear}
             monthIndex={expandedMonthIndex}
             config={draft}
@@ -133,6 +149,7 @@ export function CalendarWorkspace() {
           />
         ) : (
           <CalendarMonthGrid
+            key={dataRevision}
             year={viewYear}
             config={draft}
             events={events}
@@ -147,9 +164,14 @@ export function CalendarWorkspace() {
           year={viewYear}
           monthIndex={expandedMonthIndex}
           allEntries={allEntries}
+          staleOutsideYear={staleOutsideYear}
         />
       ) : (
-        <CalendarSidePanel draft={draft} onDraftChange={setDraft} />
+        <CalendarSidePanel
+          draft={draft}
+          onDraftChange={setDraft}
+          staleOutsideYear={staleOutsideYear}
+        />
       )}
     </div>
   );

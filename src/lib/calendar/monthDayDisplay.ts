@@ -90,9 +90,15 @@ export function buildMonthDayCellDisplay({
 
   const cellStyle: CSSProperties = {};
   if (hasMark && mark) {
-    cellStyle.backgroundColor = primaryColor(mark.categories);
-    if (mark.categories.length > 1) {
-      cellStyle.boxShadow = `inset 0 0 0 1px var(--border)`;
+    if (mark.stale) {
+      cellStyle.backgroundColor =
+        "color-mix(in oklch, var(--destructive) 18%, var(--background))";
+      cellStyle.boxShadow = "inset 0 0 0 1px var(--destructive)";
+    } else {
+      cellStyle.backgroundColor = primaryColor(mark.categories);
+      if (mark.categories.length > 1) {
+        cellStyle.boxShadow = `inset 0 0 0 1px var(--border)`;
+      }
     }
   } else if (extraDay) {
     cellStyle.backgroundColor = "var(--cal-special-extra)";
@@ -118,6 +124,7 @@ export function markedDaysForYear(
   events: TimelineEvent[],
   config: CalendarConfig,
   filters: TimelineFilterState,
+  baselineConfig?: CalendarConfig | null,
 ): Map<string, MarkedCalendarDay> {
-  return buildMarkedDaysForYear(year, events, config, filters);
+  return buildMarkedDaysForYear(year, events, config, filters, baselineConfig);
 }

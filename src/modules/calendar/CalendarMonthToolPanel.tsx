@@ -1,14 +1,21 @@
 import { ArrowLeft } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { TimeEntryRow, WorkspaceRightPanel } from "@/components/workspace-ui";
 import { Button } from "@/components/ui/button";
 import type { CalendarTimeEntry } from "@/lib/calendar/calendarEntries";
-import { entriesForDay, entriesForMonth } from "@/lib/calendar/calendarEntries";
+import {
+  calendarEntryColor,
+  calendarEntryTooltip,
+  entriesForDay,
+  entriesForMonth,
+  isCalendarEntryStale,
+} from "@/lib/calendar/calendarEntries";
 import { effectiveCalendarForYear } from "@/lib/calendar/effectiveCalendar";
-import { CALENDAR_LEGEND } from "@/lib/calendar/legend";
 import type { CalendarConfig } from "@/lib/types/calendar";
+import { CalendarStaleEntriesSection } from "@/modules/calendar/CalendarStaleEntriesSection";
 import { useCalendarViewStore } from "@/stores/useCalendarViewStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
@@ -18,12 +25,16 @@ interface CalendarMonthToolPanelProps {
   year: number;
   monthIndex: number;
   allEntries: CalendarTimeEntry[];
+  staleOutsideYear: CalendarTimeEntry[];
 }
 
-function entryColor(entry: CalendarTimeEntry): string {
-  return (
-    CALENDAR_LEGEND.find((l) => l.id === entry.category)?.color ?? "var(--cal-event)"
-  );
+function entryRowProps(entry: CalendarTimeEntry, tEditor: TFunction<"editor">) {
+  const stale = isCalendarEntryStale(entry);
+  return {
+    color: calendarEntryColor(entry),
+    stale,
+    title: calendarEntryTooltip(tEditor, entry),
+  };
 }
 
 export function CalendarMonthToolPanel({
@@ -31,8 +42,10 @@ export function CalendarMonthToolPanel({
   year,
   monthIndex,
   allEntries,
+  staleOutsideYear,
 }: CalendarMonthToolPanelProps) {
   const { t } = useTranslation("calendarView");
+  const { t: tEditor } = useTranslation("editor");
   const selectedDay = useCalendarViewStore((s) => s.selectedDay);
   const selectDay = useCalendarViewStore((s) => s.selectDay);
   const closeMonth = useCalendarViewStore((s) => s.closeMonth);
@@ -122,27 +135,41 @@ export function CalendarMonthToolPanel({
                   </p>
                 )}
                 <div className="space-y-1">
-                  {group.items.map((entry) => (
-                    <TimeEntryRow
-                      key={entry.id}
-                      color={entryColor(entry)}
-                      label={entry.label}
-                      onClick={() => openEntry(entry)}
-                    />
-                  ))}
+                  {group.items.map((entry) => {
+                    const row = entryRowProps(entry, tEditor);
+                    return (
+                      <TimeEntryRow
+                        key={entry.id}
+                        color={row.color}
+                        label={entry.label}
+                        stale={row.stale}
+                        title={row.title}
+                        onClick={() => openEntry(entry)}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ))
           ) : (
-            dayEntries.map((entry) => (
-              <TimeEntryRow
-                key={entry.id}
-                color={entryColor(entry)}
-                label={entry.label}
-                onClick={() => openEntry(entry)}
-              />
-            ))
+            dayEntries.map((entry) => {
+              const row = entryRowProps(entry, tEditor);
+              return (
+                <TimeEntryRow
+                  key={entry.id}
+                  color={row.color}
+                  label={entry.label}
+                  stale={row.stale}
+                  title={row.title}
+                  onClick={() => openEntry(entry)}
+                />
+              );
+            })
           )}
+          <CalendarStaleEntriesSection
+            entries={staleOutsideYear}
+            className="mt-3 border-t border-border/60 pt-3"
+          />
         </div>
       </WorkspaceRightPanel>
     );
@@ -174,16 +201,25 @@ export function CalendarMonthToolPanel({
         {monthEntries.length === 0 ? (
           <p className="text-xs text-muted-foreground">{t("month.noMonthEntries")}</p>
         ) : (
-          monthEntries.map((entry) => (
-            <TimeEntryRow
-              key={entry.id}
-              color={entryColor(entry)}
-              label={entry.label}
-              subtitle={entry.dateLabel}
-              onClick={() => openEntry(entry)}
-            />
-          ))
+          monthEntries.map((entry) => {
+            const row = entryRowProps(entry, tEditor);
+            return (
+              <TimeEntryRow
+                key={entry.id}
+                color={row.color}
+                label={entry.label}
+                subtitle={entry.dateLabel}
+                stale={row.stale}
+                title={row.title}
+                onClick={() => openEntry(entry)}
+              />
+            );
+          })
         )}
+        <CalendarStaleEntriesSection
+          entries={staleOutsideYear}
+          className="mt-3 border-t border-border/60 pt-3"
+        />
       </div>
     </WorkspaceRightPanel>
   );

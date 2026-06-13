@@ -1,10 +1,17 @@
 import { fromAbsoluteDay, isRenderableAbsoluteDay, toAbsoluteDay } from "@/lib/calendar";
+import type { TimeTagStatus } from "@/lib/calendar/classifyTimeTag";
 import {
   annualKindToLegendCategory,
+  CALENDAR_LEGEND,
   type CalendarLegendCategory,
 } from "@/lib/calendar/legend";
 import { annualAppliesInYear } from "@/lib/calendar/calendarMarkers";
 import { resolveMarkerPlacement } from "@/lib/calendar/markerPlacement";
+import {
+  isStaleTimeTagStatus,
+  staleTimeTagTooltipTitle,
+} from "@/lib/calendar/timeTagUi";
+import type { TFunction } from "i18next";
 import {
   fileDisplayName,
   isManuscriptPath,
@@ -29,6 +36,27 @@ export interface CalendarTimeEntry {
   blockIndex?: number;
   rawTime: string;
   dateLabel: string;
+  timeStatus: TimeTagStatus;
+}
+
+export function isCalendarEntryStale(entry: CalendarTimeEntry): boolean {
+  return isStaleTimeTagStatus(entry.timeStatus);
+}
+
+export function calendarEntryColor(entry: CalendarTimeEntry): string {
+  if (isCalendarEntryStale(entry)) {
+    return "var(--destructive)";
+  }
+  return (
+    CALENDAR_LEGEND.find((l) => l.id === entry.category)?.color ?? "var(--cal-event)"
+  );
+}
+
+export function calendarEntryTooltip(
+  t: TFunction<"editor">,
+  entry: CalendarTimeEntry,
+): string | undefined {
+  return staleTimeTagTooltipTitle(t, entry.timeStatus, entry.rawTime);
 }
 
 function formatDateLabel(parts: { day: number; month: number; year: number }): string {
@@ -57,6 +85,42 @@ function annualEntryAllowed(
   return true;
 }
 
+function pushFileCalendarEntry(
+  entries: CalendarTimeEntry[],
+  event: TimelineEvent,
+  placement: NonNullable<ReturnType<typeof resolveMarkerPlacement>>,
+  parts: { day: number; month: number; year: number },
+): void {
+  const label = event.title?.trim() || fileDisplayName(event.path);
+  const category: CalendarLegendCategory = isManuscriptPath(event.path)
+    ? "manuscript"
+    : "event";
+
+  entries.push({
+    id: timelineMarkerId(event),
+    sortKey: placement.sortKey,
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    hour: event.timeHour ?? null,
+    label,
+    category,
+    kind: "file",
+    path: event.path,
+    blockIndex: event.blockIndex,
+    rawTime: placement.rawTime,
+    dateLabel: formatDateLabel(parts),
+    timeStatus: placement.timeStatus,
+  });
+}
+
+function sortCalendarEntries(entries: CalendarTimeEntry[]): CalendarTimeEntry[] {
+  return entries.sort((a, b) => {
+    if (a.sortKey === b.sortKey) return a.label.localeCompare(b.label);
+    return a.sortKey < b.sortKey ? -1 : 1;
+  });
+}
+
 export function buildCalendarTimeEntries(
   year: number,
   events: TimelineEvent[],
@@ -73,27 +137,7 @@ export function buildCalendarTimeEntries(
     const parts = fromAbsoluteDay(placement.sortKey, config);
     if (parts.year !== year) continue;
 
-    const label = event.title?.trim() || fileDisplayName(event.path);
-
-    const category: CalendarLegendCategory = isManuscriptPath(event.path)
-      ? "manuscript"
-      : "event";
-
-    entries.push({
-      id: timelineMarkerId(event),
-      sortKey: placement.sortKey,
-      year: parts.year,
-      month: parts.month,
-      day: parts.day,
-      hour: event.timeHour ?? null,
-      label,
-      category,
-      kind: "file",
-      path: event.path,
-      blockIndex: event.blockIndex,
-      rawTime: placement.rawTime,
-      dateLabel: formatDateLabel(parts),
-    });
+    pushFileCalendarEntry(entries, event, placement, parts);
   }
 
   for (const annual of config.annualEvents ?? []) {
@@ -115,15 +159,35 @@ export function buildCalendarTimeEntries(
       path: annual.linkedPath || undefined,
       rawTime: `${annual.day}.${annual.month}.${year}`,
       dateLabel: formatDateLabel(parts),
+      timeStatus: "valid",
     });
   }
 
-  entries.sort((a, b) => {
-    if (a.sortKey === b.sortKey) return a.label.localeCompare(b.label);
-    return a.sortKey < b.sortKey ? -1 : 1;
-  });
+  return sortCalendarEntries(entries);
+}
 
-  return entries;
+/** Marcas obsoletas cuyo año calculado no coincide con el año visible. */
+export function buildStaleCalendarEntriesOutsideYear(
+  viewYear: number,
+  events: TimelineEvent[],
+  config: CalendarConfig,
+  filters?: TimelineFilterState,
+  baselineConfig?: CalendarConfig | null,
+): CalendarTimeEntry[] {
+  const entries: CalendarTimeEntry[] = [];
+
+  for (const event of events) {
+    if (!fileEntryAllowed(event, filters)) continue;
+    const placement = resolveMarkerPlacement(event, config, baselineConfig);
+    if (placement === null || !isStaleTimeTagStatus(placement.timeStatus)) continue;
+    if (!isRenderableAbsoluteDay(placement.sortKey)) continue;
+    const parts = fromAbsoluteDay(placement.sortKey, config);
+    if (parts.year === viewYear) continue;
+
+    pushFileCalendarEntry(entries, event, placement, parts);
+  }
+
+  return sortCalendarEntries(entries);
 }
 
 export function entriesForMonth(

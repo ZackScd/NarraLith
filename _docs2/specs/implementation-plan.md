@@ -88,7 +88,7 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 | **FIX-010g** | ✅ | Baseline `.narralith/calendar-baseline.json` | Medio | [plan](plans/Fase%20D/FIX-010g-calendar-baseline.md) |
 | **FIX-010a** | ✅ | `classifyTimeTag` + chips rojos editor | Medio | [plan](plans/Fase%20D/FIX-010a-classify-red-chips.md) |
 | **FIX-010b** | ✅ | Timeline visible sin mover posición | Medio | [plan](plans/Fase%20D/FIX-010b-timeline-stale-display.md) |
-| **FIX-010c** | 📋 | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
+| **FIX-010c** | ✅ | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
 | **FIX-010d** | 📋 | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
 | **FIX-010h** | 📋 | Borrador calendario localStorage | Bajo–Medio | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
 | **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) |
@@ -187,7 +187,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 13 | FIX-010g | Baseline calendario en disco ✅ |
 | 13a | FIX-010a | Clasificador + chips rojos ✅ |
 | 13b | FIX-010b | Timeline stale visible ✅ |
-| 13c | FIX-010c | Calendario + mini-timeline 📋 |
+| 13c | FIX-010c | Calendario + mini-timeline ✅ |
 | 13d | FIX-010d | Editar marcas tiempo 📋 |
 | 13h | FIX-010h | Borrador calendario LS 📋 |
 | 13i | FIX-010i | Diff estructural calendario 📋 |
@@ -260,6 +260,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-010 split: índice épica + planes 010g, 010a–d, 010h, 010i, 010e (010f dentro de 010e) |
 | 2026-06-13 | FIX-010 planificado (6.A): auditoría + plan [`plans/Fase D/FIX-010-calendar-stale-time-chips.md`](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md) |
 | 2026-06-11 | FIX-010g, 010a, 010b ✅ — QA timeline/calendario sesión NDJSON `8852` (calendario mínimo post-reset) |
+| 2026-06-11 | FIX-010c ✅ — QA calendario sesión `2156` (año 15, marcas obsoletas en panel + grid) |
 
 ---
 

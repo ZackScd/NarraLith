@@ -17,6 +17,7 @@ import {
   toAbsoluteDay,
 } from "@/lib/calendar";
 import { ALL_TIMELINE_FILTERS } from "@/lib/calendar/monthDayDisplay";
+import { isStaleTimeTagStatus, staleTimeTagTooltipTitle } from "@/lib/calendar/timeTagUi";
 import { timelineMarkerId } from "@/lib/calendar/timeMarks";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import type { TimelineEvent } from "@/lib/types/timeline";
@@ -193,9 +194,20 @@ function MiniTimelineHoverOverlay({
 }) {
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const isManuscript = item.lane === "manuscript";
+  const stale = isStaleTimeTagStatus(item.timeStatus);
   const chipWidth = estimateChipWidth(item);
   const dual = !!item.eventLabel;
   const chipBoxHeight = chipHeight(item);
+  const tooltipTitle = stale
+    ? staleTimeTagTooltipTitle(i18n.getFixedT(null, "editor"), item.timeStatus, item.rawTime)
+    : undefined;
+  const chipBorderClass = stale
+    ? "border-[var(--destructive)] bg-[color-mix(in_oklch,var(--destructive)_12%,var(--timeline-chip-bg))]"
+    : "border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)]";
+  const fileTextClass = stale ? "text-[var(--destructive)]" : "text-[var(--timeline-date)]";
+  const mainTextClass = stale
+    ? "text-[var(--destructive)] font-medium"
+    : "text-[var(--timeline-chip-text)]";
 
   useLayoutEffect(() => {
     const svg = svgRef.current;
@@ -221,24 +233,25 @@ function MiniTimelineHoverOverlay({
           : { top: anchor.y, transform: "translateX(-50%)" }),
       }}
       aria-hidden
+      title={tooltipTitle}
     >
       {isManuscript ? (
         <>
           <div
-            className="flex flex-col items-center justify-center rounded-md border border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)] px-2 py-1 text-center shadow-md"
+            className={`flex flex-col items-center justify-center rounded-md border px-2 py-1 text-center shadow-md ${chipBorderClass}`}
             style={{ width: chipWidth, minWidth: chipWidth, minHeight: chipBoxHeight }}
           >
             {dual ? (
               <>
-                <span className="text-[10px] leading-tight text-[var(--timeline-date)]">
+                <span className={`text-[10px] leading-tight ${fileTextClass}`}>
                   {truncateForChip(item.fileLabel, CHIP_TRUNC_FILE)}
                 </span>
-                <span className="text-[11px] font-medium leading-tight text-[var(--timeline-chip-text)]">
+                <span className={`text-[11px] leading-tight ${mainTextClass}`}>
                   {truncateForChip(item.eventLabel!, CHIP_TRUNC_EVENT)}
                 </span>
               </>
             ) : (
-              <span className="text-[11px] text-[var(--timeline-chip-text)]">
+              <span className={`text-[11px] ${mainTextClass}`}>
                 {truncateForChip(item.label, CHIP_TRUNC_SIMPLE)}
               </span>
             )}
@@ -255,20 +268,20 @@ function MiniTimelineHoverOverlay({
             style={{ width: 1.5, height: stemHeight }}
           />
           <div
-            className="flex flex-col items-center justify-center rounded-md border border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)] px-2 py-1 text-center shadow-md"
+            className={`flex flex-col items-center justify-center rounded-md border px-2 py-1 text-center shadow-md ${chipBorderClass}`}
             style={{ width: chipWidth, minWidth: chipWidth, minHeight: chipBoxHeight }}
           >
             {dual ? (
               <>
-                <span className="text-[10px] leading-tight text-[var(--timeline-date)]">
+                <span className={`text-[10px] leading-tight ${fileTextClass}`}>
                   {truncateForChip(item.fileLabel, CHIP_TRUNC_FILE)}
                 </span>
-                <span className="text-[11px] font-medium leading-tight text-[var(--timeline-chip-text)]">
+                <span className={`text-[11px] leading-tight ${mainTextClass}`}>
                   {truncateForChip(item.eventLabel!, CHIP_TRUNC_EVENT)}
                 </span>
               </>
             ) : (
-              <span className="text-[11px] text-[var(--timeline-chip-text)]">
+              <span className={`text-[11px] ${mainTextClass}`}>
                 {truncateForChip(item.label, CHIP_TRUNC_SIMPLE)}
               </span>
             )}

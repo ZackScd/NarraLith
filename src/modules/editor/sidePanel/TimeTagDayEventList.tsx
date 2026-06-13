@@ -4,14 +4,17 @@ import { useTranslation } from "react-i18next";
 import { TimeEntryRow } from "@/components/workspace-ui/calendar/TimeEntryRow";
 import {
   buildCalendarTimeEntries,
+  calendarEntryColor,
+  calendarEntryTooltip,
   entriesForDay,
+  isCalendarEntryStale,
   type CalendarTimeEntry,
 } from "@/lib/calendar/calendarEntries";
 import { ALL_TIMELINE_FILTERS } from "@/lib/calendar/monthDayDisplay";
-import { CALENDAR_LEGEND } from "@/lib/calendar/legend";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import type { TimelineEvent } from "@/lib/types/timeline";
 import { cn } from "@/lib/utils";
+import { useCalendarStore } from "@/stores/useCalendarStore";
 
 interface TimeTagDayEventListProps {
   year: number;
@@ -20,12 +23,6 @@ interface TimeTagDayEventListProps {
   calendar: CalendarConfig;
   events: TimelineEvent[];
   className?: string;
-}
-
-function entryColor(entry: CalendarTimeEntry): string {
-  return (
-    CALENDAR_LEGEND.find((l) => l.id === entry.category)?.color ?? "var(--cal-event)"
-  );
 }
 
 function sortDayEntries(
@@ -52,6 +49,8 @@ export function TimeTagDayEventList({
   className,
 }: TimeTagDayEventListProps) {
   const { t } = useTranslation("calendarView");
+  const { t: tEditor } = useTranslation("editor");
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const hoursEnabled = Boolean(calendar.hoursEnabled);
 
   const dayEntries = useMemo(() => {
@@ -60,9 +59,10 @@ export function TimeTagDayEventList({
       events,
       calendar,
       ALL_TIMELINE_FILTERS,
+      baselineConfig,
     );
     return sortDayEntries(entriesForDay(allEntries, month, day), hoursEnabled);
-  }, [year, month, day, calendar, events, hoursEnabled]);
+  }, [year, month, day, calendar, events, baselineConfig, hoursEnabled]);
 
   return (
     <div
@@ -77,8 +77,10 @@ export function TimeTagDayEventList({
           dayEntries.map((entry) => (
             <TimeEntryRow
               key={entry.id}
-              color={entryColor(entry)}
+              color={calendarEntryColor(entry)}
               label={entry.label}
+              stale={isCalendarEntryStale(entry)}
+              title={calendarEntryTooltip(tEditor, entry)}
               subtitle={
                 hoursEnabled
                   ? entry.hour !== null

@@ -58,6 +58,11 @@
     "openMonth": "Open month"
   },
 
+  "staleEntries": {
+    "title": "Obsolete marks ({{count}})",
+    "hint": "Outside the visible year; position kept from the original mark."
+  },
+
   "legend": {
     "manuscript": "Manuscript",
 

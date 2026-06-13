@@ -14,6 +14,7 @@ import {
 import { resolveWeekDayHeaders } from "@/lib/calendar/weekDays";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import type { TimelineEvent } from "@/lib/types/timeline";
+import { useCalendarStore } from "@/stores/useCalendarStore";
 import type { TimelineFilterState } from "@/stores/useTimelineStore";
 
 interface CalendarMonthPanelProps {
@@ -45,6 +46,7 @@ export function CalendarMonthPanel({
   prevMonthAriaLabel,
   nextMonthAriaLabel,
 }: CalendarMonthPanelProps) {
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const grid = useMemo(
     () => buildMonthGrid(year, monthIndex, config),
     [year, monthIndex, config],
@@ -56,8 +58,8 @@ export function CalendarMonthPanel({
   );
 
   const marked = useMemo(
-    () => markedDaysForYear(year, events, config, filters),
-    [year, events, config, filters],
+    () => markedDaysForYear(year, events, config, filters, baselineConfig),
+    [year, events, config, filters, baselineConfig],
   );
 
   const overlappingSeasonDays = useMemo(() => {

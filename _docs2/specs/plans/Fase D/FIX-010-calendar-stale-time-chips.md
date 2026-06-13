@@ -53,7 +53,7 @@ flowchart LR
 | **010g** | [FIX-010g-calendar-baseline.md](FIX-010g-calendar-baseline.md) | `.narralith/calendar-baseline.json` · `structure_stale` tras reinicio | v1 · ✅ |
 | **010a** | [FIX-010a-classify-red-chips.md](FIX-010a-classify-red-chips.md) | `classifyTimeTag` · chips rojos editor · i18n | v1 · ✅ |
 | **010b** | [FIX-010b-timeline-stale-display.md](FIX-010b-timeline-stale-display.md) | Timeline visible · `displaySortKey` · SVG rojo | v1 · ✅ |
-| **010c** | [FIX-010c-calendar-entries.md](FIX-010c-calendar-entries.md) | Vista calendario + mini-timeline · recarga post-reset | v1 |
+| **010c** | [FIX-010c-calendar-entries.md](FIX-010c-calendar-entries.md) | Vista calendario + mini-timeline · recarga post-reset | v1 · ✅ |
 | **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit | v1 |
 | **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador calendario en localStorage (FIX-007) | v1 |
 | **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Diff estructural borrador vs disco | v1 |
@@ -137,7 +137,9 @@ Checklists QA por sub-plan; plantilla común:
 | 2026-06-11 | **010g, 010a** implementados · QA editor OK (usuario) |
 | 2026-06-11 | **010b** implementado + hotfix congelamiento (`MAX_ABS_DAY`, `markerPlacement`) |
 | 2026-06-11 | **010b** cerrado · QA sesión `8852`: timeline 9 marcas rojas, calendario sin freeze |
+| 2026-06-11 | **010c** implementado + hotfix `eventSortKey` (crash pantalla blanca) |
+| 2026-06-11 | **010c** cerrado · QA sesión `2156`: calendario año 15, 5 marcas obsoletas, grid rojo |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010c](FIX-010c-calendar-entries.md)
+**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010d](FIX-010d-edit-time-tags.md)

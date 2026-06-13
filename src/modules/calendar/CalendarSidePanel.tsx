@@ -15,14 +15,21 @@ import { calendarErrorI18nKey } from "@/stores/useCalendarStore";
 import { useCalendarViewStore } from "@/stores/useCalendarViewStore";
 import { useTimelineStore } from "@/stores/useTimelineStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
+import type { CalendarTimeEntry } from "@/lib/calendar/calendarEntries";
+import { CalendarStaleEntriesSection } from "@/modules/calendar/CalendarStaleEntriesSection";
 import type { CalendarConfig } from "@/lib/types/calendar";
 
 interface CalendarSidePanelProps {
   draft: CalendarConfig;
   onDraftChange: (next: CalendarConfig) => void;
+  staleOutsideYear: CalendarTimeEntry[];
 }
 
-export function CalendarSidePanel({ draft, onDraftChange }: CalendarSidePanelProps) {
+export function CalendarSidePanel({
+  draft,
+  onDraftChange,
+  staleOutsideYear,
+}: CalendarSidePanelProps) {
   const { t } = useTranslation("calendarView");
   const { t: tCalendar } = useTranslation("calendar");
   const { t: tTimeline } = useTranslation("timeline");
@@ -127,6 +134,11 @@ export function CalendarSidePanel({ draft, onDraftChange }: CalendarSidePanelPro
           {editExpanded ? (
             <CalendarEditPanel draft={draft} onChange={onDraftChange} />
           ) : null}
+
+          <CalendarStaleEntriesSection
+            entries={staleOutsideYear}
+            className="mt-3 border-t border-border/60 pt-3"
+          />
         </div>
       </WorkspaceRightPanel>
 
