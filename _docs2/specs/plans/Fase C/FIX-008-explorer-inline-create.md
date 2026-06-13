@@ -1,7 +1,8 @@
 # FIX-008 — Crear archivo/carpeta inline en explorador + fix `create_file` Rust
 
 > Plan de investigación e implementación. **Estado:** 📋 Planificado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
-> **Lista maestra:** [`implementation-plan.md`](../implementation-plan.md) Fase C · Spec origen: [`fix-backlog.md` §2](../fix-backlog.md)  
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · Spec origen: [`fix-backlog.md` §2](../../fix-backlog.md)  
+> **Ruta canónica:** `plans/Fase C/FIX-008-explorer-inline-create.md` (copias sueltas en `plans/*.md` obsoletas)  
 > **Convención:** este documento refleja el **código real** al planificar; actualizar §2–§4 si el árbol cambia antes de implementar.
 
 ---
@@ -35,6 +36,7 @@ Además, la lógica Rust de `create_file` tiene un **bug de extensión**: solo c
 | Eliminar / mover / DnD | Sin cambios salvo no interferir con fila inline |
 | FIX-012 save batch / `fs-changed` remove | Perímetro distinto; solo coordinar doble `create` (§4.3) |
 | Auto-abrir pestaña al crear archivo | Comportamiento **actual** es solo `selectNode` (§4.4); no es regresión FIX-008 |
+| Validación extensión en **rename** modal | Hallazgo QA §2.5 (rename sin `.md` rompe `read_manuscript`) — **FIX-008b** o backlog explorador; no bloquea inline create |
 
 ---
 
@@ -82,6 +84,69 @@ Sesión capturada con audit ON (`tauri dev`), repro del flujo **modal actual** (
 ### 2.4 Eventos audit **ausentes** hoy (oportunidad FIX-008)
 
 No hay `obs.explorer.inline_create.*` ni `obs.explorer.create.*`. Añadir en implementación (§7.6) para QA post-inline.
+
+---
+
+## 2.5 Evidencia QA — recorrido ampliado `session-1781315188472-9108.ndjson`
+
+Sesión audit ON (`tauri dev`), **post-FIX-013**, recorrido manual: crear archivos/carpetas, **mover** y **renombrar** (flujo **modal / explorador actual**, aún **sin** inline create).
+
+### 2.5.1 Contexto (L1–L13)
+
+- Restauración sesión: 8 pestañas incl. `Manuscrito/carpeta/meh.md` (borrador previo).
+- Activa: `escena.md`; `draftCount: 0`.
+
+### 2.5.2 Crear archivos (L14–L31)
+
+| Path creado | Eventos | Hallazgo |
+|-------------|---------|----------|
+| `…/Capitulo 1/maoewo.md` | `reconcile.emit` create ×2 + `fs.sync` ×2 | **Confirma D3** — doble refresh igual que §2.2 |
+| `Manuscrito/archivo_en_raiz.md` | Mismo patrón doble create | Espacios en ruta OK; doble emit persiste |
+
+### 2.5.3 Crear carpetas (L23–L24, L34–L35)
+
+| Path | Eventos | Hallazgo |
+|------|---------|----------|
+| `…/carpeta dentro de volumen - capitulo 1` | Solo `watcher.raw` **modify** (carpeta + padre) | **Sin** `reconcile.emit` create — coherente con §2.3 (`create_folder` sin emit IPC) |
+| `Manuscrito/carpeta en raíz` | Solo `watcher.raw` modify | Igual |
+
+### 2.5.4 Mover archivo a carpeta (L36–L49)
+
+| Acción | Eventos | Hallazgo |
+|--------|---------|----------|
+| `archivo_en_raiz.md` → `carpeta en raíz/archivo_en_raiz.md` | `reconcile.emit` **rename** + `editor.fs.sync` rename | Move OK |
+| Watcher posterior | `reconcile.ghost` + emit create/remove duplicados | Ruido conocido en rename (watcher descompone rename); **no regresión funcional** en este recorrido |
+| Usuario | `obs.editor.tab.open` del archivo en nueva ruta (L50) | Apertura manual OK |
+
+### 2.5.5 Renombrar sin extensión `.md` — **hallazgo nuevo H1** (L52–L63)
+
+| Paso | Evento | Hallazgo |
+|------|--------|----------|
+| Rename a `…/renombrado de archivo en raíz pero dentro de carpeta xd` (**sin `.md`**) | `fs.sync` rename + `obs.editor.reload` | Pestaña activa remapeada |
+| Inmediato | `obs.ipc.invoke.error` · `read_manuscript` · **`error.editor.not_md`** (L56) | **Bug:** rename deja path sin `.md`; reload intenta parse manuscrito |
+| Rename a `…xd.md` (L65–L77) | rename + reload ×2 | Tras añadir `.md`, reload OK |
+
+**Impacto UX:** usuario con pestaña abierta que renombra quitando extensión ve error IPC; al corregir extensión se estabiliza.
+
+**Acción planificada (fuera alcance FIX-008 core):**
+
+| Opción | Descripción |
+|--------|-------------|
+| **A (recomendada)** | Tarea **FIX-008b** / backlog: validar en rename modal que manuscrito mantiene `.md` o auto-sufijo (misma regla D7) |
+| B | `reloadTabFromDisk` / rename handler: no llamar `read_manuscript` si path no termina en `.md` |
+| C | Bloquear rename a extensión no-`.md` bajo `Manuscrito/` |
+
+FIX-008 **debe** aplicar D7 en **create**; el rename modal comparte riesgo de extensión pero **no** se implementa en las fases §6 de FIX-008 salvo decisión explícita.
+
+### 2.5.6 Resumen para implementación FIX-008
+
+| ID | ¿Confirma plan? | Notas |
+|----|----------------|-------|
+| D3 doble create | ✅ Sí | Sigue prioritario en Fase 1 opcional |
+| D2 carpeta vacía | — | No ejercitado explícitamente; sin contradicción |
+| Inline create | ⬜ Pendiente | **Ausentes** todos los `obs.explorer.inline_create.*` (esperado) |
+| H1 rename sin `.md` | ⚠️ Nuevo | Documentar; **no** cerrar FIX-008 sin decidir FIX-008b |
+| Ghost reconcile rename | ℹ️ Conocido | Vigilar con FIX-012; fuera perímetro FIX-008 |
 
 ---
 
@@ -262,6 +327,12 @@ Casos borde:
 
 Rust: extraer `fn resolve_new_file_name(name: &str) -> Result<String, AppError>` en `paths.rs` o `crud.rs`; usar en `create_file`. Validar **stem** para `.md` (parte antes del último `.md` solo si extensión es `.md`); si extensión ≠ `.md`, validar nombre completo con `validate_name`.
 
+### 4.9 Rename sin extensión `.md` (hallazgo H1 — §2.5.5)
+
+**Decisión D8 (cerrada):** no forma parte del cierre FIX-008. Registrar en backlog como **FIX-008b** (validación extensión en rename modal / reload seguro). El recorrido QA `session-1781315188472-9108` demuestra regresión UX con pestaña abierta.
+
+**Coordinación:** al implementar D7 en create, **reutilizar** `resolveNewFileName` / `resolve_new_file_name` en FIX-008b para no duplicar reglas.
+
 ---
 
 ## 5. Diseño UX (referencia VS Code)
@@ -431,6 +502,7 @@ Deprecar títulos modal create (pueden quedar sin referencia).
 | **FIX-001** autofill | Input base ya off |
 | **FIX-007** borrador sucio | Sin interacción |
 | **FIX-009** timeline | Sin interacción |
+| **FIX-008b** rename extensión | Hallazgo H1 §2.5.5; misma util D7; tarea separada |
 | DnD explorador | Fila inline fuera de `@dnd-kit` draggable |
 
 ---
@@ -475,6 +547,7 @@ Deprecar títulos modal create (pueden quedar sin referencia).
 | R10 | WB vista tarjetas → toolbar nuevo archivo | Cambia a tree (D4) o inline visible — según fase implementada |
 | R11 | Con búsqueda abierta → nuevo archivo | Búsqueda se cierra (D5); inline en carpeta real |
 | R12 | Arrastrar otro nodo mientras inline activo | DnD no roto; inline cancel o persiste (D6: nuevo start cancela) |
+| R13 | Rename modal → quitar `.md` con pestaña abierta | Hoy: `error.editor.not_md` (§2.5.5); tras FIX-008b: validar o auto-`.md` |
 
 ### 9.2 Regresión
 
@@ -509,7 +582,8 @@ Archivo esperado: `_debug/logs/session-*.ndjson`
 | Blur/commit compite con clic en error banner | `onMouseDown` preventDefault en banner o delay blur |
 | `@dnd-kit` captura pointer | Fila sin listeners drag |
 | OneDrive / watcher ruido | Fuera de scope; igual que hoy |
-| Extensión no `.md` en manuscrito | Permitida por O4; parser puede no indexar igual — documentar |
+| Extensión no `.md` en manuscrito (create) | Permitida por O4 en **create**; parser puede no indexar igual — documentar |
+| Rename deja path sin `.md` | H1 §2.5.5; **FIX-008b**; no mezclar con cierre inline create |
 
 ---
 
@@ -538,7 +612,9 @@ Archivo esperado: `_debug/logs/session-*.ndjson`
 | Fecha | Nota |
 |-------|------|
 | 2026-06-11 | Plan creado tras investigación de código + NDJSON `session-1781307012322-6388.ndjson` (flujo modal pre-fix) |
+| 2026-06-11 | Recorrido QA ampliado `session-1781315188472-9108`: create/move/rename; confirma D3; hallazgo H1 rename sin `.md` → D8 / FIX-008b |
+| 2026-06-11 | Plan movido a `plans/Fase C/`; enlaces canónicos actualizados |
 
 ---
 
-**Última actualización:** 2026-06-11
+**Última actualización:** 2026-06-11 · **Estado:** 📋 Planificado — listo para implementar Fase 0

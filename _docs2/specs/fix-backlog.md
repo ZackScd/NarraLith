@@ -10,14 +10,14 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | # | Tarea | Tipo | Esfuerzo | Estado |
 |---|-------|------|----------|--------|
 | 1 | Deshabilitar cuadro «Información guardada» del navegador | UI / plataforma | Bajo | ✅ |
-| 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | Pendiente |
+| 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | Pendiente · [FIX-008](plans/Fase%20C/FIX-008-explorer-inline-create.md) |
 | 3 | Timeline: chip doble (archivo + evento) y conectores por evento | UX timeline | Medio–Alto | Pendiente |
 | 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | ✅ |
 | 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
 | 7 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | UX manuscrito | Medio–Alto | 🔄 · [plan](plans/FIX-006-event-frame-redesign.md) |
 | 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B ✅ (FIX-005) |
-| 9 | Ver diff: guardado en disco vs borrador sucio (panel herramientas) | UX editor | Medio | Pendiente · [FIX-013](plans/FIX-013-dirty-diff-viewer.md) |
+| 9 | Ver diff: guardado en disco vs borrador sucio (panel herramientas) | UX editor | Medio | ✅ · [FIX-013](plans/Fase%20B/FIX-013-dirty-diff-viewer.md) |
 | — | *(más tareas por definir)* | — | — | — |
 
 ---
@@ -317,6 +317,7 @@ No queda modal para crear archivo/carpeta; la creación inline replica el flujo 
 
 - **Renombrar** sigue en modal por ahora; el usuario no pidió inline rename (se puede abordar en tarea futura).
 - **`createEntity`** no cambia.
+- **QA jun 2026:** recorrido modal actual (`session-1781315188472-9108`) confirma doble refresh al crear archivo (D3) y descubre bug al renombrar sin `.md` con pestaña abierta → **FIX-008b** en [plan FIX-008 §2.5.5](plans/Fase%20C/FIX-008-explorer-inline-create.md) (fuera alcance cierre inline create).
 
 ---
 
@@ -1140,9 +1141,9 @@ Acción en la cabecera del panel lateral de herramientas del manuscrito (`Editor
 
 ### Detalle
 
-Spec completo: [**`plans/FIX-013-dirty-diff-viewer.md`**](plans/FIX-013-dirty-diff-viewer.md) (IPC, UX, fases, QA).
+Spec completo: [**`plans/Fase B/FIX-013-dirty-diff-viewer.md`**](plans/Fase%20B/FIX-013-dirty-diff-viewer.md) (IPC, UX, fases, QA).
 
-**Orden:** #12 en [`implementation-plan.md`](implementation-plan.md) — después de FIX-008 y FIX-009; antes de FIX-010 / Era II.
+**Orden:** #12 en [`implementation-plan.md`](implementation-plan.md) — ✅ cerrado jun 2026; ejecutado antes de FIX-008/009 por priorización.
 
 **Depende de:** FIX-007 ✅, FIX-005 ✅.
 

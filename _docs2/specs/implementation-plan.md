@@ -16,6 +16,7 @@
 1. Ejecutar **en orden** salvo que una tarea en curso obligue a reordenar (anotar el motivo en el PR o en `04-TASK.md`).
 2. Al **iniciar** una tarea: abrir el spec enlazado, redactar sub-plan de implementación si hace falta, marcar estado aquí (`⬜` → `🔄` → `✅`).
 3. Al **cerrar**: tests/smoke según spec; no duplicar el detalle aquí.
+4. **Planes detallados** viven en [`plans/Fase A/`](plans/Fase%20A/), [`plans/Fase B/`](plans/Fase%20B/), [`plans/Fase C/`](plans/Fase%20C/) según fase. Copias sueltas en `plans/*.md` (raíz) pueden estar obsoletas — usar siempre la ruta por fase enlazada aquí.
 
 **Estados:** ⬜ pendiente · 🔄 en curso · ✅ hecho · ⏸ aplazado
 
@@ -27,7 +28,7 @@
 |------|----------|-----|--------|
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
 | **B** | FIX-004…007, OBS-001, FIX-012, **FIX-013** | Fixes medianos (editor + UX) + observabilidad | 8 |
-| **C** | FIX-008…009 | Fixes explorador / timeline | 2 |
+| **C** | FIX-008…009 | Fixes explorador / timeline | 3 |
 | **D** | FIX-010…011 | Épica «eliminar no rompe» (primeros escenarios) | 2 |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
 | **F** | MAP-000…012 | Refactor mapas Era III | 13 |
@@ -39,9 +40,9 @@
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-001** | ✅ | Deshabilitar autocompletado «Información guardada» del navegador | Bajo | [`fix-backlog.md` §1](fix-backlog.md) · [**plan detallado**](plans/FIX-001-autofill.md) |
-| **FIX-002** | ✅ | Quitar pestaña/panel «Referencias» del lateral del manuscrito | Bajo | [`fix-backlog.md` §4](fix-backlog.md) · [**plan detallado**](plans/FIX-002-remove-references-panel.md) |
-| **FIX-003** | ✅ | Botón carpeta: abrir raíz del proyecto en el SO (manuscrito/WB) | Bajo | [`fix-backlog.md` §5](fix-backlog.md) · [**plan detallado**](plans/FIX-003-open-folder-os.md) |
+| **FIX-001** | ✅ | Deshabilitar autocompletado «Información guardada» del navegador | Bajo | [`fix-backlog.md` §1](fix-backlog.md) · [**plan detallado**](plans/Fase%20A/FIX-001-autofill.md) |
+| **FIX-002** | ✅ | Quitar pestaña/panel «Referencias» del lateral del manuscrito | Bajo | [`fix-backlog.md` §4](fix-backlog.md) · [**plan detallado**](plans/Fase%20A/FIX-002-remove-references-panel.md) |
+| **FIX-003** | ✅ | Botón carpeta: abrir raíz del proyecto en el SO (manuscrito/WB) | Bajo | [`fix-backlog.md` §5](fix-backlog.md) · [**plan detallado**](plans/Fase%20A/FIX-003-open-folder-os.md) |
 
 ---
 
@@ -49,14 +50,14 @@
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-004** | ✅ | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/FIX-004-click-empty-focus.md) |
-| **FIX-005** | ✅ | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/FIX-005-whitespace-persist.md) |
-| **FIX-006** | ✅ | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [FIX-006](plans/FIX-006-event-frame-redesign.md) |
-| **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/FIX-006.5-event-frame-interactions.md) |
-| **OBS-001** | ✅ | Módulo global de auditoría / registro del sistema (IPC, FS, stores, eventos) | Medio | [**plan detallado**](plans/OBS-001-system-audit-log.md) |
-| **FIX-007** | ✅ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [**plan detallado**](plans/FIX-007-dirty-draft-persist.md) |
-| **FIX-012** | ✅ | Guardar: tabs estables, sin ghost, save-all sin switch (2b) | Medio | [**plan detallado**](plans/FIX-012-save-tab-navigation.md) |
-| **FIX-013** | ✅ | Ver diff disco vs borrador sucio (panel herramientas manuscrito) | Medio | [**plan detallado**](plans/FIX-013-dirty-diff-viewer.md) · requiere FIX-007 ✅ |
+| **FIX-004** | ✅ | Escritura: clic en zona vacía inferior enfoca el editor | Medio | [`fix-backlog.md` §8.A](fix-backlog.md) · [**plan detallado**](plans/Fase%20B/FIX-004-click-empty-focus.md) |
+| **FIX-005** | ✅ | Guardado fiel a espacios y saltos de línea (sin `trim` en cadena extract→disco) | Medio | [`fix-backlog.md` §8.B](fix-backlog.md) · [**plan detallado**](plans/Fase%20B/FIX-005-whitespace-persist.md) |
+| **FIX-006** | ✅ | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | Medio–Alto | [FIX-006](plans/Fase%20B/FIX-006-event-frame-redesign.md) |
+| **FIX-006.5** | ✅ | Interacciones marco: `[-]`/`[+]`, borrado two-step, contexto evento | Medio–Alto | [FIX-006.5](plans/Fase%20B/FIX-006.5-event-frame-interactions.md) |
+| **OBS-001** | ✅ | Módulo global de auditoría / registro del sistema (IPC, FS, stores, eventos) | Medio | [**plan detallado**](plans/Fase%20B/OBS-001-system-audit-log.md) |
+| **FIX-007** | ✅ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [**plan detallado**](plans/Fase%20B/FIX-007-dirty-draft-persist.md) |
+| **FIX-012** | ✅ | Guardar: tabs estables, sin ghost, save-all sin switch (2b) | Medio | [**plan detallado**](plans/Fase%20B/FIX-012-save-tab-navigation.md) |
+| **FIX-013** | ✅ | Ver diff disco vs borrador sucio (panel herramientas manuscrito) | Medio | [**plan detallado**](plans/Fase%20B/FIX-013-dirty-diff-viewer.md) · requiere FIX-007 ✅ |
 
 > **OBS-001 antes de FIX-012:** diagnosticar con evidencia en `NarraLith/_debug/` (solo `tauri dev`; release sin debug).
 
@@ -66,7 +67,8 @@
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-008** | ⬜ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan detallado**](plans/FIX-008-explorer-inline-create.md) |
+| **FIX-008** | ⬜ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan detallado**](plans/Fase%20C/FIX-008-explorer-inline-create.md) |
+| **FIX-008b** | ⬜ | Rename modal: validar extensión `.md` / reload seguro (hallazgo H1 QA) | Bajo | Derivado de [FIX-008 §2.5.5](plans/Fase%20C/FIX-008-explorer-inline-create.md) · no bloquea FIX-008 |
 | **FIX-009** | ⬜ | Timeline: chip doble (archivo + evento) y conectores por evento | Medio–Alto | [`fix-backlog.md` §3](fix-backlog.md) |
 
 ---
@@ -160,8 +162,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, save-all sin switch ✅ |
 | 9 | FIX-007 | Borrador sucio al cerrar app ✅ |
 | 10 | FIX-008 | Explorador inline VS Code |
+| 10b | FIX-008b | Rename: validar extensión `.md` (hallazgo QA) |
 | 11 | FIX-009 | Timeline chips + conectores |
-| 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) |
+| 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) ✅ |
 | 13 | FIX-010 | Épica 6.A calendario obsoleto |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
 | 15 | ERAII-001 | M7 un solo modelo manuscrito |
@@ -191,7 +194,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | Grafo, versiones Git, exportación | [`03-ROADMAP.md`](../03-ROADMAP.md) Eras IV–V | Tras WB |
 | Plothole | [`module-replan.md`](module-replan.md) | Era IV+ |
 | Backlinks WB en nuevo panel | Tras ERAII-001 | Era II–IV |
-| Diff borrador vs disco | [`plans/FIX-013-dirty-diff-viewer.md`](plans/FIX-013-dirty-diff-viewer.md) | Tras FIX-009, antes Era II |
+| Diff borrador vs disco | [`plans/Fase B/FIX-013-dirty-diff-viewer.md`](plans/Fase%20B/FIX-013-dirty-diff-viewer.md) | ✅ FIX-013 |
 
 ---
 
@@ -218,6 +221,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-013 planificado: diff disco vs borrador sucio en panel herramientas (`plans/FIX-013-dirty-diff-viewer.md`); orden #12 tras FIX-009 |
 | 2026-06-11 | FIX-013 §3.1: cabecera panel solo iconos (Etiquetas/Guardar sin texto); tooltips i18n ES/EN |
 | 2026-06-11 | FIX-013 ✅ cerrado: diff inline Lexical (`DirtyDiffHighlightPlugin`), refresh al guardar vía `dirtyDiffSavedBaseline`; QA `session-1781310443496-13516` |
+| 2026-06-11 | Planes reorganizados por fase (`plans/Fase A|B|C/`); enlaces canónicos actualizados en esta lista |
+| 2026-06-11 | FIX-008 plan actualizado: QA recorrido `session-1781315188472-9108` (create/move/rename); confirma D3; hallazgo H1 rename sin `.md` → FIX-008b |
 
 ---
 
