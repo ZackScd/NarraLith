@@ -66,9 +66,152 @@ Eventos de **dominio** post-guardado (`obs.calendar.*`, `obs.ipc.*`) pueden segu
 |--------|------------|
 | Archivos enormes (verbose) | Off por default; buffer 600/300; debounce; catálogo explícito |
 | Fugas de contenido manuscrito | Prohibido texto Lexical; solo paths, ids, índices |
-| Instrumentación incompleta | Catálogo §4 + checklist QA por módulo |
+| Instrumentación incompleta | Catálogo §4 + §0.8 + checklist QA por módulo |
 | Duplicar OBS-002 | No loguear mismo hecho en ambos salvo `viewChange` (acción) vs `layout` (estado) |
 | Migración settings | Defaults Rust rellenan campos nuevos; flags viejos clear-on-boot unificados en UI |
+| Duplicar OBS-001 | Ver §0.7 — convivencia deliberada en archivos distintos |
+
+### 0.6 Auditoría de código (segunda pasada — jun 2026)
+
+Revisión archivo a archivo del repo frente al plan v1. Objetivo: que **nada quede fuera** del alcance de implementación.
+
+#### 0.6.1 Infraestructura existente (patrón a copiar)
+
+| Pieza | Ubicación | Notas para OBS-003 |
+|-------|-----------|-------------------|
+| Ring buffer dual | [`createRenderAuditApi.ts`](../../../../src/lib/render-audit/createRenderAuditApi.ts) | Copiar estructura `standard` + `verbose` + persist handlers |
+| Persistencia NDJSON | [`audit/storage.rs`](../../../../src-tauri/src/audit/storage.rs) `append_entry` | Reutilizar; ampliar `SessionLogPaths` |
+| Paths sesión | [`audit/paths.rs`](../../../../src-tauri/src/audit/paths.rs) | Añadir `action_logs_dir()` + `ensure_debug_dirs` |
+| Bootstrap único | [`audit/state.rs`](../../../../src-tauri/src/audit/state.rs) `bootstrap()` | **Extender** (no comando `action_audit_bootstrap` separado): mismo `bootId`, 5 paths |
+| IPC TS | [`lib/audit/ipc.ts`](../../../../src/lib/audit/ipc.ts) | `auditAppendActionEntry`, `auditClearAllLogs`, `auditSetActionLogEnabled`… |
+| Tipos IPC FE | [`lib/types/audit.ts`](../../../../src/lib/types/audit.ts) | Ampliar `AuditConfigResponse`, `AuditLogPathResponse`, `AuditViewerTab` |
+| Store UI | [`useAuditStore.ts`](../../../../src/stores/useAuditStore.ts) | Paths action, toggles, `clearAllLogs`, buffers action |
+| Render bootstrap | [`render-audit/bootstrap.ts`](../../../../src/lib/render-audit/bootstrap.ts) | Espejo: `applyActionAuditConfig`, `ensureActionAuditPersistHandlers`, `logActionAuditBootstrap` |
+| Compuerta release | [`vite.config.ts`](../../../../vite.config.ts) `__AUDIT_ENABLED__` | Stub `action-audit/stub.ts` |
+| Comandos Tauri | [`lib.rs`](../../../../src-tauri/src/lib.rs) L106–126 | Registrar nuevos `audit_*` bajo `#[cfg(debug_assertions)]` |
+| Tests referencia | [`render-audit.test.ts`](../../../../src/lib/render-audit/render-audit.test.ts), [`audit/storage.rs`](../../../../src-tauri/src/audit/storage.rs) tests | `action-audit.test.ts` + test `clear_all_logs` |
+
+#### 0.6.2 Menú / visor — delta concreto
+
+| Archivo | Cambio |
+|---------|--------|
+| [`DebugNavMenu.tsx`](../../../../src/modules/debug/DebugNavMenu.tsx) | 5 toggles; 1 `MenuAction` borrar; 1 toggle sesión única; quitar 3+3 actuales; 5º punto indicador |
+| [`AuditLogViewer.tsx`](../../../../src/modules/debug/AuditLogViewer.tsx) | `AuditViewerTab`: `"action"` \| `"actionVerbose"`; `useAuditEntries` → `actionAudit` |
+| [`GlobalNav.tsx`](../../../../src/modules/layout/GlobalNav.tsx) | Indicador 🐛 (5 puntos o agrupación ④⑤) |
+| [`i18n/es/debug.json`](../../../../src/i18n/es/debug.json) + `en` | Keys toggles, borrar todo, sesión única, pestañas, carpetas |
+| [`useAuditLogShortcut.ts`](../../../../src/hooks/useAuditLogShortcut.ts) | Sin cambio funcional; verificar con 5 pestañas |
+
+#### 0.6.3 Bootstrap — hueco crítico
+
+Hoy [`useAuditBootstrap`](../../../../src/hooks/useAuditBootstrap.ts) solo monta en [`WorkspaceShell`](../../../../src/modules/layout/WorkspaceShell.tsx). [`ProjectLauncher`](../../../../src/modules/project/ProjectLauncher.tsx) **no** tiene menú debug ni audit.
+
+| Consecuencia | Acción plan |
+|--------------|-------------|
+| Abrir proyecto desde launcher no genera `action-session-*` hasta entrar al workspace | **Mover** `useAuditBootstrap` + `DebugNavMenu` a [`App.tsx`](../../../../src/App.tsx) (o shell común launcher+workspace) en Fase 0 |
+| `obs.project.open` ya existe en OBS-001 ([`useProjectStore`](../../../../src/stores/useProjectStore.ts)) | OBS-003 re-emite `obs.action.project.open` en action log al abrir (mismo handler store) |
+
+#### 0.6.4 `clear_logs` — comportamiento actual vs «eliminar todo»
+
+| Comando hoy | Qué hace realmente |
+|-------------|-------------------|
+| `audit_clear_logs` | Borra **toda** `_debug/logs/`; regenera `bootId` y paths de system **y** asigna nuevos paths render en memoria **sin** borrar archivos render en disco |
+| `audit_clear_render_logs` | Borra `ui-session-*` y/o `ui-verbose-*` en `_debug/render-logs/` |
+| Sesión única | Tres flags independientes en bootstrap ([`state.rs`](../../../../src-tauri/src/audit/state.rs) L48–61) |
+
+**Decisión implementación:** `audit_clear_all_logs` debe:
+
+1. Vaciar buffers RAM (audit + renderAudit + actionAudit).
+2. Borrar archivos en `logs/`, `render-logs/`, **`action-logs/`** (toda la carpeta, igual que hoy system/render).
+3. Rotar `bootId` una vez y actualizar los 5 paths en `AuditState`.
+
+UI «Sesión única» escribe los **cinco** flags clear-on-boot (o un solo `clearAllLogsOnNextBoot` que bootstrap interpreta).
+
+#### 0.6.5 Navegación `setMainView` — bypass del guard calendario
+
+[`useWorkspaceStore.setMainView`](../../../../src/stores/useWorkspaceStore.ts) es el punto único ideal para `obs.action.workspace.viewChange`, **pero** hay llamadas directas que **saltan** [`guardCalendarNavigation`](../../../../src/modules/layout/WorkspaceShell.tsx):
+
+| Archivo | Riesgo QA |
+|---------|-----------|
+| [`TimelineSidePanel.tsx`](../../../../src/modules/timeline/TimelineSidePanel.tsx) | → calendar sin guard |
+| [`CalendarEditPanel.tsx`](../../../../src/modules/calendar/CalendarEditPanel.tsx) | → editor |
+| [`CalendarSidePanel.tsx`](../../../../src/modules/calendar/CalendarSidePanel.tsx) | usa guard ✓ |
+| [`TimelineHorizontal.tsx`](../../../../src/modules/timeline/TimelineHorizontal.tsx) | → editor |
+| [`GraphView.tsx`](../../../../src/modules/graph/GraphView.tsx) | → editor |
+| [`ConsistencyPanel.tsx`](../../../../src/modules/consistency/ConsistencyPanel.tsx) | → editor |
+| [`WorkspaceShell.tsx`](../../../../src/modules/layout/WorkspaceShell.tsx) Settings | → consistency / editor |
+
+**Plan:** log en `setMainView` siempre `{ from, to, source?: string }`; opcional `source` en llamadas directas. Los bloqueos por guard se loguean en `useCalendarViewStore.guardNavigation` → `obs.action.calendar.draft.unsavedDialog` `{ result: "blocked" }`.
+
+### 0.7 Convivencia OBS-001 ↔ OBS-003 (eventos ya instrumentados)
+
+OBS-001 ya registra acciones técnicas en `session-*.ndjson`. OBS-003 **no las elimina**; duplica en `action-session-*` con nombres orientados a QA.
+
+| Dominio OBS-001 (existente) | Equivalente OBS-003 | Estrategia |
+|----------------------------|---------------------|------------|
+| `obs.project.open` / `close` | `obs.action.project.*` | Hook en `useProjectStore` emite action si ④ ON |
+| `obs.editor.tab.*` | `obs.action.editor.tab*` | Hook subscribe `useEditorStore` o re-emit en store |
+| `obs.editor.save.start/end` | `obs.action.editor.save` | Unificar en action log (una línea por guardado) |
+| `obs.editor.unsaved.dialog` | `obs.action.editor.unsavedDialog` | Misma transacción |
+| `obs.explorer.inline_*` | `obs.action.explorer.*` | Mapeo 1:1 |
+| `obs.editor.diff.open` | `obs.action.editor.dirtyDiffToggle` | Plugin + store |
+
+**Regla:** action log = **crónica legible**; system log = **profundidad técnica** (duraciones IPC, fs.sync, saveAll cache).
+
+### 0.8 Huecos del catálogo §4 (faltaban en plan v1)
+
+| Área | Eventos a añadir | Dónde instrumentar |
+|------|------------------|-------------------|
+| Calendario | `monthDelete.confirm` / `cancel` | [`CalendarEditPanel`](../../../../src/modules/calendar/CalendarEditPanel.tsx) + `monthDeletePending` |
+| Calendario | `deleteCalendar.restoreDefault` / `leaveBlank` | [`CalendarDraftDialogs`](../../../../src/modules/calendar/CalendarDraftDialogs.tsx) |
+| Calendario | `season.*` / `specialYear.*` / `recurring.*` edit toggles | `CalendarEditPanel` secciones locales |
+| Calendario | `day.select` / `month.shift` | `useCalendarViewStore` |
+| Calendario | `topBar.yearJump` | [`CalendarTopBar`](../../../../src/modules/calendar/CalendarTopBar.tsx) |
+| Calendario | Ajustes globales (fuera vista) | [`CalendarSettingsSection`](../../../../src/modules/settings/CalendarSettingsSection.tsx) si existe · **v1 session** |
+| Editor | `saveAll` | `useEditorStore` saveAll |
+| Editor | `externalReload.dialog` | `useEditorStore` reload dialog |
+| Editor | `wikiLink.open` | WikiLinkClickPlugin — **verbose** |
+| Launcher | `recent.remove` | `ProjectLauncher` |
+| Launcher | `createDialog.open` | `CreateProjectDialog` |
+| Settings | `closeProject` / tema / locale / autosave | `SettingsDialog` + `useSettingsStore` |
+| Layout | `explorer.resize` / `panel.resize` | `useLayoutStore` — **verbose** |
+| Explorador | `search.query` | `useFileTreeStore` — **verbose** |
+| Timeline | `focusDate.change` | `useTimelineStore` |
+| Side panel | `tab.change` (editor/timeline/calendar) | Ya OBS-002 `sidePanel.tab` → action espejo |
+
+### 0.9 Inventario ampliado de archivos (checklist implementación)
+
+**Rust:** `types.rs`, `state.rs`, `storage.rs`, `paths.rs`, `commands.rs`, `mod.rs`, tests en `storage.rs`.
+
+**TypeScript core:** `lib/audit/types.ts`, `defaults.ts`, `ipc.ts`, `lib/types/audit.ts`, `stores/useAuditStore.ts`, `hooks/useAuditBootstrap.ts`, **`App.tsx`** (bootstrap global).
+
+**Nuevo módulo:** `lib/action-audit/**` (§3.2) + `action-audit.test.ts`.
+
+**UI debug:** `DebugNavMenu.tsx`, `AuditLogViewer.tsx`, `GlobalNav.tsx`, `i18n/*/debug.json`.
+
+**Hooks acción:** `lib/action-audit/hooks/*` (§3.2) montados desde `WorkspaceShell` vía `useUiActionAudit()`.
+
+**Componentes con estado local (handlers obligatorios Fase 1 calendario):**
+
+- [`CalendarEditPanel.tsx`](../../../../src/modules/calendar/CalendarEditPanel.tsx) — `monthsExpanded`, `monthsEditEnabled`, `seasons*`, `specialYears*`
+- [`CalendarSidePanel.tsx`](../../../../src/modules/calendar/CalendarSidePanel.tsx) — `editExpanded` vía store ✓
+- [`PanelSectionHeader`](../../../../src/components/workspace-ui/PanelSectionHeader.tsx) — lápiz editar meses/estaciones (prop `onEditToggle`)
+- [`monthListDnD.tsx`](../../../../src/modules/calendar/monthListDnD.tsx) — reorder
+- [`CalendarMonthRows`](../../../../src/modules/calendar/CalendarMonthRows.tsx) — remove month
+- [`CalendarDraftDialogs.tsx`](../../../../src/modules/calendar/CalendarDraftDialogs.tsx)
+- [`CalendarSidePanel`](../../../../src/modules/calendar/CalendarSidePanel.tsx) `PanelDraftFooter` onSave/onDiscard
+
+**Stores middleware / subscribe:**
+
+- `useWorkspaceStore.ts` — **wrap `setMainView`**
+- `useCalendarViewStore.ts` — save/discard/guard/confirmUnsaved/openMonth/…
+- `useFileTreeStore.ts` — bridge desde eventos explorer existentes
+- `useEditorStore.ts` — bridge tabs/save/unsaved
+- `useProjectStore.ts` — open/close/create
+- `useTimelineStore.ts` — filters (parcialmente ya en render audit)
+
+**Docs:** [`06-ARCHITECTURE.md`](../../06-ARCHITECTURE.md), [OBS-001 §2.4](../Fase%20B/OBS-001-system-audit-log.md) nota «fuera de v1» actualizar.
+
+**No tocar en v1:** `logStorePatches` flag OBS-001 (sigue off); macro `audited_command` Rust.
 
 ---
 
@@ -96,7 +239,7 @@ OBS-001 + OBS-002 no bastan para decir **qué hizo el usuario** en orden. Obliga
 
 ---
 
-## 2. Modelo de cuatro toggles + dos acciones unificadas
+## 2. Modelo de cinco toggles + dos acciones unificadas
 
 ### 2.1 Toggles (únicos controles separados)
 
@@ -114,7 +257,7 @@ Indicador 🐛: hasta **5 puntos** (verde / cielo / ámbar / violeta / rosa) o a
 
 | Acción única | Comportamiento |
 |--------------|----------------|
-| **Eliminar todo el registro** | Borra buffers RAM + trunca/elimina los **5** archivos de la sesión actual (y opcionalmente glob `session-*`, `ui-*`, `action-*` en sus carpetas — definir: solo bootId actual vs carpeta entera) |
+| **Eliminar todo el registro** | Borra buffers RAM (3 APIs) + **todos** los `.ndjson` en `logs/`, `render-logs/`, `action-logs/` + rota `bootId` (comportamiento alineado con `clear_log_files` actual, no solo el archivo de la sesión corriente) |
 | **Sesión única al reiniciar** | Un toggle marca **todos** los `*ClearOnNextBoot` → true; al próximo bootstrap se limpian las 5 rutas y el flag vuelve a false |
 
 **Migración settings (interno):**
@@ -134,7 +277,7 @@ Indicador 🐛: hasta **5 puntos** (verde / cielo / ámbar / violeta / rosa) o a
 
 Atajo `Ctrl+Shift+L`: abre última pestaña o Sistema.
 
-Menú «Abrir carpeta»: opcional submenú o una carpeta `_debug/` raíz.
+Menú «Abrir carpeta»: **una** entrada «Abrir carpeta `_debug`» (raíz repo) + opcional submenú por subcarpeta.
 
 ---
 
@@ -198,16 +341,20 @@ actionAudit.isVerboseEnabled()
 
 ### 3.3 Backend Rust
 
-Extender `src-tauri/src/audit/` (debug only):
+Extender [`src-tauri/src/audit/`](../../../../src-tauri/src/audit/) (debug only) — **sin** módulo paralelo:
 
-| Comando | Notas |
-|---------|-------|
-| `action_audit_bootstrap` | Crea paths ④⑤ si toggles on |
-| `action_audit_append_entry` | `{ channel, entry }` |
-| `audit_clear_all_logs` | **Nuevo** — system + render all + action all |
-| `audit_patch_settings` | Campos `actionLogEnabled`, `actionVerboseEnabled`, buffers, clear flags |
+| Comando / método | Notas |
+|------------------|-------|
+| `audit_bootstrap` (existente) | Ampliar `SessionLogPaths`: `action_session`, `action_verbose`; clear-on-boot ④⑤ |
+| `audit_append_action_entry` | `{ channel: ActionLogChannel, entry }` — espejo de `append_render_entry` |
+| `audit_clear_all_logs` | **Nuevo** — system + render all + action all + buffers vía respuesta config |
+| `audit_set_action_log_enabled` / `audit_set_action_verbose_enabled` | Espejo render toggles |
+| `audit_patch_settings` | Campos `actionLogEnabled`, `actionVerboseEnabled`, buffers, `actionClearLogsOnNextBoot`, `actionVerboseClearLogsOnNextBoot` |
+| `audit_get_log_path` | + `actionLogsDir`, paths action |
 
 `AuditConfigResponse` ampliado: `actionSessionLogPath`, `actionVerboseLogPath`, `actionLogsDir`.
+
+`ActionLogChannel` enum: `Session` \| `Verbose` (nombre archivo `action-session-` / `action-verbose-`).
 
 ---
 
@@ -290,6 +437,13 @@ Convención: **session** = fila en catálogo salvo nota «solo verbose».
 | `obs.action.calendar.draft.discard` | Descartar |
 | `obs.action.calendar.draft.unsavedDialog` | `{ context, choice }` |
 | `obs.action.calendar.deleteCalendar` | Flujo eliminar calendario |
+| `obs.action.calendar.deleteCalendar.choice` | `{ choice: restoreDefault \| leaveBlank \| cancel }` |
+| `obs.action.calendar.monthDelete.dialog` | Confirmar eliminar mes · `{ choice }` |
+| `obs.action.calendar.season.editMode` | Lápiz estaciones |
+| `obs.action.calendar.specialYear.editMode` | Lápiz años especiales |
+| `obs.action.calendar.day.select` | Día en detalle mes |
+| `obs.action.calendar.month.shift` | Flechas mes detalle |
+| `obs.action.calendar.topBar.yearChange` | Salto año cabecera |
 
 ### 4.7 Mapas / grafo / consistencia / WB
 
@@ -306,6 +460,26 @@ Convención: **session** = fila en catálogo salvo nota «solo verbose».
 |--------|--------|
 | `obs.action.dialog.confirm` | `{ dialogId, choice }` |
 | `obs.action.dialog.dismiss` | Cancel / overlay |
+
+### 4.9 Launcher y ajustes (antes del workspace)
+
+| Evento | Cuándo |
+|--------|--------|
+| `obs.action.launcher.createOpen` | Diálogo crear proyecto |
+| `obs.action.launcher.recentRemove` | Quitar reciente |
+| `obs.action.settings.open` / `close` | Modal ajustes |
+| `obs.action.settings.theme` / `locale` | Cambio apariencia |
+| `obs.action.settings.autosave` | Toggle autoguardado |
+| `obs.action.settings.closeProject` | Cerrar proyecto desde ajustes |
+| `obs.action.settings.calendar` | Guardar calendario desde [`CalendarSettingsSection`](../../../../src/modules/settings/CalendarSettingsSection.tsx) — **v1** |
+
+### 4.10 Editor — ampliación
+
+| Evento | Cuándo |
+|--------|--------|
+| `obs.action.editor.saveAll` | Ctrl+Shift+S |
+| `obs.action.editor.externalReload` | Diálogo recarga externa · `{ choice }` |
+| `obs.action.editor.wikiLink.open` | Solo verbose |
 
 ---
 
@@ -331,7 +505,8 @@ Duplicar en **both** solo eventos críticos opcionales (p. ej. `draft.save` sess
 
 ### 6.2 Montaje
 
-Un `useUiActionAudit()` en [`WorkspaceShell.tsx`](../../../../src/modules/layout/WorkspaceShell.tsx) junto a `useUiRenderAudit()`.
+- `useUiActionAudit()` en [`WorkspaceShell.tsx`](../../../../src/modules/layout/WorkspaceShell.tsx) junto a `useUiRenderAudit()`.
+- **`useAuditBootstrap()` en [`App.tsx`](../../../../src/App.tsx)** (Fase 0) para capturar abrir proyecto y exponer menú debug en launcher.
 
 ### 6.3 Correlación
 
@@ -344,34 +519,40 @@ Un `useUiActionAudit()` en [`WorkspaceShell.tsx`](../../../../src/modules/layout
 
 ### Fase 0 — Esqueleto + menú unificado (Medio)
 
-- [ ] Módulo `action-audit/` + stub release
-- [ ] Settings ④⑤ + paths `_debug/action-logs/`
-- [ ] Rust append + bootstrap + **`audit_clear_all_logs`**
-- [ ] Menú: **5 toggles**, **1 borrar todo**, **1 sesión única**
-- [ ] Visor 5 pestañas
-- [ ] Tests: toggles independientes; clear all; migración settings
+- [ ] Módulo `action-audit/` + stub release + tests Vitest
+- [ ] Rust: `action_logs_dir`, ampliar `SessionLogPaths`, settings ④⑤, `append_action_entry`, **`clear_all_logs`**
+- [ ] TS: `lib/types/audit.ts`, `audit/ipc.ts`, `useAuditStore`, `action-audit/bootstrap.ts`
+- [ ] **Mover** `useAuditBootstrap` (+ menú debug accesible) a `App.tsx`
+- [ ] Menú: **5 toggles**, **1 borrar todo**, **1 sesión única**, **1 abrir `_debug`**
+- [ ] Visor **5 pestañas** + tipos `AuditViewerTab`
+- [ ] i18n ES/EN completo
+- [ ] Tests Rust: clear all borra tres carpetas; settings migración; append action NDJSON
+- [ ] Corregir inconsistencia actual `audit_clear_logs` (regenera paths render sin vaciar disco) dentro de `clear_all_logs`
 
 ### Fase 1 — Acciones session núcleo (Medio–Alto)
 
 Prioridad QA (orden):
 
-1. **Workspace** — viewChange, project open/close
-2. **Calendario** — §4.6 completo session
-3. **Explorador** — select, viewMode, inline create/rename, dnd
-4. **Editor** — tabs, save, dirtyDiff, unsaved dialogs
-5. **Timeline** — filters, openCalendar, chipClick
+1. **Workspace** — wrap `setMainView`; layout toggles; settings/versions open
+2. **Proyecto** — bridge `useProjectStore` (open/close/create)
+3. **Calendario** — §4.6 + §0.8 completo (EditPanel local state, DraftDialogs, store)
+4. **Explorador** — bridge eventos OBS-001 existentes + select/viewMode/dnd
+5. **Editor** — tabs, save, dirtyDiff toggle, unsaved dialogs
+6. **Timeline** — filters, openCalendar, chipClick
 
 ### Fase 2 — Verbose + resto módulos (Medio)
 
-- [ ] Canal verbose §5
-- [ ] Map/graph/consistency stubs
-- [ ] Settings dialog actions
+- [ ] Canal verbose §5 + §4.10
+- [ ] Map/graph/consistency/entity stubs
+- [ ] Settings + launcher §4.9
+- [ ] Layout resize verbose
 
 ### Fase 3 — Integración planes D (Bajo)
 
-- [ ] FIX-010i: referenciar `obs.action.calendar.*` en QA; reducir duplicación con `obs.calendar.*` dominio IPC
-- [ ] `06-ARCHITECTURE.md` matriz observabilidad
-- [ ] Plantilla QA: «solo activar ④ → adjuntar action-session-*.ndjson»
+- [ ] FIX-010i: QA §8 solo con ④; opcional ① para `reconcileBaseline` en system log
+- [ ] `06-ARCHITECTURE.md` matriz 4 capas observabilidad
+- [ ] Actualizar OBS-002 §8 menú (referencia menú unificado)
+- [ ] Plantilla QA agente: adjuntar `action-session-{bootId}.ndjson` obligatorio
 
 ---
 
@@ -415,6 +596,15 @@ Prioridad QA (orden):
 - OBS-002: [`OBS-002-ui-render-audit-log.md`](../Fase%20C/OBS-002-ui-render-audit-log.md)
 - Menú actual: [`DebugNavMenu.tsx`](../../../../src/modules/debug/DebugNavMenu.tsx)
 - Sesión QA problemática: `bootId` `1781391642866-21776`, `1781392144324-3928`
+
+---
+
+## 12. Registro
+
+| Fecha | Nota |
+|-------|------|
+| 2026-06-11 | Plan inicial + menú unificado |
+| 2026-06-11 | **Auditoría código v2:** §0.6–0.9; bootstrap en App; clear_all; bypass setMainView; duplicación OBS-001; catálogo §4.9–4.10; inventario archivos completo |
 
 ---
 
