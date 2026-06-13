@@ -28,7 +28,7 @@
 |------|----------|-----|--------|
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
 | **B** | FIX-004…007, OBS-001, FIX-012, **FIX-013** | Fixes medianos (editor + UX) + observabilidad | 8 |
-| **C** | FIX-008…009, **OBS-002** | Fixes explorador / timeline + registro UI | 4 |
+| **C** | FIX-008…009, **OBS-002** | Fixes explorador / timeline + registro UI | 8 ✅ |
 | **D** | FIX-010…011 | Épica «eliminar no rompe» (primeros escenarios) | 2 |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
 | **F** | MAP-000…012 | Refactor mapas Era III | 13 |
@@ -63,16 +63,16 @@
 
 ---
 
-## Fase C — Fixes explorador y timeline
+## Fase C — Fixes explorador y timeline ✅
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
 | **FIX-008** | ✅ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan**](plans/Fase%20C/FIX-008-explorer-inline-create.md) · QA `session-1781317457105-5412` |
 | **FIX-008b** | ✅ | Renombrar **inline** en explorador + regla extensión `.md` | Medio | [**plan**](plans/Fase%20C/FIX-008b-rename-extension.md) · QA `session-1781318644915-6724` |
-| **FIX-009** | 🔄 | Timeline: chip dual + conectores cronológicos (v1 ✅) | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009-timeline-dual-chip-connectors.md) |
-| **FIX-009a** | ⬜ | Conectores borde lateral + **chips ancho autoajustado** | Bajo–Medio | [**plan**](plans/Fase%20C/FIX-009a-timeline-connector-edge-anchors.md) · cierra FIX-009 |
-| **FIX-009b** | 🔄 | Hover: enlaces orden escritura (v1: solo **next**, solo `segmentId`) | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009b-timeline-writing-order-links.md) · QA `session-1781321526405-27876` |
-| **FIX-009c** | ⬜ | Hover: **prev + next**, cadena **por archivo** (incl. prosa libre) | Medio | [**plan**](plans/Fase%20C/FIX-009c-timeline-writing-order-hover-neighbors.md) · cierra gap 009b |
+| **FIX-009** | ✅ | Timeline: chip dual + conectores cronológicos + cierre visual 009a | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009-timeline-dual-chip-connectors.md) · QA `session-1781319870943-19224` |
+| **FIX-009a** | ✅ | Conectores borde lateral + **chips ancho autoajustado** | Bajo–Medio | [**plan**](plans/Fase%20C/FIX-009a-timeline-connector-edge-anchors.md) · `timelineChipMetrics` + `linkEdgeAnchors` |
+| **FIX-009b** | ✅ | Hover orden escritura v1 (solo `next`) — **cerrado por 009c** | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009b-timeline-writing-order-links.md) · QA `session-1781321526405-27876` |
+| **FIX-009c** | ✅ | Hover **prev + next**, cadena manuscrito (incl. prosa libre) | Medio | [**plan**](plans/Fase%20C/FIX-009c-timeline-writing-order-hover-neighbors.md) · QA `ui-session-1781326085768-18588` |
 | **FIX-009d** | ✅ | Auditoría pathIndex árbol filtrado manuscript (regresión D→eventoTest) | Bajo | [**auditoría**](plans/Fase%20C/FIX-009d-audit-writing-order-path-index.md) |
 | **OBS-002** | ✅ | Registro **interfaz completa**: catálogo `obs.ui.*` multi-módulo + **3 toggles** (sistema / interfaz / interfaz detallada) · 2 NDJSON UI | Medio–Alto | [**plan**](plans/Fase%20C/OBS-002-ui-render-audit-log.md) · solo `tauri dev` |
 
@@ -166,14 +166,14 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 7 | OBS-001 | Auditoría global del sistema (logs reutilizables) ✅ |
 | 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, save-all sin switch ✅ |
 | 9 | FIX-007 | Borrador sucio al cerrar app ✅ |
-| 10 | FIX-008 | Explorador inline VS Code |
+| 10 | FIX-008 | Explorador inline VS Code ✅ |
 | 10b | FIX-008b | Renombrar inline + extensión `.md` ✅ |
-| 11 | FIX-009 | Timeline chips + conectores cronológicos 🔄 v1 |
-| 11a | FIX-009a | Anclas borde + chips autoajustados |
-| 11b | FIX-009b | Hover enlace orden escritura 🔄 v1 parcial |
-| 11c | FIX-009c | Hover prev+next, todos los chips, cadena por archivo |
+| 11 | FIX-009 | Timeline chips + conectores cronológicos ✅ |
+| 11a | FIX-009a | Anclas borde + chips autoajustados ✅ |
+| 11b | FIX-009b | Hover enlace orden escritura ✅ (v1 → 009c) |
+| 11c | FIX-009c | Hover prev+next, todos los chips, cadena manuscrito ✅ |
 | 11d | FIX-009d | Auditoría pathIndex árbol filtrado ✅ |
-| 11e | OBS-002 | Registro interfaz: 3 toggles (sistema / UI / UI verbose), catálogo completo |
+| 11e | OBS-002 | Registro interfaz: 3 toggles (sistema / UI / UI verbose) ✅ |
 | 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) ✅ |
 | 13 | FIX-010 | Épica 6.A calendario obsoleto |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
@@ -240,7 +240,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-009b v1 en código; QA `session-1781321526405-27876` → FIX-009c (prev+next, prosa libre, cadena por archivo) |
 | 2026-06-11 | FIX-009d: auditoría pathIndex + fix árbol filtrado manuscript; QA `session-1781323873949-29056` |
 | 2026-06-11 | OBS-002 planificado: registro UI multi-módulo + 3 toggles (sistema / interfaz / verbose) · `plans/Fase C/OBS-002-ui-render-audit-log.md` |
+| 2026-06-13 | **Fase C cerrada ✅:** FIX-009…009c (timeline chip dual, anclas, hover lectura), FIX-009d, OBS-002; tests Vitest + QA `_debug` |
 
 ---
 
-**Última actualización:** 2026-06-11
+**Última actualización:** 2026-06-13

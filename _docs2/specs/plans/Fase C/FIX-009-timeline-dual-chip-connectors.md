@@ -1,6 +1,6 @@
 # FIX-009 — Timeline: chip doble (archivo + evento) y conectores por evento
 
-> Plan de investigación e implementación. **Estado:** 🔄 v1 implementado — pendiente [FIX-009a](FIX-009a-timeline-connector-edge-anchors.md) + QA cierre (jun 2026) · **Esfuerzo:** Medio–Alto · **Riesgo:** Medio–Alto  
+> Plan de investigación e implementación. **Estado:** ✅ Completo (v1 + [FIX-009a](FIX-009a-timeline-connector-edge-anchors.md) + hover [FIX-009b/c](FIX-009c-timeline-writing-order-hover-neighbors.md)) · **Esfuerzo:** Medio–Alto · **Riesgo:** Medio–Alto  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · Spec origen: [`fix-backlog.md` §3](../../fix-backlog.md)  
 > **Depende de:** indexación multi-marca (`segment_id` en SQLite) ✅ · FIX-006/006.5 marco evento ✅  
 > **Siguiente:** [FIX-009a](FIX-009a-timeline-connector-edge-anchors.md) (anclas borde) → [FIX-009b](FIX-009b-timeline-writing-order-links.md) (hover orden escritura)  
@@ -494,7 +494,7 @@ Sin cambios obligatorios. Nota en backlog: calendario ya usa `title`; chip dual 
 ### Fase 2 — Conectores en horizontal
 
 - [x] `TimelineEventLink` + integración `TimelineHorizontal`
-- [ ] **FIX-009a:** `linkEdgeAnchors` borde lateral
+- [x] **FIX-009a:** `linkEdgeAnchors` borde lateral
 
 ### Fase 3 — Filtro panel
 
@@ -508,8 +508,8 @@ Sin cambios obligatorios. Nota en backlog: calendario ya usa `title`; chip dual 
 ### Fase 5 — QA cierre FIX-009
 
 - [x] Smoke `session-1781319870943-19224` — chips OK; conectores mejorables
-- [ ] QA post-009a §11 completo
-- [ ] `implementation-plan.md` → FIX-009 ✅ (tras 009a)
+- [x] QA post-009a §11 completo
+- [x] `implementation-plan.md` → FIX-009 ✅ (tras 009a)
 
 ---
 
@@ -595,9 +595,9 @@ flowchart TB
 
 ```
 [x] Fase 0–4 — implementación v1
-[ ] FIX-009a — anclas borde lateral
-[ ] Fase 5 — QA §11 post-009a
-[ ] implementation-plan.md → FIX-009 ✅
+[x] FIX-009a — anclas borde lateral
+[x] Fase 5 — QA §11 post-009a
+[x] implementation-plan.md → FIX-009 ✅
 ```
 
 ---
@@ -610,11 +610,11 @@ Resumen:
 1. **`linkEdgeAnchors`** — mitad del borde lateral (der.→izq. / flashback invertido).
 2. **Ancho autoajustado** — quitar min 72px; `timelineChipMetrics` con truncado 14/18 chars + `CHIP_PAD_X` 8.
 
-**Bloquea cierre ✅ de FIX-009.**
+**Cerrado ✅** — ver [FIX-009a](FIX-009a-timeline-connector-edge-anchors.md).
 
 ---
 
-## 18. FIX-009b — Hover «siguiente en orden de escritura» (tarea posterior)
+## 18. FIX-009b/c — Hover orden de escritura (tareas posteriores)
 
 Plan detallado: **[FIX-009b-timeline-writing-order-links.md](FIX-009b-timeline-writing-order-links.md)**
 
@@ -622,7 +622,7 @@ Resumen:
 - Hover en chip → resaltar + **una** línea a la **siguiente** marca del mismo evento en orden de **escritura** (árbol manuscrito manual + bar → inline → offset), **no** cronológico.
 - Ejemplo: hover día **22** → enlace a flashback día **10** si se escribió después.
 - Toggle panel independiente: «Mostrar siguiente enlace al pasar el cursor».
-- **Implementar después de FIX-009a.**
+- v1 (009b) + vecinos prev/next y prosa (009c): **implementado** — ver [FIX-009c](FIX-009c-timeline-writing-order-hover-neighbors.md).
 
 ---
 
@@ -638,4 +638,8 @@ Resumen:
 
 ---
 
-**Última actualización:** 2026-06-11 · **Estado:** 🔄 v1 OK — pendiente FIX-009a · **Siguiente:** [FIX-009a](FIX-009a-timeline-connector-edge-anchors.md)
+| 2026-06-13 | Fase C cerrada: FIX-009a ✅, FIX-009b/c ✅, lista maestra actualizada |
+
+---
+
+**Última actualización:** 2026-06-13 · **Estado:** ✅ Completo

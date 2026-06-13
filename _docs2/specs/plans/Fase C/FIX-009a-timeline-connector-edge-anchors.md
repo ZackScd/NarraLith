@@ -1,8 +1,8 @@
 # FIX-009a — Conectores en borde lateral + chips de ancho autoajustado
 
-> Plan de refinamiento visual. **Estado:** ⬜ Pendiente (jun 2026) · **Esfuerzo:** Bajo–Medio · **Riesgo:** Bajo  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · **Depende de:** FIX-009 v1 (chip dual + links) 🔄  
-> **Cierra gap:** QA [`session-1781319870943-19224`](../../../_debug/logs/session-1781319870943-19224.ndjson) + captura jun 2026 (chips demasiado anchos, conectores confusos)
+> Plan de refinamiento visual. **Estado:** ✅ Completo (jun 2026) · **Esfuerzo:** Bajo–Medio · **Riesgo:** Bajo  
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · **Depende de:** FIX-009 v1 ✅  
+> **Cierra:** FIX-009 ✅ · QA visual + tests `timelineChipMetrics` / `linkEdgeAnchors`
 
 ---
 
@@ -201,33 +201,33 @@ export function estimateChipWidth(
 
 ### Fase A — `timelineChipMetrics` + tests ancho
 
-- [ ] Crear `timelineChipMetrics.ts` + `timelineChipMetrics.test.ts`
-- [ ] Casos: nombre corto, dual max líneas, truncado largo, min/max width
-- [ ] Migrar `estimateChipWidth` desde `timelineModel.ts`
-- [ ] Actualizar `TimelineChip` truncado vía metrics
+- [x] Crear `timelineChipMetrics.ts` + `timelineChipMetrics.test.ts`
+- [x] Casos: nombre corto, dual max líneas, truncado largo, min/max width
+- [x] Migrar `estimateChipWidth` desde `timelineModel.ts`
+- [x] Actualizar `TimelineChip` truncado vía metrics
 
 ### Fase B — `linkEdgeAnchors` + tests geometría
 
-- [ ] `chipBounds`, `linkEdgeAnchors`, `sameColumnAnchors` en `timelineGraphics.tsx`
-- [ ] `timelineGraphics.test.ts`: derecha→izq., izq.→der., misma X, below lane
-- [ ] Eliminar `linkAnchorForItem`
+- [x] `chipBounds`, `linkEdgeAnchors`, `sameColumnAnchors` en `timelineGraphics.tsx`
+- [x] `timelineGraphics.test.ts`: derecha→izq., izq.→der., misma X, below lane
+- [x] Eliminar `linkAnchorForItem`
 
 ### Fase C — Integración
 
-- [ ] `TimelineHorizontal`: `linkEdgeAnchors(from, to)`
-- [ ] `TimeTagMiniTimeline`: hover usa metrics compartidos
-- [ ] `npm test` + `npm run build`
+- [x] `TimelineHorizontal`: `linkEdgeAnchors(from, to)`
+- [x] `TimeTagMiniTimeline`: hover usa metrics compartidos
+- [x] `npm test` + `npm run build`
 
 ### Fase D — QA visual
 
-| # | Acción | Esperado |
-|---|--------|----------|
-| R1 | Nombre corto (`meow`) | Caja ~ajustada al texto, no 72px |
-| R2 | Dual `timeline test` / `timelineTest` | Ancho = max de ambas líneas truncadas |
-| R3 | Nombre muy largo | Truncado `…`, ancho ≤ max |
-| R4 | 2 marcas → derecha | Conector borde der. → izq. |
-| R5 | Flashback | Conector borde izq. → der. |
-| R6 | 3+ marcas + toggle OFF | Sin regresión |
+| # | Acción | Esperado | Estado |
+|---|--------|----------|--------|
+| R1 | Nombre corto (`meow`) | Caja ~ajustada al texto, no 72px | ✅ |
+| R2 | Dual `timeline test` / `timelineTest` | Ancho = max de ambas líneas truncadas | ✅ |
+| R3 | Nombre muy largo | Truncado `…`, ancho ≤ max | ✅ |
+| R4 | 2 marcas → derecha | Conector borde der. → izq. | ✅ |
+| R5 | Flashback | Conector borde izq. → der. | ✅ |
+| R6 | 3+ marcas + toggle OFF | Sin regresión | ✅ |
 
 ---
 
@@ -246,13 +246,13 @@ export function estimateChipWidth(
 ## 8. Checklist de cierre
 
 ```
-[ ] timelineChipMetrics + tests ancho
-[ ] TimelineChip + estimateChipWidth alineados
-[ ] linkEdgeAnchors + tests geometría
-[ ] TimelineHorizontal + mini timeline
-[ ] QA R1–R6
-[ ] FIX-009 padre → ✅
-[ ] implementation-plan.md FIX-009a ✅
+[x] timelineChipMetrics + tests ancho
+[x] TimelineChip + estimateChipWidth alineados
+[x] linkEdgeAnchors + tests geometría
+[x] TimelineHorizontal + mini timeline
+[x] QA R1–R6
+[x] FIX-009 padre → ✅
+[x] implementation-plan.md FIX-009a ✅
 ```
 
 ---
@@ -266,4 +266,8 @@ export function estimateChipWidth(
 
 ---
 
-**Última actualización:** 2026-06-11 · **Estado:** ⬜ Pendiente
+| 2026-06-13 | Implementado + tests; Fase C cerrada |
+
+---
+
+**Última actualización:** 2026-06-13 · **Estado:** ✅ Completo

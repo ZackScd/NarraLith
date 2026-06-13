@@ -1,7 +1,7 @@
 # FIX-009b — Timeline: conexión «siguiente en orden de escritura» al hover
 
-> Plan de investigación e implementación. **Estado:** ⬜ Pendiente (jun 2026) · **Esfuerzo:** Medio–Alto · **Riesgo:** Medio–Alto  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · **Depende de:** FIX-009 ✅ + [FIX-009a](FIX-009a-timeline-connector-edge-anchors.md) (anclas borde)  
+> Plan de investigación e implementación. **Estado:** ✅ Completo — v1 absorbido por [FIX-009c](FIX-009c-timeline-writing-order-hover-neighbors.md) · **Esfuerzo:** Medio–Alto · **Riesgo:** Medio–Alto  
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · **Depende de:** FIX-009 ✅ + FIX-009a ✅  
 > **Origen:** idea post-QA FIX-009 — orden **narrativo/escritura**, no cronológico
 
 ---
@@ -169,36 +169,38 @@ Si cronológico y escritura difieren en el **mismo par** de marcas, pueden ser *
 
 ### Fase 0 — Orden escritura (puro)
 
-- [ ] `buildManuscriptPathWritingIndex` + tests (orden manual vs disco)
-- [ ] `parseSegmentIndex(segmentId)` + `writingOrderKeyForItem`
-- [ ] `buildWritingOrderNextLink` + test flashback (bar d22 → inline d10)
+- [x] `buildManuscriptPathWritingIndex` + tests (orden manual vs disco)
+- [x] `parseSegmentIndex(segmentId)` + `writingOrderKeyForItem`
+- [x] `buildWritingOrderNextLink` + test flashback (bar d22 → inline d10)
 
 ### Fase 1 — Store + toggle UI
 
-- [ ] `showWritingOrderHoverLink` en [`useTimelineStore`](../../../src/stores/useTimelineStore.ts)
-- [ ] [`TimelineFiltersSection`](../../../src/components/workspace-ui/TimelineFiltersSection.tsx) + i18n
+- [x] `showWritingOrderHoverLink` en [`useTimelineStore`](../../../src/stores/useTimelineStore.ts)
+- [x] [`TimelineFiltersSection`](../../../src/components/workspace-ui/TimelineFiltersSection.tsx) + i18n
 
 ### Fase 2 — Hover state + render
 
-- [ ] `hoveredTimelineMarkerId` en store (o estado local en `TimelineHorizontal`)
-- [ ] [`TimelineChip`](../../../src/modules/timeline/timelineGraphics.tsx): `onPointerEnter/Leave` → set hover id
-- [ ] Capa `<g className="timeline-writing-order-hover-link">` con un `TimelineEventLink` destacado
-- [ ] Anclas: [`linkEdgeAnchors`](FIX-009a-timeline-connector-edge-anchors.md) (FIX-009a)
+- [x] `hoveredTimelineMarkerId` en store
+- [x] [`TimelineChip`](../../../src/modules/timeline/timelineGraphics.tsx): `onPointerEnter/Leave`
+- [x] Capa hover con `TimelineEventLink` destacado
+- [x] Anclas: `linkEdgeAnchors` (FIX-009a)
 
 ### Fase 3 — Datos árbol
 
-- [ ] Suscribir `tree` + `explorerOrder` desde `useFileTreeStore` en `TimelineHorizontal` (o hook `useManuscriptWritingOrderIndex`)
-- [ ] Recalcular `nextLink` cuando cambie árbol u orden DnD
+- [x] Suscribir `tree` + `explorerOrder` en `TimelineHorizontal`
+- [x] Recalcular vecinos cuando cambie árbol u orden DnD
 
-### Fase 4 — QA
+### Fase 4 — QA v1
 
-| # | Escenario | Esperado |
-|---|-----------|----------|
-| R1 | Mismo segmento: bar d22 + inline flashback d10 | Hover bar d22 → línea a inline d10 |
-| R2 | Reordenar carpeta en explorador | Cambia «siguiente» si afecta pathIndex |
-| R3 | Toggle OFF | Sin línea hover |
-| R4 | Última marca del evento | Hover sin línea |
-| R5 | Conectores globales ON + hover | Ambos visibles, hover destacado |
+| # | Escenario | Esperado | v1 | Final (009c) |
+|---|-----------|----------|-----|--------------|
+| R1 | Mismo segmento: bar d22 + inline flashback d10 | Hover bar d22 → inline d10 | ✅ next | ✅ prev+next |
+| R2 | Reordenar carpeta en explorador | Cambia vecinos | ✅ | ✅ |
+| R3 | Toggle OFF | Sin línea hover | ✅ | ✅ |
+| R4 | Última marca del evento | Hover sin línea next | ✅ | ✅ |
+| R5 | Conectores globales ON + hover | Ambos visibles | ✅ | ✅ |
+
+> Gap v1 (solo `next`, solo `segmentId`) cerrado en [FIX-009c](FIX-009c-timeline-writing-order-hover-neighbors.md).
 
 ---
 
@@ -239,12 +241,13 @@ Si cronológico y escritura difieren en el **mismo par** de marcas, pueden ser *
 ## 10. Checklist de cierre
 
 ```
-[ ] Fase 0 — writingOrder + tests (flashback)
-[ ] Fase 1 — store + panel
-[ ] Fase 2 — hover + render
-[ ] Fase 3 — árbol explorador
-[ ] Fase 4 — QA R1–R5
-[ ] implementation-plan.md FIX-009b ✅
+[x] Fase 0 — writingOrder + tests (flashback)
+[x] Fase 1 — store + panel
+[x] Fase 2 — hover + render
+[x] Fase 3 — árbol explorador
+[x] Fase 4 — QA R1–R5 (v1)
+[x] Gap v1 → FIX-009c ✅
+[x] implementation-plan.md FIX-009b ✅
 ```
 
 ---
@@ -255,8 +258,9 @@ Si cronológico y escritura difieren en el **mismo par** de marcas, pueden ser *
 |-------|--------|
 | 2026-06-11 | Plan redactado: idea orden escritura + flashback + árbol manual; post FIX-009 QA |
 | 2026-06-11 | v1 implementado en código (solo `next`, agrupación `segmentId`) |
-| 2026-06-11 | QA `session-1781321526405-27876`: falta `prev`, excluye prosa; ver [FIX-009c](FIX-009c-timeline-writing-order-hover-neighbors.md) |
+| 2026-06-11 | QA `session-1781321526405-27876`: falta `prev`, excluye prosa → [FIX-009c](FIX-009c-timeline-writing-order-hover-neighbors.md) |
+| 2026-06-13 | Cerrado ✅: funcionalidad final en 009c (`buildWritingOrderNeighbors`); Fase C completa |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Estado:** 🔄 v1 implementado — gap QA → [FIX-009c](FIX-009c-timeline-writing-order-hover-neighbors.md) · **Después de:** FIX-009a
+**Última actualización:** 2026-06-13 · **Estado:** ✅ Completo (v1 → 009c)

@@ -1,8 +1,8 @@
 # FIX-009c — Hover: vecinos anterior + siguiente en orden de escritura (todos los chips)
 
-> Plan de refinamiento post-QA FIX-009b. **Estado:** ⬜ Pendiente (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · **Depende de:** FIX-009b (v1 implementado en código)  
-> **Origen:** QA visual + [`session-1781321526405-27876.ndjson`](../../../_debug/logs/session-1781321526405-27876.ndjson)
+> Plan de refinamiento post-QA FIX-009b. **Estado:** ✅ Completo (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · **Depende de:** FIX-009b v1 ✅  
+> **Origen:** QA visual + [`session-1781321526405-27876.ndjson`](../../../_debug/logs/session-1781321526405-27876.ndjson) · evidencia hover [`ui-session-1781326085768-18588`](../../../_debug/render-logs/ui-session-1781326085768-18588.ndjson)
 
 ---
 
@@ -260,14 +260,14 @@ Subtítulo panel (opcional tooltip): «Anterior y siguiente en el orden del manu
 ## 10. Checklist de cierre
 
 ```
-[ ] Auditoría datos confirmada en proyecto real (timeline test.md)
-[ ] writingOrderNeighbors + tests T1–T5
-[ ] Hover todos los chips temporales
-[ ] Render prev + next
-[ ] i18n toggle
-[ ] QA R1–R7
-[ ] FIX-009b plan → nota «v1 parcial; cerrado por 009c»
-[ ] implementation-plan.md FIX-009c ✅
+[x] Auditoría datos confirmada en proyecto real (timeline test.md + linetest)
+[x] writingOrderNeighbors + tests T1–T5 (`writingOrder.test.ts`)
+[x] Hover todos los chips temporales (`kind === "file"`)
+[x] Render prev + next (`writingOrderHoverLinks`)
+[x] i18n toggle («enlaces de lectura al pasar el cursor»)
+[x] QA R1–R7 (archivo D → prev C, no eventoTest — FIX-009d)
+[x] FIX-009b plan → v1 parcial; cerrado por 009c
+[x] implementation-plan.md FIX-009c ✅
 ```
 
 ---
@@ -278,7 +278,8 @@ Subtítulo panel (opcional tooltip): «Anterior y siguiente en el orden del manu
 |-------|--------|
 | 2026-06-11 | Plan redactado tras QA: solo next, solo segmentId; ejemplo prosa d10→evento d15→d20 |
 | 2026-06-11 | Auditoría NDJSON `session-1781321526405-27876` + modelo `time_markers` |
+| 2026-06-13 | Implementado: `buildWritingOrderNeighbors`, prev+next, cadena manuscrito; QA OBS-002 `ui-session-1781326085768-18588` |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Estado:** ⬜ Pendiente · **Implementar después de:** validación usuario de este plan
+**Última actualización:** 2026-06-13 · **Estado:** ✅ Completo
