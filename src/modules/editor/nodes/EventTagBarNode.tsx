@@ -9,7 +9,7 @@ import {
 import type { JSX } from "react";
 
 import type { BarTag } from "@/lib/types/manuscript";
-import { EventTagBar } from "@/modules/editor/components/EventTagBar";
+import { EventTagBarHost } from "@/modules/editor/components/EventTagBarHost";
 
 export interface SerializedEventTagBarNode extends SerializedLexicalNode {
   type: "event-tag-bar";
@@ -140,13 +140,7 @@ export class EventTagBarNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
-    return (
-      <EventTagBar
-        segmentId={this.__segmentId}
-        eventName={this.__eventName}
-        barTags={this.__barTags}
-      />
-    );
+    return <EventTagBarHost nodeKey={this.getKey()} />;
   }
 
   exportJSON(): SerializedEventTagBarNode {

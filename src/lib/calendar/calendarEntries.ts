@@ -7,6 +7,7 @@ import {
 } from "@/lib/calendar/legend";
 import { annualAppliesInYear } from "@/lib/calendar/calendarMarkers";
 import { resolveMarkerPlacement } from "@/lib/calendar/markerPlacement";
+import { isTimelineMarkerReconciled } from "@/lib/calendar/timeTagReconcile";
 import {
   isStaleTimeTagStatus,
   staleTimeTagTooltipTitle,
@@ -85,6 +86,18 @@ function annualEntryAllowed(
   return true;
 }
 
+function resolveCalendarMarkerPlacement(
+  event: TimelineEvent,
+  config: CalendarConfig,
+  baselineConfig?: CalendarConfig | null,
+  reconciledKeys?: ReadonlySet<string>,
+) {
+  const calendarReconciled = reconciledKeys
+    ? isTimelineMarkerReconciled(event, reconciledKeys)
+    : false;
+  return resolveMarkerPlacement(event, config, baselineConfig, calendarReconciled);
+}
+
 function pushFileCalendarEntry(
   entries: CalendarTimeEntry[],
   event: TimelineEvent,
@@ -127,12 +140,18 @@ export function buildCalendarTimeEntries(
   config: CalendarConfig,
   filters?: TimelineFilterState,
   baselineConfig?: CalendarConfig | null,
+  reconciledKeys?: ReadonlySet<string>,
 ): CalendarTimeEntry[] {
   const entries: CalendarTimeEntry[] = [];
 
   for (const event of events) {
     if (!fileEntryAllowed(event, filters)) continue;
-    const placement = resolveMarkerPlacement(event, config, baselineConfig);
+    const placement = resolveCalendarMarkerPlacement(
+      event,
+      config,
+      baselineConfig,
+      reconciledKeys,
+    );
     if (placement === null || !isRenderableAbsoluteDay(placement.sortKey)) continue;
     const parts = fromAbsoluteDay(placement.sortKey, config);
     if (parts.year !== year) continue;
@@ -173,12 +192,18 @@ export function buildStaleCalendarEntriesOutsideYear(
   config: CalendarConfig,
   filters?: TimelineFilterState,
   baselineConfig?: CalendarConfig | null,
+  reconciledKeys?: ReadonlySet<string>,
 ): CalendarTimeEntry[] {
   const entries: CalendarTimeEntry[] = [];
 
   for (const event of events) {
     if (!fileEntryAllowed(event, filters)) continue;
-    const placement = resolveMarkerPlacement(event, config, baselineConfig);
+    const placement = resolveCalendarMarkerPlacement(
+      event,
+      config,
+      baselineConfig,
+      reconciledKeys,
+    );
     if (placement === null || !isStaleTimeTagStatus(placement.timeStatus)) continue;
     if (!isRenderableAbsoluteDay(placement.sortKey)) continue;
     const parts = fromAbsoluteDay(placement.sortKey, config);

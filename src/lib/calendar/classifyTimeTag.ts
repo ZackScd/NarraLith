@@ -15,10 +15,16 @@ export interface ClassifiedTimeTag {
   fixedSortKey?: bigint;
 }
 
+export interface ClassifyTimeTagOptions {
+  /** Marca revisada manualmente (FIX-010d): válida si parsea en calendario activo. */
+  calendarReconciled?: boolean;
+}
+
 export function classifyTimeTag(
   raw: string,
   activeConfig: CalendarConfig,
   baselineConfig?: CalendarConfig | null,
+  options?: ClassifyTimeTagOptions,
 ): ClassifiedTimeTag {
   const trimmed = raw.trim();
   const activeParsed = parseDateString(trimmed, activeConfig);
@@ -41,6 +47,14 @@ export function classifyTimeTag(
     };
   }
 
+  if (activeParsed.kind !== "instant") {
+    return {
+      status: "invalid",
+      raw: trimmed,
+      parts: parseTimeTag(trimmed) ?? undefined,
+    };
+  }
+
   const sortKey = activeParsed.absoluteDay;
   const parts = parseTimeTag(trimmed);
   const base = {
@@ -50,7 +64,7 @@ export function classifyTimeTag(
     parts: parts ?? undefined,
   };
 
-  if (!baselineConfig) {
+  if (options?.calendarReconciled || !baselineConfig) {
     return { status: "valid", ...base };
   }
 

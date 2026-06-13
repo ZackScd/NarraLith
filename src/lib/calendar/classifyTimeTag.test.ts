@@ -70,4 +70,22 @@ describe("classifyTimeTag", () => {
     const config = fourMonthConfig();
     expect(classifyTimeTag("15.3.0", config, null).status).toBe("valid");
   });
+
+  it("treats calendarReconciled as valid against baseline", () => {
+    const baseline = fourMonthConfig();
+    const active: CalendarConfig = {
+      ...baseline,
+      months: [
+        baseline.months[0]!,
+        baseline.months[1]!,
+        { name: "Inserted", days: 30 },
+        baseline.months[2]!,
+        baseline.months[3]!,
+      ],
+    };
+
+    expect(
+      classifyTimeTag("15.4.0", active, baseline, { calendarReconciled: true }).status,
+    ).toBe("valid");
+  });
 });

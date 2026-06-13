@@ -226,6 +226,7 @@ fn upsert_event_time_markers(
             Some(&segment_id),
             "bar",
             None,
+            tag.calendar_reconciled,
         )?;
         bar_index += 1;
     }
@@ -246,6 +247,7 @@ fn upsert_event_time_markers(
             Some(&segment_id),
             "inline",
             Some(tag.char_offset),
+            false,
         )?;
     }
 
@@ -278,6 +280,7 @@ fn upsert_inline_time_markers_for_block(
             None,
             "inline",
             Some(tag.char_offset),
+            false,
         )?;
     }
 
@@ -308,6 +311,7 @@ fn upsert_legacy_time_marker(
         None,
         "bar",
         None,
+        false,
     )
 }
 
@@ -322,12 +326,13 @@ fn insert_time_marker(
     segment_id: Option<&str>,
     tag_kind: &str,
     char_offset: Option<u32>,
+    calendar_reconciled: bool,
 ) -> Result<(), AppError> {
     conn.execute(
         "INSERT INTO time_markers (
             id, block_id, entity_path, timestamp, label, raw_time, persisted_at,
-            segment_id, tag_kind, char_offset
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            segment_id, tag_kind, char_offset, calendar_reconciled
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         params![
             marker_id,
             block_id,
@@ -339,6 +344,7 @@ fn insert_time_marker(
             segment_id,
             tag_kind,
             char_offset.map(i64::from),
+            i64::from(calendar_reconciled),
         ],
     )
     .map_err(|e| AppError::database(e.to_string()))?;

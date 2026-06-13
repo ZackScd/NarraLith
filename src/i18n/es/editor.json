@@ -110,6 +110,7 @@
     "removeChip": "Quitar esta etiqueta"
   },
   "timeTag": {
+    "editTitle": "Editar marca de tiempo",
     "invalid": "Requiere actualización",
     "invalidDetail": "Esta fecha no es válida con el calendario actual ({{raw}})",
     "structureStale": "Fecha desplazada por cambio de calendario"

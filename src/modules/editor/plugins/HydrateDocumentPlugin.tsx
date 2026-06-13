@@ -2,10 +2,12 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { useEffect, useRef } from "react";
 
 import {
+  $restoreInlineCalendarReconciledFromKeys,
   bodyFingerprintFromExtractedManuscript,
   extractManuscriptFromEditor,
   hydrateLexicalManuscript,
 } from "@/lib/editor/documentSync";
+import { LEXICAL_HYDRATE_TAG } from "@/lib/editor/editorSyncGuard";
 import { runEditorHydration } from "@/lib/editor/editorSyncGuard";
 import type { ParsedManuscript } from "@/lib/types/manuscript";
 import { useEditorStore } from "@/stores/useEditorStore";
@@ -41,6 +43,16 @@ export function HydrateDocumentPlugin({
 
     runEditorHydration(() => {
       hydrateLexicalManuscript(editor, manuscript);
+      const { reconciledTimeTagKeys } = useEditorStore.getState();
+      editor.update(
+        () => {
+          $restoreInlineCalendarReconciledFromKeys(
+            manuscript.filePath,
+            reconciledTimeTagKeys,
+          );
+        },
+        { discrete: true, tag: LEXICAL_HYDRATE_TAG },
+      );
     });
 
     queueMicrotask(() => {

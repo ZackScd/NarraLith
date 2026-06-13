@@ -110,6 +110,7 @@
     "removeChip": "Remove this tag"
   },
   "timeTag": {
+    "editTitle": "Edit time marker",
     "invalid": "Needs update",
     "invalidDetail": "This date is not valid with the current calendar ({{raw}})",
     "structureStale": "Date shifted by calendar change"

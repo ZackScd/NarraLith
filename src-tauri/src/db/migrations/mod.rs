@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use crate::error::AppError;
 
 /// Versión de esquema más reciente que aplica este binario.
-pub const CURRENT_SCHEMA_VERSION: i32 = 5;
+pub const CURRENT_SCHEMA_VERSION: i32 = 6;
 
 const META_SCHEMA_VERSION: &str = "schema_version";
 
@@ -81,6 +81,22 @@ pub fn run_pending_migrations(conn: &Connection) -> Result<(), AppError> {
                 .map_err(|e| AppError::database(e.to_string()))?;
         }
         version = 5;
+        write_schema_version(conn, version)?;
+    }
+
+    if version < 6 {
+        let has_calendar_reconciled: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('time_markers') WHERE name = 'calendar_reconciled'",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|e| AppError::database(e.to_string()))?;
+        if has_calendar_reconciled == 0 {
+            conn.execute_batch(include_str!("006_time_marker_calendar_reconciled.sql"))
+                .map_err(|e| AppError::database(e.to_string()))?;
+        }
+        version = 6;
         write_schema_version(conn, version)?;
     }
 
@@ -173,7 +189,61 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, "5");
+        assert_eq!(version, "6");
+    }
+
+    #[test]
+    fn migration_006_adds_calendar_reconciled_column() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            PRAGMA foreign_keys = ON;
+            CREATE TABLE project_meta (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);
+            CREATE TABLE blocks (
+                id TEXT PRIMARY KEY NOT NULL,
+                file_path TEXT NOT NULL,
+                block_index INTEGER NOT NULL,
+                content_hash TEXT,
+                metadata TEXT NOT NULL DEFAULT '{}',
+                UNIQUE (file_path, block_index)
+            );
+            CREATE TABLE time_markers (
+                id TEXT PRIMARY KEY NOT NULL,
+                block_id TEXT,
+                entity_path TEXT,
+                timestamp TEXT,
+                label TEXT,
+                raw_time TEXT,
+                persisted_at INTEGER NOT NULL DEFAULT 0,
+                segment_id TEXT,
+                tag_kind TEXT NOT NULL DEFAULT 'bar' CHECK (tag_kind IN ('bar', 'inline')),
+                char_offset INTEGER,
+                FOREIGN KEY (block_id) REFERENCES blocks (id) ON DELETE SET NULL
+            );
+            "#,
+        )
+        .unwrap();
+        write_schema_version(&conn, 5).unwrap();
+
+        run_pending_migrations(&conn).unwrap();
+
+        let count: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('time_markers') WHERE name = 'calendar_reconciled'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1);
+
+        let version: String = conn
+            .query_row(
+                "SELECT value FROM project_meta WHERE key = 'schema_version'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(version, "6");
     }
 
     #[test]
@@ -228,7 +298,7 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, "5");
+        assert_eq!(version, "6");
     }
 
     #[test]

@@ -53,7 +53,10 @@ Distinto de `CalendarConfig.version` (esquema JSON, hoy `1`).
 | Guardar sin diff estructural | = config nueva |
 | Guardar con diff estructural | **No** avanza hasta migración ([010e](FIX-010e-migration-wizard.md)) |
 | Migración modo A confirmada | = config activa |
+| Restaurar plantilla default/blank | **=** config restaurada ([010d §12](FIX-010d-edit-time-tags.md#12-follow-up--restaurar-plantilla-debe-reconciliar-baseline)) |
 | Restaurar snapshot Git (VER-001) | Coherente con snapshot |
+
+> **Deuda v1 (jun 2026):** `useCalendarViewStore.saveDraft()` invoca `saveCalendar(..., { reconcileBaseline: true })` **siempre**, sin consultar diff estructural. La fila «Guardar con diff estructural → no avanza» **no está aplicada** en UI. Consecuencia: tras editar meses/días, baseline y activo coinciden → marcas `valid` aunque hayan **cambiado de mes** en la UI ([010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672)). Cablear `reconcileBaseline: false` cuando [010i](FIX-010i-calendar-structural-diff.md) detecte `affectsTimeMarkers` — hasta entonces, documentar como limitación.
 
 ---
 
@@ -103,6 +106,7 @@ classifyTimeTag(raw, activeConfig, baselineConfig)
 | G1 | Insertar mes · guardar · reiniciar app | Marcas stale siguen rojas |
 | G2 | Proyecto legacy sin baseline | Se crea al abrir; sin stale hasta próximo cambio |
 | G3 | Migración A confirmada | Baseline = calendario activo; rojos resueltos |
+| G4 | Guardar borrador con mes eliminado | Baseline **no** avanza hasta 010e · marcas stale | ❌ v1: baseline avanza · ver §13 010d |
 
 ---
 

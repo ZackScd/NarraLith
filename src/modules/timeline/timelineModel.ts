@@ -1,6 +1,7 @@
 import { fromAbsoluteDay, isRenderableAbsoluteDay, toAbsoluteDay } from "@/lib/calendar";
 import { resolveMarkerPlacement } from "@/lib/calendar/markerPlacement";
 import type { TimeTagStatus } from "@/lib/calendar/classifyTimeTag";
+import { isTimelineMarkerReconciled } from "@/lib/calendar/timeTagReconcile";
 import { annualAppliesInYear } from "@/lib/calendar/calendarMarkers";
 import { annualKindToLegendCategory } from "@/lib/calendar/legend";
 import type { CalendarAnnualEvent, CalendarConfig } from "@/lib/types/calendar";
@@ -70,8 +71,17 @@ function resolveTimelineMarkerPlacement(
   event: TimelineEvent,
   activeConfig: CalendarConfig,
   baselineConfig: CalendarConfig | null | undefined,
+  reconciledKeys?: ReadonlySet<string>,
 ) {
-  return resolveMarkerPlacement(event, activeConfig, baselineConfig);
+  const calendarReconciled = reconciledKeys
+    ? isTimelineMarkerReconciled(event, reconciledKeys)
+    : false;
+  return resolveMarkerPlacement(
+    event,
+    activeConfig,
+    baselineConfig,
+    calendarReconciled,
+  );
 }
 
 function placableItemYears(
@@ -123,6 +133,7 @@ export function buildTimelineItems(
   calendar: CalendarConfig,
   filters: TimelineFilterState,
   baselineCalendar?: CalendarConfig | null,
+  reconciledKeys?: ReadonlySet<string>,
 ): TimelineDisplayItem[] {
   const items: TimelineDisplayItem[] = [];
 
@@ -132,6 +143,7 @@ export function buildTimelineItems(
       event,
       calendar,
       baselineCalendar,
+      reconciledKeys,
     );
     if (placement === null) continue;
 

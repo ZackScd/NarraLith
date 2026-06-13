@@ -89,7 +89,16 @@ fn serialize_event_segment(event: &EventSegment) -> Result<String, AppError> {
         let tags: Vec<Value> = event
             .bar_tags
             .iter()
-            .map(|t| json!({ "type": t.tag_type, "value": t.value }))
+            .map(|t| {
+                let mut tag = json!({ "type": t.tag_type, "value": t.value });
+                if let Some(hour) = t.hour {
+                    tag["hour"] = json!(hour);
+                }
+                if t.calendar_reconciled {
+                    tag["calendarReconciled"] = json!(true);
+                }
+                tag
+            })
             .collect();
         map.insert("barTags".to_string(), Value::Array(tags));
     }

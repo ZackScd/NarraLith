@@ -42,4 +42,24 @@ describe("resolveMarkerPlacement", () => {
     expect(placement!.sortKey).toBeLessThanOrEqual(BigInt(MAX_ABS_DAY));
     expect(placement!.sortKey).toBeGreaterThan(0n);
   });
+
+  it("treats reconciled stale markers as valid", () => {
+    const baseline = blankConfig;
+    const active: CalendarConfig = {
+      ...baseline,
+      epoch: { year: 0, month: 1, day: 2 },
+    };
+    const placement = resolveMarkerPlacement(
+      marker({
+        path: "Manuscrito/x.md",
+        blockIndex: 1,
+        rawTime: "15.1.0",
+      }),
+      active,
+      baseline,
+      true,
+    );
+
+    expect(placement?.timeStatus).toBe("valid");
+  });
 });

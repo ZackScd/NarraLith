@@ -1,12 +1,18 @@
 import {
   $createParagraphNode,
+  $getNodeByKey,
   $getRoot,
   $isParagraphNode,
   type LexicalEditor,
   type LexicalNode,
 } from "lexical";
 
+import {
+  inlineReconcileKey,
+  timelineReconcileKeyForInlineTag,
+} from "@/lib/calendar/timeTagReconcile";
 import { LEXICAL_HYDRATE_TAG } from "@/lib/editor/editorSyncGuard";
+import { parseInlineTagsInText } from "@/lib/editor/inlineTagSyntax";
 import { stableSegmentId } from "@/lib/editor/manuscriptBlocks";
 import {
   appendParagraphContent,
@@ -20,6 +26,9 @@ import {
   $createEventTagBarNode,
   $isEventTagBarNode,
 } from "@/modules/editor/nodes/EventTagBarNode";
+import {
+  $isInlineTimeTagNode,
+} from "@/modules/editor/nodes/InlineTimeTagNode";
 import type { SaveManuscriptPayload, SaveManuscriptSegmentPayload } from "@/lib/types/editor";
 import type {
   BarTag,
@@ -176,6 +185,56 @@ export function hydrateLexicalManuscript(
     },
     { discrete: true, tag: LEXICAL_HYDRATE_TAG },
   );
+}
+
+/** Tras rehidratar Lexical, restaura `calendarReconciled` inline desde claves estables del store. */
+export function $restoreInlineCalendarReconciledFromKeys(
+  filePath: string,
+  reconciledKeys: ReadonlySet<string>,
+): void {
+  if (reconciledKeys.size === 0) {
+    return;
+  }
+
+  for (const span of scanEventSpans($getRoot())) {
+    const blockIndex = span.segmentIndex + 1;
+    for (const paragraphKey of span.bodyParagraphKeys) {
+      const paragraph = $getNodeByKey(paragraphKey);
+      if (!$isParagraphNode(paragraph)) {
+        continue;
+      }
+      const text = paragraph.getTextContent();
+      for (const child of paragraph.getChildren()) {
+        if (!$isInlineTimeTagNode(child)) {
+          continue;
+        }
+        if (reconciledKeys.has(inlineReconcileKey(child.getKey()))) {
+          child.setCalendarReconciled(true);
+          continue;
+        }
+        const value = child.getValue();
+        for (const tag of parseInlineTagsInText(text)) {
+          if (tag.type !== "time" || tag.value.trim() !== value.trim()) {
+            continue;
+          }
+          if (
+            reconciledKeys.has(
+              timelineReconcileKeyForInlineTag(
+                filePath,
+                blockIndex,
+                span.segmentId,
+                tag.start,
+                value,
+              ),
+            )
+          ) {
+            child.setCalendarReconciled(true);
+            break;
+          }
+        }
+      }
+    }
+  }
 }
 
 /** Une líneas de párrafos top-level sin normalizar whitespace. */
@@ -557,7 +616,11 @@ export function $appendBarTimeToSegment(
     if ($isEventTagBarNode(child) && child.getSegmentId() === segmentId) {
       const tags = [...child.getBarTags()];
       const idx = tags.findIndex((t) => t.type === "time");
-      const next: BarTag = { type: "time", value: timeValue };
+      const next: BarTag = {
+        type: "time",
+        value: timeValue,
+        calendarReconciled: true,
+      };
       if (hour != null) {
         next.hour = hour;
       }
@@ -569,6 +632,49 @@ export function $appendBarTimeToSegment(
       child.setBarTags(tags);
       return true;
     }
+  }
+  return false;
+}
+
+/** Actualiza el valor de un chip inline `{{time:…}}` por clave Lexical. */
+export function $updateInlineTimeTagValue(nodeKey: string, value: string): boolean {
+  const node = $getNodeByKey(nodeKey);
+  if (!$isInlineTimeTagNode(node)) {
+    return false;
+  }
+  node.setValue(value);
+  node.setCalendarReconciled(true);
+  return true;
+}
+
+/** Actualiza una etiqueta `time` concreta en la barra del evento. */
+export function $updateBarTimeTagAtIndex(
+  segmentId: string,
+  tagIndex: number,
+  timeValue: string,
+  hour: number | null = null,
+): boolean {
+  const root = $getRoot();
+  for (const child of root.getChildren()) {
+    if (!$isEventTagBarNode(child) || child.getSegmentId() !== segmentId) {
+      continue;
+    }
+    const tags = [...child.getBarTags()];
+    const existing = tags[tagIndex];
+    if (!existing || existing.type !== "time") {
+      return false;
+    }
+    const next: BarTag = {
+      type: "time",
+      value: timeValue,
+      calendarReconciled: true,
+    };
+    if (hour != null) {
+      next.hour = hour;
+    }
+    tags[tagIndex] = next;
+    child.setBarTags(tags);
+    return true;
   }
   return false;
 }

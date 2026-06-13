@@ -504,6 +504,25 @@ mod tests {
     }
 
     #[test]
+    fn calendar_reset_template_reconciles_baseline() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
+
+        let default = CalendarConfig::default_template();
+        let mut edited = default.clone();
+        edited.months[0].days = 28;
+        save_calendar_config(root, &edited, true).unwrap();
+
+        save_calendar_config(root, &default, true).unwrap();
+
+        let active = load_calendar_config(root).unwrap();
+        let baseline = load_calendar_baseline_file(root).unwrap().config;
+        assert_eq!(active, default);
+        assert_eq!(baseline, default);
+    }
+
+    #[test]
     fn calendar_rejects_empty_months() {
         let mut config = CalendarConfig::default_template();
         config.months.clear();

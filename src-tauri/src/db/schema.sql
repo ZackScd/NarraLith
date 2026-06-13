@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS time_markers (
     segment_id TEXT,
     tag_kind TEXT NOT NULL DEFAULT 'bar' CHECK (tag_kind IN ('bar', 'inline')),
     char_offset INTEGER,
+    calendar_reconciled INTEGER NOT NULL DEFAULT 0 CHECK (calendar_reconciled IN (0, 1)),
     FOREIGN KEY (block_id) REFERENCES blocks (id) ON DELETE SET NULL
 );
 
@@ -78,6 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_time_markers_persisted_at ON time_markers (persis
 CREATE INDEX IF NOT EXISTS idx_time_markers_segment_id ON time_markers (segment_id);
 CREATE INDEX IF NOT EXISTS idx_time_markers_segment_trajectory
     ON time_markers (segment_id, tag_kind, char_offset);
+CREATE INDEX IF NOT EXISTS idx_time_markers_calendar_reconciled
+    ON time_markers (calendar_reconciled);
 
 CREATE TABLE IF NOT EXISTS graph_edges (
     id TEXT PRIMARY KEY NOT NULL,

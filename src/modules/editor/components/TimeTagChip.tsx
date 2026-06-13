@@ -10,22 +10,31 @@ import {
 } from "@/lib/calendar/timeTagUi";
 import { ManuscriptTagChip } from "@/modules/editor/components/ManuscriptTagChip";
 import { useCalendarStore } from "@/stores/useCalendarStore";
+import { cn } from "@/lib/utils";
 
 interface TimeTagChipProps {
   value: string;
   hour?: number | null;
   visible?: boolean;
+  calendarReconciled?: boolean;
+  onClick?: (event: React.MouseEvent) => void;
 }
 
-export function TimeTagChip({ value, hour = null, visible = true }: TimeTagChipProps) {
+export function TimeTagChip({
+  value,
+  hour = null,
+  visible = true,
+  calendarReconciled = false,
+  onClick,
+}: TimeTagChipProps) {
   const { t } = useTranslation("editor");
   const calendar = useCalendarStore((s) => s.config);
   const baselineConfig = useCalendarStore((s) => s.baselineConfig);
 
   const classified = useMemo(() => {
     if (!calendar) return null;
-    return classifyTimeTag(value, calendar, baselineConfig);
-  }, [value, calendar, baselineConfig]);
+    return classifyTimeTag(value, calendar, baselineConfig, { calendarReconciled });
+  }, [value, calendar, baselineConfig, calendarReconciled]);
 
   const parts = parseTimeTag(value);
   const includeHour = calendar?.hoursEnabled !== false;
@@ -38,7 +47,6 @@ export function TimeTagChip({ value, hour = null, visible = true }: TimeTagChipP
       : value;
 
   const invalid = classified != null && isStaleTimeTagStatus(classified.status);
-
   const title = timeTagTooltipTitle(t, classified?.status, value);
 
   return (
@@ -49,6 +57,8 @@ export function TimeTagChip({ value, hour = null, visible = true }: TimeTagChipP
       visible={visible}
       invalid={invalid}
       data-inline-tag-value={value}
+      className={cn(onClick && "cursor-pointer hover:bg-muted/60")}
+      onClick={onClick}
     />
   );
 }

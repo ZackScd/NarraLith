@@ -21,16 +21,17 @@ function file(path: string, name: string): FileTreeNode {
 }
 
 function placed(
-  item: Omit<PlacedTimelineItem, "x" | "y" | "width"> & Partial<Pick<PlacedTimelineItem, "x" | "y" | "width">>,
+  item: Omit<PlacedTimelineItem, "x" | "y" | "width" | "timeStatus" | "rawTime"> &
+    Partial<Pick<PlacedTimelineItem, "x" | "y" | "width" | "timeStatus" | "rawTime">>,
 ): PlacedTimelineItem {
   return {
-    x: 0,
-    y: 0,
-    width: 80,
-    blockIndex: 0,
-    timeStatus: "valid",
-    rawTime: "",
     ...item,
+    x: item.x ?? 0,
+    y: item.y ?? 0,
+    width: item.width ?? 80,
+    blockIndex: item.blockIndex ?? 0,
+    timeStatus: item.timeStatus ?? "valid",
+    rawTime: item.rawTime ?? "",
   };
 }
 

@@ -52,6 +52,20 @@ Compartir panel con FIX-011 (huérfanos WB) en v2 épica 6.
 
 **Default UI:** Modo C preseleccionado; A/B requieren checkbox «Modificaré N archivos».
 
+### 3.1 Caso canónico — mes eliminado
+
+Complemento de [010a §3.1](FIX-010a-classify-red-chips.md#31-escenario-canónico--mes-eliminado-inverso-de-3). Ejemplo validado en QA [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672): quitar **Abril** con marcas `14.4.2020`.
+
+| Modo | Comportamiento |
+|------|----------------|
+| **A** `preserveGap` | Recalcular `rawTime` para que el **día absoluto** (intervalo entre marcas) se preserve bajo el calendario nuevo; preview «14.4.2020 → 14.5.2020» (o el mes que corresponda por nombre) |
+| **B** `keepLiteral` | Mantener `14.4.2020` en disco; marcar **structure_stale** / rojo si el mes ordinal ya no es Abril semántico |
+| **C** | Usuario edita chip a chip ([010d](FIX-010d-edit-time-tags.md)) |
+
+**Disparador:** diff estructural con `affectsTimeMarkers` ([010i](FIX-010i-calendar-structural-diff.md)) — incluye «− mes Abril», no solo inserciones.
+
+**v1 sin wizard:** el guardado actual reconcilia baseline y reposiciona en silencio — **no sustituye** este flujo.
+
 ---
 
 ## 4. Panel consistencia (010f)
@@ -106,6 +120,7 @@ Reparación módulo: `git/mod.rs` + IPC — ver `implementation-plan.md` VER-001
 | E2 | Modo A confirmado | `rawTime` reescritos; baseline avanza |
 | E3 | Cancelar | Solo rojo; baseline intacto |
 | E4 | Panel consistencia | Lista obsoletas; re-ejecutar migración |
+| E5 | Quitar mes (Abril) con marcas · guardar | Asistente · preview desplazamiento | ❌ v1 · [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) |
 
 ---
 

@@ -68,6 +68,7 @@ import {
 } from "@/modules/timeline/timelineModel";
 import type { TimeDraft } from "@/stores/useTimeTagDialogStore";
 import { useCalendarStore } from "@/stores/useCalendarStore";
+import { useEditorStore } from "@/stores/useEditorStore";
 import i18n from "i18next";
 
 export type MiniZoomLevel = "years" | "year1" | "months" | "days";
@@ -463,6 +464,7 @@ export function TimeTagMiniTimeline({
   const { t } = useTranslation("editor");
   const { t: tTimeline } = useTranslation("timeline");
   const baselineConfig = useCalendarStore((s) => s.baselineConfig);
+  const reconciledTimeTagKeys = useEditorStore((s) => s.reconciledTimeTagKeys);
   const { width, setContainer } = useContainerWidth();
 
   const previewTime = useMemo(
@@ -481,6 +483,7 @@ export function TimeTagMiniTimeline({
       calendar,
       ALL_TIMELINE_FILTERS,
       baselineConfig,
+      reconciledTimeTagKeys,
     ).filter(
       (item) => !isEditingBlock(item, filePath, blockIndex),
     );
@@ -850,6 +853,7 @@ export function TimeTagMiniTimeline({
     baselineConfig,
     calendar,
     events,
+    reconciledTimeTagKeys,
     previewTime,
     previewParts,
     filePath,

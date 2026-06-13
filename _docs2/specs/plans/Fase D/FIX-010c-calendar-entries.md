@@ -29,6 +29,8 @@ Entradas inválidas/obsoletas visibles en vista calendario y mini-timeline later
 
 > Tras reset a calendario mínimo, las marcas con timestamp antiguo suelen caer en **fuera de año** y aparecen en la sección inferior del panel lateral (no en la cuadrícula del mes actual).
 
+> **Edición estructural (quitar mes):** distinto del reset. La cuadrícula y `buildCalendarTimeEntries` colocan marcas según el parse del calendario **activo** — el ordinal `m` en `d.m.y` sigue apuntando al índice `months[m-1]` del array actual. Si Abril desaparece, `14.4.2020` cae en la celda del mes que ocupa la posición 4 (p. ej. Mayo), con chip **normal** si baseline avanzó al guardar. No entra en «Marcas obsoletas». Ver [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672).
+
 ---
 
 ## 3. Mini-timeline + side panel
@@ -72,6 +74,7 @@ En `resetCalendarToDefault` / `Blank` (`useCalendarViewStore.ts`):
 | C1 | Vista calendario tras reset | Entradas obsoletas listadas en rojo | ✅ Año 15: sección «Marcas obsoletas (5)» + celdas rojas (Agosto 14/16) |
 | C2 | Mini-timeline en diálogo tiempo | Chips stale visibles | ⏭️ no probado explícito · `markerCount: 9` estable en panel |
 | C3 | Reset → timeline | Sin crash; datos refrescados | ✅ `viewChange` timeline↔calendar sin corte · sesión previa reset OK |
+| C4 | Quitar mes con marcas · guardar | Sin desplazamiento silencioso en cuadrícula | ❌ v1 · sesión `19672` · [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) |
 
 **Logs:** `_debug/render-logs/ui-session-1781345228544-2156.ndjson` · `_debug/logs/session-1781345228544-2156.ndjson`
 
@@ -87,4 +90,4 @@ En `resetCalendarToDefault` / `Blank` (`useCalendarViewStore.ts`):
 
 ---
 
-**Anterior:** [010b](FIX-010b-timeline-stale-display.md) · **Siguiente:** [010d](FIX-010d-edit-time-tags.md)
+**Anterior:** [010d](FIX-010d-edit-time-tags.md) · **Siguiente:** [010i](FIX-010i-calendar-structural-diff.md)

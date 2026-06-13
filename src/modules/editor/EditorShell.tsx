@@ -39,6 +39,7 @@ import { ExtractBlocksPlugin } from "@/modules/editor/plugins/ExtractBlocksPlugi
 
 import { HydrateDocumentPlugin } from "@/modules/editor/plugins/HydrateDocumentPlugin";
 
+import { EditInlineTimeTagPlugin } from "@/modules/editor/plugins/EditInlineTimeTagPlugin";
 import { InsertInlineTagPlugin } from "@/modules/editor/plugins/InsertInlineTagPlugin";
 
 import { EventFrameDeletePlugin, EventFramePendingClearPlugin } from "@/modules/editor/plugins/EventFrameDeletePlugin";
@@ -145,6 +146,8 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <EventFramePendingClearPlugin />
 
         <InsertInlineTagPlugin />
+
+        <EditInlineTimeTagPlugin />
 
         <WikiLinkTypeaheadPlugin />
 

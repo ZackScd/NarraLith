@@ -13,6 +13,8 @@ export interface TimelineEvent {
   characters: string[];
   location?: string | null;
   persistedAt?: number | null;
+  /** Revisada manualmente tras cambio estructural del calendario (FIX-010d). */
+  calendarReconciled?: boolean;
 }
 
 export interface LastAddedTimeMarker {

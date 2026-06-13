@@ -13,6 +13,8 @@ export interface BarTag {
   value: string;
   /** Hora opcional (0–23) asociada a marcas `time` en barra. */
   hour?: number | null;
+  /** Revisada manualmente tras cambio estructural del calendario (FIX-010d). */
+  calendarReconciled?: boolean;
 }
 
 /** Etiqueta inline en cuerpo (`{{time:…}}`) con offset UTF-8. */

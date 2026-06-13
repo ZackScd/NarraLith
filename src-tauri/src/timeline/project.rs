@@ -24,6 +24,7 @@ pub struct TimelineEvent {
     pub characters: Vec<String>,
     pub location: Option<String>,
     pub persisted_at: i64,
+    pub calendar_reconciled: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -53,7 +54,7 @@ pub fn list_timeline_events(
     let mut stmt = conn
         .prepare(
             "SELECT b.file_path, b.block_index, b.metadata, tm.raw_time, tm.timestamp, tm.label, tm.persisted_at,
-                    tm.segment_id, tm.tag_kind, tm.char_offset
+                    tm.segment_id, tm.tag_kind, tm.char_offset, tm.calendar_reconciled
              FROM time_markers tm
              INNER JOIN blocks b ON b.id = tm.block_id
              WHERE tm.raw_time IS NOT NULL AND trim(tm.raw_time) != ''
@@ -82,6 +83,7 @@ pub fn list_timeline_events(
             let segment_id: Option<String> = row.get(7)?;
             let tag_kind: Option<String> = row.get(8)?;
             let char_offset: Option<i64> = row.get(9)?;
+            let calendar_reconciled: i64 = row.get(10)?;
 
             let metadata = metadata_str
                 .as_deref()
@@ -129,6 +131,7 @@ pub fn list_timeline_events(
                 characters,
                 location,
                 persisted_at,
+                calendar_reconciled: calendar_reconciled != 0,
             })
         })
         .map_err(|e| AppError::database(e.to_string()))?;

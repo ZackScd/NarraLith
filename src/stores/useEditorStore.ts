@@ -28,6 +28,7 @@ import {
   tabPathsToCloseOnRemove,
 } from "@/lib/editor/fsSync";
 import { manuscriptToParsedDocument } from "@/lib/editor/manuscriptBlocks";
+import { reconciledKeysFromManuscript } from "@/lib/calendar/timeTagReconcile";
 import { audit } from "@/lib/audit";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { normalizeProjectPath, projectPathsEqual } from "@/lib/pathUtils";
@@ -39,6 +40,7 @@ import { entityFingerprint } from "@/lib/worldbuilding/entityFingerprint";
 import { isEntityPath } from "@/lib/worldbuilding/entityPath";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { useProjectTimelineStore } from "@/stores/useProjectTimelineStore";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 export type MetadataSaveStatus = "idle" | "saving" | "saved" | "error";
@@ -84,6 +86,13 @@ type UpdateEventFn = (params: {
   barTags: BarTag[] | null;
 }) => boolean;
 type AppendBarTimeFn = (timeTag: string, hour?: number | null) => boolean;
+type UpdateInlineTimeTagFn = (nodeKey: string, value: string) => boolean;
+type UpdateBarTimeTagFn = (
+  segmentId: string,
+  tagIndex: number,
+  timeTag: string,
+  hour?: number | null,
+) => boolean;
 type RemoveEventFn = (segmentId: string) => boolean;
 type RemoveEventEndFn = (segmentId: string) => boolean;
 
@@ -121,6 +130,7 @@ interface EditorState {
   dirtyDiffBaselineVersion: number;
   /** Snapshot post-guardado para refrescar diff sin releer disco. */
   dirtyDiffSavedBaseline: ParsedManuscript | null;
+  reconciledTimeTagKeys: Set<string>;
 
   setExtractManuscriptFn: (fn: ExtractManuscriptFn | null) => void;
   setInsertInlineTagFn: (fn: InsertInlineTagFn | null) => void;
@@ -129,6 +139,8 @@ interface EditorState {
   setCommitEventFn: (fn: CommitEventFn | null) => void;
   setUpdateEventFn: (fn: UpdateEventFn | null) => void;
   setAppendBarTimeFn: (fn: AppendBarTimeFn | null) => void;
+  setUpdateInlineTimeTagFn: (fn: UpdateInlineTimeTagFn | null) => void;
+  setUpdateBarTimeTagFn: (fn: UpdateBarTimeTagFn | null) => void;
   setRemoveEventFn: (fn: RemoveEventFn | null) => void;
   setRemoveEventEndFn: (fn: RemoveEventEndFn | null) => void;
   /** Sincroniza `manuscript` desde Lexical sin escribir a disco. */
@@ -153,6 +165,14 @@ interface EditorState {
     barTags: BarTag[] | null;
   }) => boolean;
   appendBarTimeToActiveEvent: (timeTag: string, hour?: number | null) => boolean;
+  updateInlineTimeTagAt: (nodeKey: string, value: string) => boolean;
+  updateBarTimeTagAt: (
+    segmentId: string,
+    tagIndex: number,
+    timeTag: string,
+    hour?: number | null,
+  ) => boolean;
+  markTimeTagCalendarReconciled: (...keys: string[]) => void;
   removeEventFromEditor: (segmentId: string) => boolean;
   removeEventEndFromEditor: (segmentId: string) => boolean;
   labelCommitDepth: number;
@@ -216,6 +236,8 @@ let expandEventFn: ExpandEventFn | null = null;
 let commitEventFn: CommitEventFn | null = null;
 let updateEventFn: UpdateEventFn | null = null;
 let appendBarTimeFn: AppendBarTimeFn | null = null;
+let updateInlineTimeTagFn: UpdateInlineTimeTagFn | null = null;
+let updateBarTimeTagFn: UpdateBarTimeTagFn | null = null;
 let removeEventFn: RemoveEventFn | null = null;
 let removeEventEndFn: RemoveEventEndFn | null = null;
 
@@ -225,6 +247,24 @@ function manuscriptTabFields(manuscript: ParsedManuscript) {
     document: manuscriptToParsedDocument(manuscript),
     savedBodyFingerprint: bodyFingerprintFromManuscript(manuscript),
   };
+}
+
+function mergeReconciledKeysFromManuscript(
+  existing: Set<string>,
+  manuscript: ParsedManuscript | null | undefined,
+): Set<string> {
+  if (!manuscript) {
+    return existing;
+  }
+  const keys = reconciledKeysFromManuscript(manuscript);
+  if (keys.length === 0) {
+    return existing;
+  }
+  const next = new Set(existing);
+  for (const key of keys) {
+    next.add(key);
+  }
+  return next;
 }
 
 const emptyEditorView = {
@@ -240,6 +280,7 @@ const emptyEditorView = {
   isDirty: false,
   saveStatus: "idle" as SaveStatus,
   metadataSaveStatus: "idle" as MetadataSaveStatus,
+  reconciledTimeTagKeys: new Set<string>(),
 };
 
 const initialState = {
@@ -258,6 +299,7 @@ const initialState = {
   dirtyDiffVisible: false,
   dirtyDiffBaselineVersion: 0,
   dirtyDiffSavedBaseline: null as ParsedManuscript | null,
+  reconciledTimeTagKeys: new Set<string>(),
 };
 
 function syncTabInMap(
@@ -355,8 +397,18 @@ function activeViewFromTab(tab: EditorTab) {
   };
 }
 
-function activateTabView(tab: EditorTab) {
-  return activeViewFromTab(tab);
+function activateTabView(tab: EditorTab, reconciledTimeTagKeys: Set<string>) {
+  const view = activeViewFromTab(tab);
+  if (tab.kind === "manuscript" && tab.manuscript) {
+    return {
+      ...view,
+      reconciledTimeTagKeys: mergeReconciledKeysFromManuscript(
+        reconciledTimeTagKeys,
+        tab.manuscript,
+      ),
+    };
+  }
+  return view;
 }
 
 function syncManuscriptTabsClear(tabOrder: string[]): void {
@@ -460,6 +512,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     appendBarTimeFn = fn;
   },
 
+  setUpdateInlineTimeTagFn: (fn) => {
+    updateInlineTimeTagFn = fn;
+  },
+
+  setUpdateBarTimeTagFn: (fn) => {
+    updateBarTimeTagFn = fn;
+  },
+
   setRemoveEventFn: (fn) => {
     removeEventFn = fn;
   },
@@ -486,6 +546,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       document,
       isDirty: true,
       saveStatus: "idle",
+      reconciledTimeTagKeys: mergeReconciledKeysFromManuscript(
+        state.reconciledTimeTagKeys,
+        updated,
+      ),
       tabs: syncTabInMap(state.tabs, activeFilePath, {
         manuscript: updated,
         document,
@@ -523,6 +587,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   appendBarTimeToActiveEvent: (timeTag, hour) =>
     appendBarTimeFn?.(timeTag, hour) ?? false,
+
+  updateInlineTimeTagAt: (nodeKey, value) =>
+    updateInlineTimeTagFn?.(nodeKey, value) ?? false,
+
+  updateBarTimeTagAt: (segmentId, tagIndex, timeTag, hour) =>
+    updateBarTimeTagFn?.(segmentId, tagIndex, timeTag, hour) ?? false,
+
+  markTimeTagCalendarReconciled: (...keys) => {
+    set((state) => {
+      const toAdd = keys.filter((key) => !state.reconciledTimeTagKeys.has(key));
+      if (toAdd.length === 0) {
+        return state;
+      }
+      const reconciledTimeTagKeys = new Set(state.reconciledTimeTagKeys);
+      for (const key of toAdd) {
+        reconciledTimeTagKeys.add(key);
+      }
+      return { reconciledTimeTagKeys };
+    });
+  },
 
   removeEventFromEditor: (segmentId) => removeEventFn?.(segmentId) ?? false,
 
@@ -611,7 +695,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       beginEditorSession();
       set({
         tabs,
-        ...activateTabView(target),
+        ...activateTabView(target, state.reconciledTimeTagKeys),
       });
       return;
     }
@@ -639,7 +723,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         tabs: flushed.tabs,
         dirtyDiffVisible: false,
         dirtyDiffSavedBaseline: null,
-        ...activateTabView(tab),
+        ...activateTabView(tab, state.reconciledTimeTagKeys),
       });
       audit.info("editor", "obs.editor.tab.switch", { from: fromPath, to: filePath });
       return;
@@ -697,7 +781,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if (nextTabs[pendingFilePath]) {
         const tab = nextTabs[pendingFilePath];
         beginEditorSession();
-        set({ ...activateTabView(tab) });
+        set({ ...activateTabView(tab, get().reconciledTimeTagKeys) });
       } else {
         await get().openDocument(pendingFilePath);
       }
@@ -736,7 +820,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         tabs: nextTabs,
         tabOrder: nextOrder,
         pendingFilePath: null,
-        ...activateTabView(tab),
+        ...activateTabView(tab, get().reconciledTimeTagKeys),
       });
       syncManuscriptTabsClear(nextOrder);
     }
@@ -764,7 +848,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       extractManuscriptFn = tab.kind === "entity" ? null : extractManuscriptFn;
       set({
         tabs: { ...flushed.tabs, [filePath]: tab },
-        ...activateTabView(tab),
+        ...activateTabView(tab, get().reconciledTimeTagKeys),
       });
       audit.info("editor", "obs.editor.tab.open", {
         path: filePath,
@@ -807,7 +891,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             : [...state.tabOrder, filePath],
           isLoading: false,
           showExternalReloadDialog: false,
-          ...activateTabView(tab),
+          ...activateTabView(tab, state.reconciledTimeTagKeys),
         }));
         audit.info("editor", "obs.editor.tab.open", {
           path: filePath,
@@ -841,7 +925,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           : [...state.tabOrder, filePath],
         isLoading: false,
         showExternalReloadDialog: false,
-        ...activateTabView(tab),
+        ...activateTabView(tab, state.reconciledTimeTagKeys),
       }));
       audit.info("editor", "obs.editor.tab.open", {
         path: filePath,
@@ -993,8 +1077,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           manuscript: saved,
           document: fields.document,
           dirtyDiffSavedBaseline: state.dirtyDiffVisible ? saved : state.dirtyDiffSavedBaseline,
+          reconciledTimeTagKeys: mergeReconciledKeysFromManuscript(
+            state.reconciledTimeTagKeys,
+            saved,
+          ),
         };
       });
+      void useProjectTimelineStore.getState().load();
       return true;
     } catch (err) {
       const parsed = parseAppError(err);
@@ -1081,6 +1170,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const fields = manuscriptTabFields(manuscript);
       set((state) => {
         const documentSyncKey = state.documentSyncKey + 1;
+        const reconciledTimeTagKeys = mergeReconciledKeysFromManuscript(
+          state.reconciledTimeTagKeys,
+          manuscript,
+        );
         return {
           manuscript,
           document: fields.document,
@@ -1088,6 +1181,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           metadataSaveStatus: "idle",
           showExternalReloadDialog: false,
           documentSyncKey,
+          reconciledTimeTagKeys,
           ...patchSavedBaseline(state, activeFilePath, fields.savedBodyFingerprint),
           tabs: syncTabInMap(state.tabs, activeFilePath, {
             ...fields,
@@ -1242,7 +1336,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       useEditorStore.setState({
         tabs: nextTabs,
         tabOrder: nextOrder,
-        ...activateTabView(nextTab),
+        ...activateTabView(nextTab, useEditorStore.getState().reconciledTimeTagKeys),
       });
       syncManuscriptTabsClear(nextOrder);
     }
@@ -1299,6 +1393,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           metadataSaveStatus: "idle",
           showExternalReloadDialog: false,
           documentSyncKey,
+          reconciledTimeTagKeys: mergeReconciledKeysFromManuscript(
+            state.reconciledTimeTagKeys,
+            manuscript,
+          ),
           ...patchSavedBaseline(state, filePath, fingerprint),
         };
       });
@@ -1393,7 +1491,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if (projectPathsEqual(state.activeFilePath, path)) {
         return {
           tabs,
-          ...activateTabView(updated),
+          ...activateTabView(updated, state.reconciledTimeTagKeys),
           isDirty: true,
           saveStatus: "idle" as SaveStatus,
         };
@@ -1512,7 +1610,7 @@ export function requestCloseEditorTab(filePath: string): void {
   useEditorStore.setState({
     tabs: nextTabs,
     tabOrder: nextOrder,
-    ...activateTabView(nextTab),
+    ...activateTabView(nextTab, state.reconciledTimeTagKeys),
   });
   syncManuscriptTabsClear(nextOrder);
 }

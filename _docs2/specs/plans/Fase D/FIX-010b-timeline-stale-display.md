@@ -77,6 +77,7 @@ interface TimelineDisplayItem {
 | B2 | `markerCount` | No baja 9→0 en silencio | ✅ `obs.ui.calendarPanel.miniTimeline` → `markerCount: 9` estable |
 | B3 | Mes insertado | Posición literal o timestamp; solo rojo | ⏭️ no probado en esta sesión (calendario mínimo) |
 | B4 | Timeline + calendario tras reset | Sin congelamiento | ✅ `viewChange` editor→timeline→calendar→editor sin corte de log |
+| B5 | Quitar mes · guardar calendario | X estable o stale rojo explícito | ❌ v1 · X se mueve · [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) · matiz §8 |
 
 **Logs:** `_debug/render-logs/ui-session-1781343876561-8852.ndjson` · `_debug/logs/session-1781343876561-8852.ndjson`
 
@@ -89,6 +90,20 @@ interface TimelineDisplayItem {
 **Estado:** ✅ Cerrado (jun 2026) · Tests: `timelineModel.test.ts`, `markerPlacement.test.ts`, `calendar.test.ts` (clave mythic).
 
 **Pendiente en 010c:** estilo rojo en filas del calendario mensual (`TimeEntryRow`) y recarga explícita post-reset en stores.
+
+---
+
+## 8. Matiz D1 — reset vs editar calendario
+
+**D1** («timeline: misma posición X») se cumple cuando el parse activo **falla** o diverge fuertemente del calendario visible y `resolveMarkerPlacement` cae al **`timestamp` SQLite** (caso típico: reset a calendario mínimo — sesión `8852`).
+
+| Escenario | Fuente de `displaySortKey` | ¿Se mueve X? |
+|-----------|---------------------------|--------------|
+| Reset calendario incompatible | `timestamp` SQLite (fallback) | **No** (D1 OK) |
+| Editar calendario (quitar mes) · guardar | Parse activo «instant» · nuevo `absoluteDay` | **Sí** — reposicionamiento silencioso |
+| `structure_stale` · baseline ≠ active | Parse activo (clasificador) | **Sí** si parse activo cambió |
+
+**Conclusión:** 010b cerró el drop silencioso y el freeze; **no** garantiza X fija tras edición estructural del calendario. Eso requiere [010g](FIX-010g-calendar-baseline.md) (no reconciliar baseline) + [010e](FIX-010e-migration-wizard.md) o usar `absoluteDay_baseline` / timestamp como ancla explícita — fuera de alcance 010b. Hallazgo QA: [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672).
 
 ---
 

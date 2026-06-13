@@ -10,20 +10,15 @@ import {
 import type { JSX } from "react";
 
 import { serializeInlineTag } from "@/lib/editor/inlineTagSyntax";
-import { TimeTagChip } from "@/modules/editor/components/TimeTagChip";
-import { useLayoutStore } from "@/stores/useLayoutStore";
+import { InlineTimeTagChipHost } from "@/modules/editor/components/InlineTimeTagChipHost";
 
 export type SerializedInlineTimeTagNode = SerializedLexicalNode & {
   tagType: string;
   value: string;
+  calendarReconciled?: boolean;
   type: "inline-time-tag";
   version: 1;
 };
-
-function InlineTimeTagDecorator({ value }: { value: string }): JSX.Element {
-  const visible = useLayoutStore((s) => s.inlineMetadataVisible);
-  return <TimeTagChip value={value} visible={visible} />;
-}
 
 /**
  * Chip inline de tiempo en prosa (`{{time:…}}`). Sustituye el chip único `time` por bloque.
@@ -32,11 +27,18 @@ function InlineTimeTagDecorator({ value }: { value: string }): JSX.Element {
 export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
   __tagType: string;
   __value: string;
+  __calendarReconciled: boolean;
 
-  constructor(tagType: string, value: string, key?: NodeKey) {
+  constructor(
+    tagType: string,
+    value: string,
+    calendarReconciled = false,
+    key?: NodeKey,
+  ) {
     super(key);
     this.__tagType = tagType;
     this.__value = value;
+    this.__calendarReconciled = calendarReconciled;
   }
 
   static getType(): string {
@@ -44,7 +46,12 @@ export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
   }
 
   static clone(node: InlineTimeTagNode): InlineTimeTagNode {
-    return new InlineTimeTagNode(node.__tagType, node.__value, node.__key);
+    return new InlineTimeTagNode(
+      node.__tagType,
+      node.__value,
+      node.__calendarReconciled,
+      node.__key,
+    );
   }
 
   getTagType(): string {
@@ -53,6 +60,22 @@ export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
 
   getValue(): string {
     return this.__value;
+  }
+
+  isCalendarReconciled(): boolean {
+    return this.__calendarReconciled;
+  }
+
+  setValue(value: string): this {
+    const writable = this.getWritable();
+    writable.__value = value;
+    return writable;
+  }
+
+  setCalendarReconciled(reconciled: boolean): this {
+    const writable = this.getWritable();
+    writable.__calendarReconciled = reconciled;
+    return writable;
   }
 
   /** Texto en disco: `{{time:…}}`. */
@@ -78,11 +101,15 @@ export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
     el.contentEditable = "false";
     el.setAttribute("data-inline-tag-type", this.__tagType);
     el.setAttribute("data-inline-tag-value", this.__value);
+    el.setAttribute("data-lexical-node-key", this.getKey());
     return el;
   }
 
-  updateDOM(): boolean {
-    return false;
+  updateDOM(prevNode: InlineTimeTagNode): boolean {
+    return (
+      prevNode.__value !== this.__value ||
+      prevNode.__calendarReconciled !== this.__calendarReconciled
+    );
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -94,11 +121,15 @@ export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
-    return <InlineTimeTagDecorator value={this.__value} />;
+    return <InlineTimeTagChipHost nodeKey={this.getKey()} />;
   }
 
   static importJSON(serializedNode: SerializedInlineTimeTagNode): InlineTimeTagNode {
-    return $createInlineTimeTagNode(serializedNode.tagType, serializedNode.value);
+    return $createInlineTimeTagNode(
+      serializedNode.tagType,
+      serializedNode.value,
+      serializedNode.calendarReconciled ?? false,
+    );
   }
 
   exportJSON(): SerializedInlineTimeTagNode {
@@ -106,6 +137,7 @@ export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
       ...super.exportJSON(),
       tagType: this.__tagType,
       value: this.__value,
+      calendarReconciled: this.__calendarReconciled || undefined,
       type: "inline-time-tag",
       version: 1,
     };
@@ -115,12 +147,15 @@ export class InlineTimeTagNode extends DecoratorNode<JSX.Element> {
 export function $createInlineTimeTagNode(
   tagType: string,
   value: string,
+  calendarReconciled = false,
 ): InlineTimeTagNode {
-  return $applyNodeReplacement(new InlineTimeTagNode(tagType, value));
+  return $applyNodeReplacement(
+    new InlineTimeTagNode(tagType, value, calendarReconciled),
+  );
 }
 
 export function $isInlineTimeTagNode(
   node: LexicalNode | null | undefined,
 ): node is InlineTimeTagNode {
-  return node instanceof InlineTimeTagNode;
+  return node != null && node.getType() === InlineTimeTagNode.getType();
 }

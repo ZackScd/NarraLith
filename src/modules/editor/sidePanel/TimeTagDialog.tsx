@@ -67,6 +67,8 @@ export function TimeTagDialog() {
   const blockIndex = useTimeTagDialogStore((s) => s.blockIndex);
   const draft = useTimeTagDialogStore((s) => s.draft);
   const commitOnSave = useTimeTagDialogStore((s) => s.commitOnSave);
+  const mode = useTimeTagDialogStore((s) => s.mode);
+  const editTarget = useTimeTagDialogStore((s) => s.editTarget);
   const setPosition = useTimeTagDialogStore((s) => s.setPosition);
   const setDraft = useTimeTagDialogStore((s) => s.setDraft);
   const close = useTimeTagDialogStore((s) => s.close);
@@ -83,6 +85,8 @@ export function TimeTagDialog() {
   const appendBarTimeToActiveEvent = useEditorStore(
     (s) => s.appendBarTimeToActiveEvent,
   );
+  const updateInlineTimeTagAt = useEditorStore((s) => s.updateInlineTimeTagAt);
+  const updateBarTimeTagAt = useEditorStore((s) => s.updateBarTimeTagAt);
   const stageTime = useManuscriptLabelDraftStore((s) => s.stageTime);
   const clearPending = useManuscriptLabelDraftStore((s) => s.clear);
   const { events, lastAdded, reload } = useProjectTimeline();
@@ -149,12 +153,30 @@ export function TimeTagDialog() {
   };
 
   const handleSave = async () => {
-    const block = parsedDocument?.blocks[blockIndex];
-    if (!block) return;
     const safe = clampToCalendar(
       { day: safeDay, month: safeMonth, year: draft.year },
       calendar,
     );
+
+    if (mode === "edit" && editTarget) {
+      const timeTag = formatTimeTag(safe);
+      const ok =
+        editTarget.kind === "inline"
+          ? updateInlineTimeTagAt(editTarget.nodeKey, timeTag)
+          : updateBarTimeTagAt(
+              editTarget.segmentId,
+              editTarget.tagIndex,
+              timeTag,
+              draft.hour ?? null,
+            );
+      if (ok) {
+        close();
+      }
+      return;
+    }
+
+    const block = parsedDocument?.blocks[blockIndex];
+    if (!block) return;
 
     if (commitOnSave) {
       const ok = runLabelCommit(() =>
@@ -221,6 +243,7 @@ export function TimeTagDialog() {
           onSetHour={setHour}
           onSave={() => void handleSave()}
           commitOnSave={commitOnSave}
+          mode={mode}
           onToggleTimelinePreview={toggleTimelinePreview}
           timelinePreviewOpen={timelinePreviewOpen}
           t={t}
@@ -251,6 +274,7 @@ interface DialogBodyProps {
   onSetHour: (n: number | null) => void;
   onSave: () => void;
   commitOnSave: boolean;
+  mode: "insert" | "edit";
   onToggleTimelinePreview: () => void;
   timelinePreviewOpen: boolean;
   t: (key: string, opts?: Record<string, unknown>) => string;
@@ -275,6 +299,7 @@ function DialogBody({
   onSetHour,
   onSave,
   commitOnSave,
+  mode,
   onToggleTimelinePreview,
   timelinePreviewOpen,
   t,
@@ -473,7 +498,7 @@ function DialogBody({
       ref={dialogRef}
       role="dialog"
       aria-modal="false"
-      aria-label={t("panel.timeDialogTitle")}
+      aria-label={mode === "edit" ? t("timeTag.editTitle") : t("panel.timeDialogTitle")}
       className="fixed z-50 flex w-fit min-w-[240px] flex-col rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl"
       style={{ left: position.x, top: position.y, width: dialogWidth }}
       onPointerMove={onPointerMove}
@@ -486,7 +511,7 @@ function DialogBody({
       >
         <div className="flex items-center gap-2 text-xs font-medium text-foreground">
           <GripHorizontal className="size-3.5 text-muted-foreground" />
-          <span>{t("panel.timeDialogTitle")}</span>
+          <span>{mode === "edit" ? t("timeTag.editTitle") : t("panel.timeDialogTitle")}</span>
         </div>
         <Button
           type="button"

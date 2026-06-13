@@ -38,6 +38,8 @@ function fileEvent(rawTime: string, timestamp?: string): TimelineEvent {
     segmentId: null,
     tagKind: "inline",
     charOffset: 0,
+    isParallel: false,
+    characters: [],
   };
 }
 

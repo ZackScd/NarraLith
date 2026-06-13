@@ -8,8 +8,16 @@ export interface TimeDraft {
   hour: number | null;
 }
 
+export type TimeTagDialogMode = "insert" | "edit";
+
+export type TimeTagEditTarget =
+  | { kind: "inline"; nodeKey: string }
+  | { kind: "bar"; segmentId: string; tagIndex: number };
+
 interface TimeTagDialogState {
   isOpen: boolean;
+  mode: TimeTagDialogMode;
+  editTarget: TimeTagEditTarget | null;
   /** Posición flotante absoluta (px) en el viewport. */
   position: { x: number; y: number };
   /** Pestaña/archivo y bloque a los que pertenece la edición en curso. */
@@ -28,6 +36,8 @@ interface TimeTagDialogState {
     initial: TimeDraft;
     position?: { x: number; y: number };
     commitOnSave?: boolean;
+    mode?: TimeTagDialogMode;
+    editTarget?: TimeTagEditTarget;
   }) => void;
   close: () => void;
   setPosition: (position: { x: number; y: number }) => void;
@@ -57,6 +67,8 @@ function clampPreviewPosition(x: number, y: number): { x: number; y: number } {
 
 export const useTimeTagDialogStore = create<TimeTagDialogState>((set) => ({
   isOpen: false,
+  mode: "insert",
+  editTarget: null,
   position: DEFAULT_POSITION,
   filePath: null,
   blockIndex: null,
@@ -65,13 +77,23 @@ export const useTimeTagDialogStore = create<TimeTagDialogState>((set) => ({
   timelinePreviewOpen: false,
   timelinePreviewPosition: DEFAULT_POSITION,
 
-  open: ({ filePath, blockIndex, initial, position, commitOnSave }) =>
+  open: ({
+    filePath,
+    blockIndex,
+    initial,
+    position,
+    commitOnSave,
+    mode = "insert",
+    editTarget = null,
+  }) =>
     set((state) => ({
       isOpen: true,
+      mode,
+      editTarget: mode === "edit" ? editTarget : null,
       filePath,
       blockIndex,
       draft: { ...initial },
-      commitOnSave: !!commitOnSave,
+      commitOnSave: mode === "edit" ? false : !!commitOnSave,
       position: position ?? state.position,
       timelinePreviewOpen: false,
     })),
@@ -79,6 +101,8 @@ export const useTimeTagDialogStore = create<TimeTagDialogState>((set) => ({
   close: () =>
     set({
       isOpen: false,
+      mode: "insert",
+      editTarget: null,
       filePath: null,
       blockIndex: null,
       commitOnSave: false,

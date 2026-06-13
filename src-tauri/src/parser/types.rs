@@ -29,12 +29,15 @@ pub struct ManuscriptFileHeader {
 
 /// Etiqueta de origen confirmada en el panel y persistida en YAML (`barTags`, §1.5).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BarTag {
     #[serde(rename = "type")]
     pub tag_type: String,
     pub value: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hour: Option<u32>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub calendar_reconciled: bool,
 }
 
 /// Etiqueta inline en el cuerpo (`{{time:…}}`, etc.) con offset UTF-8 en `body`.
@@ -256,6 +259,7 @@ mod tests {
                         tag_type: "time".to_string(),
                         value: "10.1.0".to_string(),
                         hour: Some(9),
+                        calendar_reconciled: false,
                     }],
                     body: "cuerpo {{time:10.1.0}}".to_string(),
                     inline_tags: vec![InlineTag {
@@ -311,6 +315,7 @@ mod tests {
             tag_type: "time".to_string(),
             value: "1.1.0".to_string(),
             hour: None,
+            calendar_reconciled: false,
         };
         let json = serde_json::to_value(&tag).unwrap();
         assert_eq!(json.get("type").and_then(|v| v.as_str()), Some("time"));
@@ -352,11 +357,13 @@ mod tests {
             tag_type: "time".to_string(),
             value: "1.0.0".to_string(),
             hour: None,
+            calendar_reconciled: false,
         });
         event.bar_tags.push(BarTag {
             tag_type: "location".to_string(),
             value: "X".to_string(),
             hour: None,
+            calendar_reconciled: false,
         });
         event.inline_tags.push(InlineTag {
             tag_type: "time".to_string(),

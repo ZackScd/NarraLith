@@ -15,6 +15,7 @@ Toggle en panel calendario: ver cambios **estructurales** borrador vs disco ante
 | O2 | Lista legible de cambios (meses, días, epoch) |
 | O3 | Misma fuente `calendarStructuralDiff` que wizard [010e](FIX-010e-migration-wizard.md) |
 | O4 | Sin escribir a disco al activar |
+| O5 | Si `affectsTimeMarkers`: banner «N marcas pueden cambiar de mes al guardar sin migración» — enlace a [010e](FIX-010e-migration-wizard.md) cuando exista |
 
 ---
 
@@ -42,6 +43,7 @@ Enlace opcional «Ver JSON completo» → `DiffViewer` cuando VER-001 operativo.
 
 - [ ] `CalendarStructuralDiffPanel.tsx` — **Nuevo**
 - [ ] Integrar toggle en UI calendario
+- [ ] `saveDraft`: `reconcileBaseline: !diff.affectsTimeMarkers` (hasta [010e](FIX-010e-migration-wizard.md))
 - [ ] Tests `calendarStructuralDiff.test.ts` (casos compartidos con 010a)
 
 ---
@@ -63,6 +65,7 @@ Enlace opcional «Ver JSON completo» → `DiffViewer` cuando VER-001 operativo.
 | I1 | Insertar mes en borrador · toggle diff | Lista cambio estructural |
 | I2 | Sin cambios | Toggle oculto o vacío |
 | I3 | Guardar | Diff se re-baselinea |
+| I4 | Quitar mes con marcas · toggle diff | Lista «− mes» + contador marcas afectadas · aviso O5 | Pendiente · ver [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) |
 
 ---
 

@@ -284,7 +284,7 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
         locale,
         mode: "default",
       });
-      useCalendarStore.setState({ config, lastErrorKey: null });
+      useCalendarStore.setState({ config, baselineConfig: config, lastErrorKey: null });
       get().initFromConfig(config);
       void useProjectTimelineStore.getState().load();
       set({
@@ -313,7 +313,7 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
         locale,
         mode: "blank",
       });
-      useCalendarStore.setState({ config, lastErrorKey: null });
+      useCalendarStore.setState({ config, baselineConfig: config, lastErrorKey: null });
       get().initFromConfig(config);
       void useProjectTimelineStore.getState().load();
       set({

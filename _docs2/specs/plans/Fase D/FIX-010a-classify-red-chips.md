@@ -68,6 +68,22 @@ Calendario real + mes extra **entre junio y julio**:
 | `15.7.27`, `15.8.27` | **structure_stale** |
 | `31.6.27` (junio acortado) | **invalid** o stale según diff |
 
+### 3.1 Escenario canónico — mes eliminado (inverso de §3)
+
+Calendario con 12 meses; el autor **quita Abril** (mes ordinal 4) y guarda. Las marcas `{{time:14.4.2020}}` **no se reescriben** en disco.
+
+| `rawTime` | Parse en calendario **antes** | Parse en calendario **después** (Abril fuera) |
+|-----------|------------------------------|------------------------------------------------|
+| `14.4.2020` | 14 Abril (`months[3]`) | 14 **Mayo** (`months[3]` = ex mes 5) |
+| `30.4.2028` | 30 Abril | 30 **Mayo** (si el mes destino tiene ≥30 días) |
+
+| Condición | Clasificación **esperada** (regla 010g sin reconciliar) | v1 **actual** si `saveDraft` reconcilia baseline |
+|-----------|----------------------------------------------------------|---------------------------------------------------|
+| active ≠ baseline · `absoluteDay` distinto | **structure_stale** · rojo | — |
+| active = baseline · mismo parse post-guardado | **valid** · normal | **valid** · normal **pero mes semántico cambió** |
+
+**Producto:** no reinterpretar marcas en silencio (**D6**). El rojo solo aparece si baseline **no** avanza; hoy el avance automático en guardado enmascara el problema — ver [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672). Resolución: [010e](FIX-010e-migration-wizard.md) modo A (reescribir) o B (literal + rojo).
+
 ---
 
 ## 4. UI editor
@@ -122,6 +138,7 @@ Namespaces: `editor`.
 | A1 | `{{time:31.2.27}}` válido → reset blank | Chip rojo |
 | A2 | Restaurar calendario original | Chip normal |
 | A3 | Mes insertado §3 | ene–jun normal; jul+ rojo |
+| A4 | Mes eliminado §3.1 | Tras guardar sin 010e: marcas en mes **índice** siguiente · literal intacto · ver §13 010d |
 
 ---
 

@@ -54,7 +54,7 @@ flowchart LR
 | **010a** | [FIX-010a-classify-red-chips.md](FIX-010a-classify-red-chips.md) | `classifyTimeTag` · chips rojos editor · i18n | v1 · ✅ |
 | **010b** | [FIX-010b-timeline-stale-display.md](FIX-010b-timeline-stale-display.md) | Timeline visible · `displaySortKey` · SVG rojo | v1 · ✅ |
 | **010c** | [FIX-010c-calendar-entries.md](FIX-010c-calendar-entries.md) | Vista calendario + mini-timeline · recarga post-reset | v1 · ✅ |
-| **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit | v1 |
+| **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit · §12 reset baseline | v1 · ✅ |
 | **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador calendario en localStorage (FIX-007) | v1 |
 | **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Diff estructural borrador vs disco | v1 |
 | **010e** | [FIX-010e-migration-wizard.md](FIX-010e-migration-wizard.md) | Asistente migración modos A/B/C + vista previa | v2 |
@@ -64,6 +64,8 @@ flowchart LR
 **Orden de implementación sugerido:** `010g → 010a → 010b → 010c → 010d → 010h → 010i → 010e`
 
 **v1 sin 010e:** guardar calendario con diff estructural **no bloquea** el save; baseline no avanza → marcas en rojo hasta migración manual (010d) o wizard v2 (010e).
+
+> **⚠️ Deuda implementación (jun 2026):** `saveDraft()` hoy llama `saveCalendar` con `reconcileBaseline: true` por defecto — **no** respeta aún la regla 010g «baseline no avanza con diff estructural». Eso produce un bug de producto documentado en [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672): al eliminar un mes, las marcas **se reposicionan** en el mes que ocupa el mismo índice (p. ej. abril → mayo, mismo día) con `rawTime` literal intacto y chip **normal** (no rojo). Resolución: [010i](FIX-010i-calendar-structural-diff.md) (aviso) + [010e](FIX-010e-migration-wizard.md) (migración explícita).
 
 ---
 
@@ -112,6 +114,7 @@ Checklists QA por sub-plan; plantilla común:
 | R3, R3b | Timeline posición + mes insertado | 010b, 010a |
 | R4 | Calendario mensual | 010c |
 | R4b–R4c | Editar chips | 010d |
+| R4d | Editar calendario (quitar mes) → marcas no se desplazan en silencio | 010d §13 · 010e |
 | R8 | Reinicio → stale persiste | 010g |
 | R9 | Borrador calendario | 010h |
 | R10 | Toggle diff | 010i |
@@ -139,7 +142,10 @@ Checklists QA por sub-plan; plantilla común:
 | 2026-06-11 | **010b** cerrado · QA sesión `8852`: timeline 9 marcas rojas, calendario sin freeze |
 | 2026-06-11 | **010c** implementado + hotfix `eventSortKey` (crash pantalla blanca) |
 | 2026-06-11 | **010c** cerrado · QA sesión `2156`: calendario año 15, 5 marcas obsoletas, grid rojo |
+| 2026-06-11 | **010d §12** implementado · QA `5836`: baseline alineado tras reset plantilla |
+| 2026-06-11 | **010d §13** · QA `19672`: editar calendario (quitar abril) reposiciona marcas en mayo mismo día · limitación v1 documentada |
+| 2026-06-11 | **010d cerrado** · QA §8 D3 automatizado + build verde |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010d](FIX-010d-edit-time-tags.md)
+**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010h](FIX-010h-calendar-draft-persist.md) · **Bloqueador producto v2:** [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) → [010i](FIX-010i-calendar-structural-diff.md) + [010e](FIX-010e-migration-wizard.md)

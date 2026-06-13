@@ -9,6 +9,8 @@ export interface ManuscriptTagChipProps {
   visible?: boolean;
   variant?: "default" | "dashed";
   invalid?: boolean;
+  className?: string;
+  onClick?: (event: React.MouseEvent) => void;
   "data-inline-tag-value"?: string;
 }
 
@@ -19,6 +21,8 @@ export function ManuscriptTagChip({
   visible = true,
   variant = "default",
   invalid = false,
+  className,
+  onClick,
   "data-inline-tag-value": dataInlineTagValue,
 }: ManuscriptTagChipProps) {
   if (!visible) {
@@ -34,9 +38,13 @@ export function ManuscriptTagChip({
         variant === "dashed" &&
           "border border-dashed border-border/60 text-muted-foreground",
         invalid && "border-destructive/60 text-destructive",
+        className,
       )}
       title={title}
       data-inline-tag-value={dataInlineTagValue}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
     >
       <Icon className="size-3 shrink-0 text-muted-foreground" aria-hidden />
       <span className="truncate">{label}</span>

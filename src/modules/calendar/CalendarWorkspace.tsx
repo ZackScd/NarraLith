@@ -14,6 +14,7 @@ import { CalendarSidePanel } from "@/modules/calendar/CalendarSidePanel";
 import { CalendarTopBar } from "@/modules/calendar/CalendarTopBar";
 import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useCalendarViewStore } from "@/stores/useCalendarViewStore";
+import { useEditorStore } from "@/stores/useEditorStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useTimelineStore } from "@/stores/useTimelineStore";
 
@@ -45,12 +46,20 @@ export function CalendarWorkspace() {
   const { events, lastAdded, hasLoaded: timelineReady } = useProjectTimeline();
   const activeProject = useProjectStore((s) => s.activeProject);
   const filters = useTimelineStore((s) => s.filters);
+  const reconciledTimeTagKeys = useEditorStore((s) => s.reconciledTimeTagKeys);
   const dataRevision = useCalendarViewStore((s) => s.dataRevision);
 
   const allEntries = useMemo(() => {
     if (!draft) return [];
-    return buildCalendarTimeEntries(viewYear, events, draft, filters, baselineConfig);
-  }, [viewYear, events, draft, filters, baselineConfig]);
+    return buildCalendarTimeEntries(
+      viewYear,
+      events,
+      draft,
+      filters,
+      baselineConfig,
+      reconciledTimeTagKeys,
+    );
+  }, [viewYear, events, draft, filters, baselineConfig, reconciledTimeTagKeys]);
 
   const staleOutsideYear = useMemo(() => {
     if (!draft) return [];
@@ -60,8 +69,9 @@ export function CalendarWorkspace() {
       draft,
       filters,
       baselineConfig,
+      reconciledTimeTagKeys,
     );
-  }, [viewYear, events, draft, filters, baselineConfig]);
+  }, [viewYear, events, draft, filters, baselineConfig, reconciledTimeTagKeys]);
 
   useEffect(() => {
     void loadCalendar();

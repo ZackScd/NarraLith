@@ -45,8 +45,8 @@ pub fn reset_calendar_config(
             Some("blank") => CalendarConfig::blank_template_for_locale(&loc),
             _ => CalendarConfig::default_template_for_locale(&loc),
         };
-        // FIX-010g: no avanzar baseline en reset → marcas pueden quedar stale.
-        save_calendar_config(root, &config, false)?;
+        // FIX-010d §12: alinear baseline con plantilla restaurada (P1/P3).
+        save_calendar_config(root, &config, true)?;
         Ok(config)
     })
 }

@@ -26,11 +26,18 @@ export function resolveMarkerPlacement(
   event: TimelineEvent,
   activeConfig: CalendarConfig,
   baselineConfig?: CalendarConfig | null,
+  calendarReconciled = false,
 ): MarkerPlacement | null {
   const rawTime = event.rawTime?.trim() ?? "";
   if (!rawTime) return null;
 
-  const classified = classifyTimeTag(rawTime, activeConfig, baselineConfig ?? null);
+  const reconciled =
+    calendarReconciled ||
+    event.calendarReconciled === true;
+
+  const classified = classifyTimeTag(rawTime, activeConfig, baselineConfig ?? null, {
+    calendarReconciled: reconciled,
+  });
 
   let sortKey =
     classified.displaySortKey ?? classified.sortKey ?? classified.fixedSortKey;
