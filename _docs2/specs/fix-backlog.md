@@ -320,6 +320,7 @@ No queda modal para crear archivo/carpeta; la creación inline replica el flujo 
 - **QA jun 2026:** recorrido modal actual (`session-1781315188472-9108`) confirma doble refresh al crear archivo (D3) y descubre bug al renombrar sin `.md` con pestaña abierta → **FIX-008b** en [plan FIX-008b](plans/Fase%20C/FIX-008b-rename-extension.md).
 - **FIX-008 ✅** inline create QA `session-1781317457105-5412`.
 - **FIX-008b ✅** rename inline + regla `.md` QA `session-1781318644915-6724`; create inline sin regresión (confirmado manual).
+- **FIX-009** plan detallado en [`FIX-009-timeline-dual-chip-connectors.md`](plans/Fase%20C/FIX-009-timeline-dual-chip-connectors.md): chip dual + conectores por `segmentId`.
 
 ---
 
@@ -378,7 +379,7 @@ Además: el **conector** que une las marcas de un mismo evento debe poder **most
 | Nombre de archivo (arriba) | Texto secundario: menor tamaño, color atenuado del chip actual (`muted` / `timeline-chip-text` con opacidad) |
 | Nombre de evento (abajo) | Texto principal: tamaño estándar del chip, peso/color del label actual |
 | Conector entre marcas | Línea coherente con vástagos existentes; puede usar `--primary` o borde del chip con opacidad — **no** un morado fijo del boceto |
-| Caja | Misma familia de rect redondeado; altura mayor (`BOX_HEIGHT` + ~12–16px para segunda línea) |
+| Caja | Misma familia de rect redondeado; altura = **`chipHeight()`** derivada de `BOX_HEIGHT` + segunda línea (§ FIX-009 plan §5.1), no medida fija del boceto |
 
 ### Plan de implementación (orden recomendado)
 

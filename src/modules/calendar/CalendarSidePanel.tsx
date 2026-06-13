@@ -39,6 +39,12 @@ export function CalendarSidePanel({ draft, onDraftChange }: CalendarSidePanelPro
   const setDeleteDialogOpen = useCalendarViewStore((s) => s.setDeleteDialogOpen);
   const filters = useTimelineStore((s) => s.filters);
   const toggleFilter = useTimelineStore((s) => s.toggleFilter);
+  const showEventConnectors = useTimelineStore((s) => s.showEventConnectors);
+  const setShowEventConnectors = useTimelineStore((s) => s.setShowEventConnectors);
+  const showWritingOrderHoverLink = useTimelineStore((s) => s.showWritingOrderHoverLink);
+  const setShowWritingOrderHoverLink = useTimelineStore(
+    (s) => s.setShowWritingOrderHoverLink,
+  );
 
   const dirty = isDirty();
 
@@ -48,6 +54,8 @@ export function CalendarSidePanel({ draft, onDraftChange }: CalendarSidePanelPro
       sectionAnnuals: tTimeline("filters.annuals"),
       manuscript: tTimeline("filters.manuscript"),
       events: tTimeline("filters.events"),
+      eventConnectors: tTimeline("filters.eventConnectors"),
+      writingOrderHoverLink: tTimeline("filters.writingOrderHoverLink"),
       festivals: t("legend.festival"),
       anniversaries: t("legend.anniversary"),
       cosmic: t("legend.cosmic"),
@@ -95,6 +103,10 @@ export function CalendarSidePanel({ draft, onDraftChange }: CalendarSidePanelPro
           <TimelineFiltersSection
             filters={filters}
             onToggle={toggleFilter}
+            showEventConnectors={showEventConnectors}
+            onShowEventConnectorsChange={setShowEventConnectors}
+            showWritingOrderHoverLink={showWritingOrderHoverLink}
+            onShowWritingOrderHoverLinkChange={setShowWritingOrderHoverLink}
             labels={filterLabels}
           />
 

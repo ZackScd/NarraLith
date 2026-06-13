@@ -28,6 +28,12 @@ export function TimelineSidePanel() {
   const setOrientation = useTimelineStore((s) => s.setOrientation);
   const filters = useTimelineStore((s) => s.filters);
   const toggleFilter = useTimelineStore((s) => s.toggleFilter);
+  const showEventConnectors = useTimelineStore((s) => s.showEventConnectors);
+  const setShowEventConnectors = useTimelineStore((s) => s.setShowEventConnectors);
+  const showWritingOrderHoverLink = useTimelineStore((s) => s.showWritingOrderHoverLink);
+  const setShowWritingOrderHoverLink = useTimelineStore(
+    (s) => s.setShowWritingOrderHoverLink,
+  );
   const collapseDeadTime = useTimelineStore((s) => s.collapseDeadTime);
   const collapseLevels = useTimelineStore((s) => s.collapseLevels);
   const setCollapseDeadTime = useTimelineStore((s) => s.setCollapseDeadTime);
@@ -45,6 +51,8 @@ export function TimelineSidePanel() {
       sectionCollapsePeriods: t("panel.collapsePeriods"),
       manuscript: t("filters.manuscript"),
       events: t("filters.events"),
+      eventConnectors: t("filters.eventConnectors"),
+      writingOrderHoverLink: t("filters.writingOrderHoverLink"),
       festivals: t("filters.festivals"),
       anniversaries: t("filters.anniversaries"),
       cosmic: t("filters.cosmic"),
@@ -217,6 +225,10 @@ export function TimelineSidePanel() {
         <TimelineFiltersSection
           filters={filters}
           onToggle={toggleFilter}
+          showEventConnectors={showEventConnectors}
+          onShowEventConnectorsChange={setShowEventConnectors}
+          showWritingOrderHoverLink={showWritingOrderHoverLink}
+          onShowWritingOrderHoverLinkChange={setShowWritingOrderHoverLink}
           labels={filterLabels}
         />
       </div>

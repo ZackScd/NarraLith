@@ -8,6 +8,8 @@ export interface TimelineFiltersLabels {
   sectionAnnuals: string;
   manuscript: string;
   events: string;
+  eventConnectors: string;
+  writingOrderHoverLink: string;
   festivals: string;
   anniversaries: string;
   cosmic: string;
@@ -16,12 +18,20 @@ export interface TimelineFiltersLabels {
 interface TimelineFiltersSectionProps {
   filters: TimelineFilterState;
   onToggle: (key: keyof TimelineFilterState) => void;
+  showEventConnectors: boolean;
+  onShowEventConnectorsChange: (checked: boolean) => void;
+  showWritingOrderHoverLink: boolean;
+  onShowWritingOrderHoverLinkChange: (checked: boolean) => void;
   labels: TimelineFiltersLabels;
 }
 
 export function TimelineFiltersSection({
   filters,
   onToggle,
+  showEventConnectors,
+  onShowEventConnectorsChange,
+  showWritingOrderHoverLink,
+  onShowWritingOrderHoverLinkChange,
   labels,
 }: TimelineFiltersSectionProps) {
   const toggle = (key: keyof TimelineFilterState) => () => onToggle(key);
@@ -38,6 +48,20 @@ export function TimelineFiltersSection({
         checked={filters.events}
         label={labels.events}
         onCheckedChange={toggle("events")}
+      />
+      <PanelFilterCheckbox
+        checked={showEventConnectors}
+        label={labels.eventConnectors}
+        onCheckedChange={() => onShowEventConnectorsChange(!showEventConnectors)}
+        indent
+      />
+      <PanelFilterCheckbox
+        checked={showWritingOrderHoverLink}
+        label={labels.writingOrderHoverLink}
+        onCheckedChange={() =>
+          onShowWritingOrderHoverLinkChange(!showWritingOrderHoverLink)
+        }
+        className="pl-10"
       />
       <PanelGroupLabel className="mt-2">{labels.sectionAnnuals}</PanelGroupLabel>
       <PanelFilterCheckbox

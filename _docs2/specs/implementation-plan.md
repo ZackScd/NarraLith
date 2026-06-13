@@ -69,7 +69,10 @@
 |----|--------|-------|----------|-------------------|
 | **FIX-008** | ✅ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan**](plans/Fase%20C/FIX-008-explorer-inline-create.md) · QA `session-1781317457105-5412` |
 | **FIX-008b** | ✅ | Renombrar **inline** en explorador + regla extensión `.md` | Medio | [**plan**](plans/Fase%20C/FIX-008b-rename-extension.md) · QA `session-1781318644915-6724` |
-| **FIX-009** | ⬜ | Timeline: chip doble (archivo + evento) y conectores por evento | Medio–Alto | [`fix-backlog.md` §3](fix-backlog.md) |
+| **FIX-009** | 🔄 | Timeline: chip dual + conectores cronológicos (v1 ✅) | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009-timeline-dual-chip-connectors.md) |
+| **FIX-009a** | ⬜ | Conectores borde lateral + **chips ancho autoajustado** | Bajo–Medio | [**plan**](plans/Fase%20C/FIX-009a-timeline-connector-edge-anchors.md) · cierra FIX-009 |
+| **FIX-009b** | 🔄 | Hover: enlaces orden escritura (v1: solo **next**, solo `segmentId`) | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009b-timeline-writing-order-links.md) · QA `session-1781321526405-27876` |
+| **FIX-009c** | ⬜ | Hover: **prev + next**, cadena **por archivo** (incl. prosa libre) | Medio | [**plan**](plans/Fase%20C/FIX-009c-timeline-writing-order-hover-neighbors.md) · cierra gap 009b |
 
 ---
 
@@ -163,7 +166,10 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 9 | FIX-007 | Borrador sucio al cerrar app ✅ |
 | 10 | FIX-008 | Explorador inline VS Code |
 | 10b | FIX-008b | Renombrar inline + extensión `.md` ✅ |
-| 11 | FIX-009 | Timeline chips + conectores |
+| 11 | FIX-009 | Timeline chips + conectores cronológicos 🔄 v1 |
+| 11a | FIX-009a | Anclas borde + chips autoajustados |
+| 11b | FIX-009b | Hover enlace orden escritura 🔄 v1 parcial |
+| 11c | FIX-009c | Hover prev+next, todos los chips, cadena por archivo |
 | 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) ✅ |
 | 13 | FIX-010 | Épica 6.A calendario obsoleto |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
@@ -225,7 +231,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-008 plan actualizado: QA recorrido `session-1781315188472-9108` (create/move/rename); confirma D3; hallazgo H1 rename sin `.md` → FIX-008b |
 | 2026-06-11 | FIX-008 ✅ cerrado: QA `session-1781317457105-5412`; plan FIX-008b rename extensión redactado |
 | 2026-06-11 | FIX-008b replanteado: rename **inline** (sin modal), mismo estilo que create + regla D7 + Rust |
-| 2026-06-11 | FIX-008b ✅ cerrado: QA `session-1781318644915-6724`; inline rename + regla `.md`; H1 resuelto |
+| 2026-06-11 | FIX-009 planificado: chip dual archivo+evento, conectores por `segmentId`, filtro panel (`plans/Fase C/FIX-009-timeline-dual-chip-connectors.md`) |
+| 2026-06-11 | FIX-009 v1 implementado; QA `session-1781319870943` → plan FIX-009a (anclas borde) + FIX-009b (hover orden escritura / árbol manuscrito) |
+| 2026-06-11 | FIX-009b v1 en código; QA `session-1781321526405-27876` → FIX-009c (prev+next, prosa libre, cadena por archivo) |
 
 ---
 

@@ -5,6 +5,7 @@ interface PanelFilterCheckboxProps {
   label: string;
   onCheckedChange: () => void;
   indent?: boolean;
+  className?: string;
 }
 
 export function PanelFilterCheckbox({
@@ -12,12 +13,14 @@ export function PanelFilterCheckbox({
   label,
   onCheckedChange,
   indent,
+  className,
 }: PanelFilterCheckboxProps) {
   return (
     <label
       className={cn(
         "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/60",
         indent && "pl-6",
+        className,
       )}
     >
       <input

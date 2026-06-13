@@ -12,11 +12,22 @@ export interface TimelineDisplayItem {
   id: string;
   kind: TimelineItemKind;
   label: string;
+  fileLabel: string;
+  eventLabel: string | null;
+  segmentId: string | null;
   sortKey: bigint;
   path?: string;
   blockIndex?: number;
   lane: "manuscript" | "below";
+  tagKind?: string | null;
+  charOffset?: number | null;
   annualKind?: "birthday" | "cosmic";
+}
+
+export interface EventSpanLink {
+  segmentId: string;
+  fromId: string;
+  toId: string;
 }
 
 const MANUSCRIPT_PREFIX = "Manuscrito/";
@@ -33,6 +44,22 @@ export function isManuscriptPath(path: string): boolean {
 export function isTimedEventPath(path: string): boolean {
   const normalized = path.replace(/\\/g, "/");
   return !normalized.startsWith(MANUSCRIPT_PREFIX);
+}
+
+function resolveEventLabel(event: TimelineEvent): string | null {
+  if (!event.segmentId) return null;
+  const title = event.title?.trim();
+  return title || null;
+}
+
+function ariaLabelForItem(fileLabel: string, eventLabel: string | null): string {
+  return eventLabel ? `${eventLabel} (${fileLabel})` : fileLabel;
+}
+
+function tagKindOrder(tagKind: string | null | undefined): number {
+  if (tagKind === "bar") return 0;
+  if (tagKind === "inline") return 1;
+  return 2;
 }
 
 function sortKeyForEvent(
@@ -77,6 +104,16 @@ function annualMatchesFilter(
   return true;
 }
 
+function compareMarkersInSegment(a: TimelineDisplayItem, b: TimelineDisplayItem): number {
+  if (a.sortKey !== b.sortKey) return a.sortKey < b.sortKey ? -1 : 1;
+  const kindDiff = tagKindOrder(a.tagKind) - tagKindOrder(b.tagKind);
+  if (kindDiff !== 0) return kindDiff;
+  const offsetA = a.charOffset ?? 0;
+  const offsetB = b.charOffset ?? 0;
+  if (offsetA !== offsetB) return offsetA - offsetB;
+  return a.id.localeCompare(b.id);
+}
+
 export function buildTimelineItems(
   events: TimelineEvent[],
   calendar: CalendarConfig,
@@ -90,14 +127,22 @@ export function buildTimelineItems(
     if (sortKey === null) continue;
 
     const manuscript = isManuscriptPath(event.path);
+    const fileLabel = fileDisplayName(event.path);
+    const eventLabel = resolveEventLabel(event);
+
     items.push({
       id: timelineMarkerId(event),
       kind: "file",
-      label: fileDisplayName(event.path),
+      label: ariaLabelForItem(fileLabel, eventLabel),
+      fileLabel,
+      eventLabel,
+      segmentId: event.segmentId ?? null,
       sortKey,
       path: event.path,
       blockIndex: event.blockIndex,
       lane: manuscript ? "manuscript" : "below",
+      tagKind: event.tagKind ?? null,
+      charOffset: event.charOffset ?? null,
     });
   }
 
@@ -123,8 +168,13 @@ export function buildTimelineItems(
           id: `annual:${annual.id}:${year}`,
           kind: "annual",
           label: annual.name,
+          fileLabel: annual.name,
+          eventLabel: null,
+          segmentId: null,
           sortKey,
           lane: "below",
+          tagKind: null,
+          charOffset: null,
           annualKind:
             annualKindToLegendCategory(annual.kind) === "cosmic"
               ? "cosmic"
@@ -149,8 +199,41 @@ export interface PlacedTimelineItem extends TimelineDisplayItem {
   dateLabel?: string;
 }
 
-export function estimateLabelWidth(label: string): number {
-  return Math.min(200, Math.max(72, label.length * 7 + 20));
+import { estimateChipWidth } from "@/modules/timeline/timelineChipMetrics";
+export { estimateChipWidth };
+
+export function buildEventSpanLinks(
+  placed: PlacedTimelineItem[],
+  showLinks: boolean,
+): EventSpanLink[] {
+  if (!showLinks) return [];
+
+  const grouped = new Map<string, PlacedTimelineItem[]>();
+  for (const item of placed) {
+    if (!item.segmentId) continue;
+    const key = `${item.segmentId}\0${item.lane}`;
+    const bucket = grouped.get(key);
+    if (bucket) bucket.push(item);
+    else grouped.set(key, [item]);
+  }
+
+  const links: EventSpanLink[] = [];
+  for (const group of grouped.values()) {
+    if (group.length < 2) continue;
+    const sorted = [...group].sort(compareMarkersInSegment);
+    for (let i = 0; i < sorted.length - 1; i += 1) {
+      const from = sorted[i]!;
+      const to = sorted[i + 1]!;
+      if (from.lane !== to.lane) continue;
+      links.push({
+        segmentId: from.segmentId!,
+        fromId: from.id,
+        toId: to.id,
+      });
+    }
+  }
+
+  return links;
 }
 
 /** Etiqueta compacta de fecha bajo el eje (día-mes-año). */
@@ -163,7 +246,7 @@ export function formatTimelineDate(sortKey: bigint, calendar: CalendarConfig): s
 export function layoutManuscriptLanesAbove(
   manuscriptItems: TimelineDisplayItem[],
   xForKey: (key: bigint) => number,
-  estimateWidth: (label: string) => number,
+  estimateWidth: (item: TimelineDisplayItem) => number,
 ): Map<string, number> {
   type Interval = { left: number; right: number };
   const lanes: Interval[][] = [];
@@ -177,7 +260,7 @@ export function layoutManuscriptLanesAbove(
 
   for (const item of sorted) {
     const x = xForKey(item.sortKey);
-    const half = estimateWidth(item.label) / 2;
+    const half = estimateWidth(item) / 2;
     const interval = { left: x - half, right: x + half };
 
     let laneIndex = 0;
@@ -256,7 +339,7 @@ export function layoutBelowLanes(
 
   for (const item of sorted) {
     const x = xForKey(item.sortKey);
-    const half = estimateLabelWidth(item.label) / 2;
+    const half = estimateChipWidth(item) / 2;
     const interval = { left: x - half, right: x + half };
 
     let laneIndex = 0;

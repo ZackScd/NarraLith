@@ -14,12 +14,14 @@ import { timelineMarkerId } from "@/lib/calendar/timeMarks";
 import { formatTimelineRangeLabel } from "@/lib/timeline/formatRangeLabel";
 import {
   TimelineChip,
+  TimelineEventLink,
   TimelineEventStem,
   BAR_HEIGHT,
   BELOW_LANE_HEIGHT,
-  BOX_HEIGHT,
   MANUSCRIPT_LANE_STEP,
   STEM_DATE_STACK_HEIGHT,
+  chipHeight,
+  linkEdgeAnchors,
 } from "@/modules/timeline/timelineGraphics";
 import {
   assignLanes,
@@ -32,12 +34,18 @@ import {
   type PositionedItem,
 } from "@/modules/timeline/timelineLayoutHelpers";
 import {
+  buildEventSpanLinks,
   buildTimelineItems,
-  estimateLabelWidth,
+  estimateChipWidth,
   type TimelineDisplayItem,
 } from "@/modules/timeline/timelineModel";
+import {
+  buildManuscriptPathWritingIndex,
+  buildWritingOrderNeighbors,
+} from "@/modules/timeline/writingOrder";
 import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useEditorStore } from "@/stores/useEditorStore";
+import { useFileTreeStore } from "@/stores/useFileTreeStore";
 import { useTimelineStore } from "@/stores/useTimelineStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
@@ -324,6 +332,17 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
   const focusDay = useTimelineStore((s) => s.focusDay);
   const setFocusDate = useTimelineStore((s) => s.setFocusDate);
   const showHours = useTimelineStore((s) => s.showHours);
+  const showEventConnectors = useTimelineStore((s) => s.showEventConnectors);
+  const showWritingOrderHoverLink = useTimelineStore((s) => s.showWritingOrderHoverLink);
+  const hoveredTimelineMarkerId = useTimelineStore((s) => s.hoveredTimelineMarkerId);
+  const setHoveredTimelineMarkerId = useTimelineStore((s) => s.setHoveredTimelineMarkerId);
+  const fileTree = useFileTreeStore((s) => s.tree);
+  const explorerOrder = useFileTreeStore((s) => s.explorerOrder);
+  const loadTree = useFileTreeStore((s) => s.loadTree);
+
+  useEffect(() => {
+    void loadTree();
+  }, [loadTree]);
   const requestOpenDocument = useEditorStore((s) => s.requestOpenDocument);
   const setMainView = useWorkspaceStore((s) => s.setMainView);
   const collapseLevelEnabled =
@@ -776,7 +795,7 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
         ...entry.item,
         x: centeredXByItemId.get(entry.item.id) ?? toX(entry.time, entry.parts.year),
         y: axisY,
-        width: estimateLabelWidth(entry.item.label),
+        width: estimateChipWidth(entry.item),
         day: entry.parts.day,
         month: entry.parts.month,
         year: entry.parts.year,
@@ -791,11 +810,12 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
     const barBottom = axisY + BAR_HEIGHT / 2;
 
     const placed = [...manuscriptRaw, ...belowRaw].map((item) => {
+      const h = chipHeight(item);
       if (item.lane === "manuscript") {
         const lane = manuscriptLanes.get(item.id) ?? 0;
         return {
           ...item,
-          y: barTop - BOX_HEIGHT - STEM_DATE_STACK_HEIGHT - lane * MANUSCRIPT_LANE_STEP,
+          y: barTop - h - STEM_DATE_STACK_HEIGHT - lane * MANUSCRIPT_LANE_STEP,
         };
       }
       const lane = belowLanes.get(item.id) ?? 0;
@@ -856,6 +876,68 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
       onRangeLabelChange?.(layout.rangeLabel);
     }
   }, [layout?.rangeLabel, onRangeLabelChange]);
+
+  const placedForLinks = layout?.placed ?? [];
+  const placedById = useMemo(
+    () => new Map(placedForLinks.map((item) => [item.id, item])),
+    [placedForLinks],
+  );
+  const eventLinks = useMemo(
+    () => buildEventSpanLinks(placedForLinks, showEventConnectors),
+    [placedForLinks, showEventConnectors],
+  );
+
+  const manuscriptPaths = useMemo(
+    () =>
+      items
+        .filter((item) => item.kind === "file" && item.lane === "manuscript" && item.path)
+        .map((item) => item.path!),
+    [items],
+  );
+
+  const allFileMarksForWritingOrder = useMemo(
+    () =>
+      items
+        .filter((item): item is TimelineDisplayItem & { path: string } =>
+          item.kind === "file" && !!item.path,
+        )
+        .map((item) => ({ ...item, x: 0, y: 0, width: 0 })),
+    [items],
+  );
+
+  const manuscriptPathIndex = useMemo(
+    () => buildManuscriptPathWritingIndex(fileTree, explorerOrder, manuscriptPaths),
+    [fileTree, explorerOrder, manuscriptPaths],
+  );
+
+  const writingOrderNeighbors = useMemo(
+    () => buildWritingOrderNeighbors(allFileMarksForWritingOrder, manuscriptPathIndex),
+    [allFileMarksForWritingOrder, manuscriptPathIndex],
+  );
+
+  const writingOrderHoverLinks = useMemo(() => {
+    if (!showWritingOrderHoverLink || !hoveredTimelineMarkerId) return [];
+    const hovered = placedById.get(hoveredTimelineMarkerId);
+    if (!hovered) return [];
+    const { prevId, nextId } =
+      writingOrderNeighbors.get(hoveredTimelineMarkerId) ?? {};
+    const links: Array<{ fromItem: PositionedItem; toItem: PositionedItem }> =
+      [];
+    if (prevId) {
+      const prev = placedById.get(prevId);
+      if (prev) links.push({ fromItem: prev, toItem: hovered });
+    }
+    if (nextId) {
+      const next = placedById.get(nextId);
+      if (next) links.push({ fromItem: hovered, toItem: next });
+    }
+    return links;
+  }, [
+    showWritingOrderHoverLink,
+    hoveredTimelineMarkerId,
+    writingOrderNeighbors,
+    placedById,
+  ]);
 
   const allowHoursLevel = showHours && calendar?.hoursEnabled !== false;
   const collapseYearZoom = collapseDeadTime && collapseLevels.years;
@@ -1382,6 +1464,30 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
           </g>
         ))}
 
+        {eventLinks.map((link) => {
+          const fromItem = placedById.get(link.fromId);
+          const toItem = placedById.get(link.toId);
+          if (!fromItem || !toItem) return null;
+          return (
+            <TimelineEventLink
+              key={`${link.fromId}-${link.toId}`}
+              {...linkEdgeAnchors(fromItem, toItem)}
+            />
+          );
+        })}
+
+        {writingOrderHoverLinks.length > 0 ? (
+          <g className="timeline-writing-order-hover-link">
+            {writingOrderHoverLinks.map((link) => (
+              <TimelineEventLink
+                key={`${link.fromItem.id}-${link.toItem.id}`}
+                highlighted
+                {...linkEdgeAnchors(link.fromItem, link.toItem)}
+              />
+            ))}
+          </g>
+        ) : null}
+
         {placed.map((item) => (
           <TimelineEventStem
             key={`stem-${item.id}`}
@@ -1397,7 +1503,24 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
         ))}
 
         {placed.map((item) => (
-          <TimelineChip key={`chip-${item.id}`} item={item} onOpen={openItem} />
+          <TimelineChip
+            key={`chip-${item.id}`}
+            item={item}
+            onOpen={openItem}
+            highlighted={
+              showWritingOrderHoverLink && hoveredTimelineMarkerId === item.id
+            }
+            onPointerEnter={
+              item.kind === "file" && showWritingOrderHoverLink
+                ? () => setHoveredTimelineMarkerId(item.id)
+                : undefined
+            }
+            onPointerLeave={
+              item.kind === "file" && showWritingOrderHoverLink
+                ? () => setHoveredTimelineMarkerId(null)
+                : undefined
+            }
+          />
         ))}
       </svg>
     </div>

@@ -30,11 +30,11 @@ import {
   TimelineYearBlocks,
   BAR_HEIGHT,
   BELOW_LANE_HEIGHT,
-  BOX_HEIGHT,
   MANUSCRIPT_LANE_STEP,
   MINIMIZED_MARKER_HEIGHT,
   MINIMIZED_PIN_RADIUS,
   STEM_DATE_STACK_HEIGHT,
+  chipHeight,
 } from "@/modules/timeline/timelineGraphics";
 import {
   assignLanes,
@@ -53,8 +53,14 @@ import {
   type PositionedItem,
 } from "@/modules/timeline/timelineLayoutHelpers";
 import {
+  CHIP_TRUNC_EVENT,
+  CHIP_TRUNC_FILE,
+  CHIP_TRUNC_SIMPLE,
+  estimateChipWidth,
+  truncateForChip,
+} from "@/modules/timeline/timelineChipMetrics";
+import {
   buildTimelineItems,
-  estimateLabelWidth,
   fileDisplayName,
   isManuscriptPath,
   type TimelineDisplayItem,
@@ -149,8 +155,25 @@ function svgToClient(
   };
 }
 
-function truncateChipLabel(label: string): string {
-  return label.length > 22 ? `${label.slice(0, 20)}…` : label;
+function resolvePreviewEventContext(
+  events: TimelineEvent[],
+  filePath: string | null,
+  blockIndex: number | null,
+): { eventLabel: string | null; segmentId: string | null } {
+  if (!filePath || blockIndex === null) {
+    return { eventLabel: null, segmentId: null };
+  }
+  const match = events.find(
+    (event) =>
+      event.path === filePath &&
+      event.blockIndex === blockIndex &&
+      event.segmentId &&
+      event.title?.trim(),
+  );
+  return {
+    eventLabel: match?.title?.trim() ?? null,
+    segmentId: match?.segmentId ?? null,
+  };
 }
 
 function MiniTimelineHoverOverlay({
@@ -168,7 +191,9 @@ function MiniTimelineHoverOverlay({
 }) {
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const isManuscript = item.lane === "manuscript";
-  const chipWidth = estimateLabelWidth(item.label);
+  const chipWidth = estimateChipWidth(item);
+  const dual = !!item.eventLabel;
+  const chipBoxHeight = chipHeight(item);
 
   useLayoutEffect(() => {
     const svg = svgRef.current;
@@ -198,10 +223,23 @@ function MiniTimelineHoverOverlay({
       {isManuscript ? (
         <>
           <div
-            className="flex h-7 items-center justify-center rounded-md border border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)] px-2 text-[11px] text-[var(--timeline-chip-text)] shadow-md"
-            style={{ width: chipWidth, minWidth: chipWidth }}
+            className="flex flex-col items-center justify-center rounded-md border border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)] px-2 py-1 text-center shadow-md"
+            style={{ width: chipWidth, minWidth: chipWidth, minHeight: chipBoxHeight }}
           >
-            {truncateChipLabel(item.label)}
+            {dual ? (
+              <>
+                <span className="text-[10px] leading-tight text-[var(--timeline-date)]">
+                  {truncateForChip(item.fileLabel, CHIP_TRUNC_FILE)}
+                </span>
+                <span className="text-[11px] font-medium leading-tight text-[var(--timeline-chip-text)]">
+                  {truncateForChip(item.eventLabel!, CHIP_TRUNC_EVENT)}
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] text-[var(--timeline-chip-text)]">
+                {truncateForChip(item.label, CHIP_TRUNC_SIMPLE)}
+              </span>
+            )}
           </div>
           <div
             className="shrink-0 bg-[var(--timeline-stem)]"
@@ -215,10 +253,23 @@ function MiniTimelineHoverOverlay({
             style={{ width: 1.5, height: stemHeight }}
           />
           <div
-            className="flex h-7 items-center justify-center rounded-md border border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)] px-2 text-[11px] text-[var(--timeline-chip-text)] shadow-md"
-            style={{ width: chipWidth, minWidth: chipWidth }}
+            className="flex flex-col items-center justify-center rounded-md border border-[var(--timeline-chip-border)] bg-[var(--timeline-chip-bg)] px-2 py-1 text-center shadow-md"
+            style={{ width: chipWidth, minWidth: chipWidth, minHeight: chipBoxHeight }}
           >
-            {truncateChipLabel(item.label)}
+            {dual ? (
+              <>
+                <span className="text-[10px] leading-tight text-[var(--timeline-date)]">
+                  {truncateForChip(item.fileLabel, CHIP_TRUNC_FILE)}
+                </span>
+                <span className="text-[11px] font-medium leading-tight text-[var(--timeline-chip-text)]">
+                  {truncateForChip(item.eventLabel!, CHIP_TRUNC_EVENT)}
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] text-[var(--timeline-chip-text)]">
+                {truncateForChip(item.label, CHIP_TRUNC_SIMPLE)}
+              </span>
+            )}
           </div>
         </>
       )}
@@ -636,11 +687,20 @@ export function TimeTagMiniTimeline({
     const insertLabel = filePath ? fileDisplayName(filePath) : t("panel.timeAddCta");
     const insertLane: "manuscript" | "below" =
       filePath && isManuscriptPath(filePath) ? "manuscript" : "below";
+    const { eventLabel: previewEventLabel, segmentId: previewSegmentId } =
+      resolvePreviewEventContext(events, filePath, blockIndex);
+    const previewFileLabel = insertLabel;
+    const previewAriaLabel = previewEventLabel
+      ? `${previewEventLabel} (${previewFileLabel})`
+      : previewFileLabel;
 
     const previewItem: TimelineDisplayItem = {
       id: PREVIEW_ITEM_ID,
       kind: "file",
-      label: insertLabel,
+      label: previewAriaLabel,
+      fileLabel: previewFileLabel,
+      eventLabel: previewEventLabel,
+      segmentId: previewSegmentId,
       sortKey: toAbsoluteDay(
         { day: safeDay, month: safeMonth, year: draft.year },
         calendar,
@@ -681,11 +741,13 @@ export function TimeTagMiniTimeline({
       ...previewItem,
       x: previewX,
       y: axisY,
-      width: estimateLabelWidth(insertLabel),
+      width: estimateChipWidth(previewItem),
       day: previewParts.day,
       month: previewParts.month,
       year: previewParts.year,
     };
+
+    const previewChipH = chipHeight(previewRaw);
 
     const previewLanes = assignLanes([previewRaw]);
     const manuscriptMinLanes = assignLanes(minimizedManuscript);
@@ -715,7 +777,7 @@ export function TimeTagMiniTimeline({
             ...previewRaw,
             y:
               barTop -
-              BOX_HEIGHT -
+              previewChipH -
               STEM_DATE_STACK_HEIGHT -
               previewLane * MANUSCRIPT_LANE_STEP,
           }
@@ -734,10 +796,10 @@ export function TimeTagMiniTimeline({
     const topExtent = Math.min(
       placedPreview.y,
       ...manuscriptTops,
-      barTop - BOX_HEIGHT - STEM_DATE_STACK_HEIGHT,
+      barTop - previewChipH - STEM_DATE_STACK_HEIGHT,
     );
     const bottomExtent = Math.max(
-      placedPreview.y + BOX_HEIGHT,
+      placedPreview.y + previewChipH,
       ...belowBottoms,
       barBottom + MINIMIZED_MARKER_HEIGHT,
       axisY + BAR_HEIGHT / 2 + (hourTicks.length > 0 ? 20 : 0),

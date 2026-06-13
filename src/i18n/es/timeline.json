@@ -51,6 +51,8 @@
   "filters": {
     "manuscript": "Manuscrito",
     "events": "Eventos",
+    "eventConnectors": "Mostrar conectores de evento",
+    "writingOrderHoverLink": "Mostrar enlaces de lectura al pasar el cursor",
     "annuals": "Anuales",
     "festivals": "Festividades",
     "anniversaries": "Aniversarios",

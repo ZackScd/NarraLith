@@ -51,6 +51,8 @@
   "filters": {
     "manuscript": "Manuscript",
     "events": "Events",
+    "eventConnectors": "Show event connectors",
+    "writingOrderHoverLink": "Show reading-order links on hover",
     "annuals": "Annual",
     "festivals": "Festivals",
     "anniversaries": "Anniversaries",

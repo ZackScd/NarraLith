@@ -38,6 +38,9 @@ interface TimelineState {
   collapseDeadTime: boolean;
   collapseLevels: TimelineCollapseLevels;
   showHours: boolean;
+  showEventConnectors: boolean;
+  showWritingOrderHoverLink: boolean;
+  hoveredTimelineMarkerId: string | null;
   filters: TimelineFilterState;
   setOrientation: (orientation: TimelineOrientation) => void;
   setZoomLevel: (level: TimelineZoomLevel) => void;
@@ -52,6 +55,9 @@ interface TimelineState {
   setCollapseDeadTime: (collapse: boolean) => void;
   setCollapseLevel: (level: TimelineCollapseLevelKey, checked: boolean) => void;
   setShowHours: (show: boolean) => void;
+  setShowEventConnectors: (show: boolean) => void;
+  setShowWritingOrderHoverLink: (show: boolean) => void;
+  setHoveredTimelineMarkerId: (id: string | null) => void;
   toggleFilter: (key: keyof TimelineFilterState) => void;
   panLeft: () => void;
   panRight: () => void;
@@ -96,6 +102,9 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
   collapseDeadTime: true,
   collapseLevels: { ...defaultCollapseLevels },
   showHours: false,
+  showEventConnectors: true,
+  showWritingOrderHoverLink: true,
+  hoveredTimelineMarkerId: null,
   filters: { ...defaultFilters },
 
   setOrientation: (orientation) => set({ orientation }),
@@ -171,6 +180,14 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
 
   setShowHours: (showHours) => set({ showHours }),
 
+  setShowEventConnectors: (showEventConnectors) => set({ showEventConnectors }),
+
+  setShowWritingOrderHoverLink: (showWritingOrderHoverLink) =>
+    set({ showWritingOrderHoverLink }),
+
+  setHoveredTimelineMarkerId: (hoveredTimelineMarkerId) =>
+    set({ hoveredTimelineMarkerId }),
+
   toggleFilter: (key) =>
     set((s) => ({
       filters: { ...s.filters, [key]: !s.filters[key] },
@@ -237,6 +254,9 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       collapseDeadTime: true,
       collapseLevels: { ...defaultCollapseLevels },
       showHours: false,
+      showEventConnectors: true,
+      showWritingOrderHoverLink: true,
+      hoveredTimelineMarkerId: null,
       filters: { ...defaultFilters },
     }),
 }));
