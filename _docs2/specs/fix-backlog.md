@@ -16,7 +16,8 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
 | 6 | Principio «eliminar no rompe» + indicadores de datos huérfanos/obsoletos | Arquitectura / UX | Alto (épica) | Pendiente — documento vivo |
 | 7 | Rediseño marco de evento: chips unificados, fecha ISO, esquinas overlay | UX manuscrito | Medio–Alto | 🔄 · [plan](plans/FIX-006-event-frame-redesign.md) |
-| 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B 🔄 (FIX-005 implementado, QA pendiente) |
+| 8 | Escritura: clic en zona vacía + guardado fiel a espacios/saltos | UX editor / persistencia | Medio | 8.A ✅ · 8.B ✅ (FIX-005) |
+| 9 | Ver diff: guardado en disco vs borrador sucio (panel herramientas) | UX editor | Medio | Pendiente · [FIX-013](plans/FIX-013-dirty-diff-viewer.md) |
 | — | *(más tareas por definir)* | — | — | — |
 
 ---
@@ -1125,6 +1126,28 @@ Tests Rust en `block_splitter` / `document` / `serializer`: guardar y reparsear 
 
 ---
 
+## Tarea 9 — Ver diff: disco vs borrador sucio (panel herramientas)
+
+**ID lista maestra:** FIX-013 · **Estado:** ⬜ planificado · **Esfuerzo:** Medio
+
+### Problema
+
+Con FIX-007 el borrador sobrevive al cerrar la app, pero no hay UI para ver **qué difiere** del `.md` guardado antes de confirmar Ctrl+S.
+
+### Objetivo
+
+Acción en la cabecera del panel lateral de herramientas del manuscrito (`EditorSidePanel`) que abre un diálogo con diff resaltado: **texto literal en disco** vs **texto que escribiría `save_manuscript`**.
+
+### Detalle
+
+Spec completo: [**`plans/FIX-013-dirty-diff-viewer.md`**](plans/FIX-013-dirty-diff-viewer.md) (IPC, UX, fases, QA).
+
+**Orden:** #12 en [`implementation-plan.md`](implementation-plan.md) — después de FIX-008 y FIX-009; antes de FIX-010 / Era II.
+
+**Depende de:** FIX-007 ✅, FIX-005 ✅.
+
+---
+
 ## Tareas pendientes de definir
 
-*(El usuario irá añadiendo ítems 9, 10, … o nuevos escenarios 6.C, 6.D en la épica 6.)*
+*(Nuevos escenarios 6.C, 6.D en la épica 6, etc.)*

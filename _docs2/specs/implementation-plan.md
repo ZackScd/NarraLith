@@ -26,7 +26,7 @@
 | Fase | Rango ID | Qué | Tareas |
 |------|----------|-----|--------|
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
-| **B** | FIX-004…007, OBS-001, FIX-012 | Fixes medianos (editor + UX) + observabilidad | 7 |
+| **B** | FIX-004…007, OBS-001, FIX-012, **FIX-013** | Fixes medianos (editor + UX) + observabilidad | 8 |
 | **C** | FIX-008…009 | Fixes explorador / timeline | 2 |
 | **D** | FIX-010…011 | Épica «eliminar no rompe» (primeros escenarios) | 2 |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
@@ -56,6 +56,7 @@
 | **OBS-001** | ✅ | Módulo global de auditoría / registro del sistema (IPC, FS, stores, eventos) | Medio | [**plan detallado**](plans/OBS-001-system-audit-log.md) |
 | **FIX-007** | ✅ | Borrador sucio persistente al cerrar la app | Medio | [`manuscript-design.md`](manuscript-design.md) §1 · [**plan detallado**](plans/FIX-007-dirty-draft-persist.md) |
 | **FIX-012** | ✅ | Guardar: tabs estables, sin ghost, save-all sin switch (2b) | Medio | [**plan detallado**](plans/FIX-012-save-tab-navigation.md) |
+| **FIX-013** | ✅ | Ver diff disco vs borrador sucio (panel herramientas manuscrito) | Medio | [**plan detallado**](plans/FIX-013-dirty-diff-viewer.md) · requiere FIX-007 ✅ |
 
 > **OBS-001 antes de FIX-012:** diagnosticar con evidencia en `NarraLith/_debug/` (solo `tauri dev`; release sin debug).
 
@@ -160,24 +161,25 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 9 | FIX-007 | Borrador sucio al cerrar app ✅ |
 | 10 | FIX-008 | Explorador inline VS Code |
 | 11 | FIX-009 | Timeline chips + conectores |
-| 12 | FIX-010 | Épica 6.A calendario obsoleto |
-| 13 | FIX-011 | Épica 6.B evento WB huérfano |
-| 14 | ERAII-001 | M7 un solo modelo manuscrito |
-| 15 | ERAII-002 | M8 QA manual §7 |
-| 16 | ERAII-003 | Cierre v0.10.0 Era II |
-| 17 | MAP-000 | Inventario purga mapas |
-| 18 | MAP-001 | Persistencia mapas |
-| 19 | MAP-002 | Multi-mundo |
-| 20 | MAP-003 | Lienzo crear/expandir/recortar |
-| 21 | MAP-004 | Modos interactivo / edición |
-| 22 | MAP-005 | Estudio Sketchbook |
-| 23 | MAP-006 | Capas internas |
-| 24 | MAP-007 | Dibujo principal + Desde |
-| 25 | MAP-008 | Secundarios temporales |
-| 26 | MAP-009 | Compositor + timeline T |
-| 27 | MAP-010 | Navegación hotspots |
-| 28 | MAP-011 | Marcas X ubicación (stub) |
-| 29 | MAP-012 | Smoke + purga legacy mapas |
+| 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) |
+| 13 | FIX-010 | Épica 6.A calendario obsoleto |
+| 14 | FIX-011 | Épica 6.B evento WB huérfano |
+| 15 | ERAII-001 | M7 un solo modelo manuscrito |
+| 16 | ERAII-002 | M8 QA manual §7 |
+| 17 | ERAII-003 | Cierre v0.10.0 Era II |
+| 18 | MAP-000 | Inventario purga mapas |
+| 19 | MAP-001 | Persistencia mapas |
+| 20 | MAP-002 | Multi-mundo |
+| 21 | MAP-003 | Lienzo crear/expandir/recortar |
+| 22 | MAP-004 | Modos interactivo / edición |
+| 23 | MAP-005 | Estudio Sketchbook |
+| 24 | MAP-006 | Capas internas |
+| 25 | MAP-007 | Dibujo principal + Desde |
+| 26 | MAP-008 | Secundarios temporales |
+| 27 | MAP-009 | Compositor + timeline T |
+| 28 | MAP-010 | Navegación hotspots |
+| 29 | MAP-011 | Marcas X ubicación (stub) |
+| 30 | MAP-012 | Smoke + purga legacy mapas |
 | — | WB-* | Post-WB (aplazado) |
 
 ---
@@ -189,7 +191,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | Grafo, versiones Git, exportación | [`03-ROADMAP.md`](../03-ROADMAP.md) Eras IV–V | Tras WB |
 | Plothole | [`module-replan.md`](module-replan.md) | Era IV+ |
 | Backlinks WB en nuevo panel | Tras ERAII-001 | Era II–IV |
-| Detalle UX MAP (hotspot forma, asistente apilar/cerrar) | Se planifica al tomar MAP-008/010 | Era III |
+| Diff borrador vs disco | [`plans/FIX-013-dirty-diff-viewer.md`](plans/FIX-013-dirty-diff-viewer.md) | Tras FIX-009, antes Era II |
 
 ---
 
@@ -213,6 +215,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-012 Fase 2b: save-all desde caché sin switchTab; AtPath saves + batch saveStatus |
 | 2026-06-11 | FIX-007: borrador sucio manuscrito en localStorage al cerrar; restore drafts (`plans/FIX-007-dirty-draft-persist.md`) |
 | 2026-06-11 | FIX-007 QA cerrado: NDJSON `session-1781307782589-1952` (cierre) + `session-1781307807051-26148` (reopen, `draftCount: 2`) |
+| 2026-06-11 | FIX-013 planificado: diff disco vs borrador sucio en panel herramientas (`plans/FIX-013-dirty-diff-viewer.md`); orden #12 tras FIX-009 |
+| 2026-06-11 | FIX-013 §3.1: cabecera panel solo iconos (Etiquetas/Guardar sin texto); tooltips i18n ES/EN |
+| 2026-06-11 | FIX-013 ✅ cerrado: diff inline Lexical (`DirtyDiffHighlightPlugin`), refresh al guardar vía `dirtyDiffSavedBaseline`; QA `session-1781310443496-13516` |
 
 ---
 

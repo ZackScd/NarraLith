@@ -116,6 +116,18 @@
     "discard": "Descartar",
     "cancel": "Cancelar"
   },
+  "diff": {
+    "open": "Ver cambios sin guardar",
+    "hide": "Ocultar cambios sin guardar",
+    "disabledClean": "No hay cambios sin guardar en esta pestaña",
+    "title": "Cambios sin guardar — {{name}}",
+    "diskLegend": "Guardado en disco",
+    "draftLegend": "Borrador actual",
+    "empty": "No hay diferencias detectables.",
+    "close": "Cerrar",
+    "loading": "Calculando diff…",
+    "error": "No se pudo calcular el diff."
+  },
   "externalReload": {
     "title": "Archivo modificado fuera de la app",
     "message": "Este archivo cambió en disco. Tienes cambios sin guardar en el editor. ¿Recargar desde disco y descartar tus cambios locales?",

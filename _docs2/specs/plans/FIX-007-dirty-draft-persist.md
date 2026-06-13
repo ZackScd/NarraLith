@@ -107,6 +107,8 @@ type ManuscriptTabsSession = {
 
 Tras guardar, `patchSavedBaseline` pone `isDirty: false` → el siguiente snapshot **omite** esa ruta en `drafts`.
 
+**Seguimiento UX:** FIX-013 (⬜) — visor diff disco vs borrador en panel herramientas; ver [`FIX-013-dirty-diff-viewer.md`](FIX-013-dirty-diff-viewer.md).
+
 ---
 
 ## 4. Archivos tocados

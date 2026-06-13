@@ -115,6 +115,12 @@ interface EditorState {
   unsavedAction: UnsavedAction;
   pendingFilePath: string | null;
   showExternalReloadDialog: boolean;
+  /** Resaltado inline disco vs borrador en Lexical (FIX-013). */
+  dirtyDiffVisible: boolean;
+  /** Incrementa tras guardar — el plugin refresca baseline / limpia estilos. */
+  dirtyDiffBaselineVersion: number;
+  /** Snapshot post-guardado para refrescar diff sin releer disco. */
+  dirtyDiffSavedBaseline: ParsedManuscript | null;
 
   setExtractManuscriptFn: (fn: ExtractManuscriptFn | null) => void;
   setInsertInlineTagFn: (fn: InsertInlineTagFn | null) => void;
@@ -197,6 +203,10 @@ interface EditorState {
   getManuscriptSessionSnapshot: () => ManuscriptTabsSession | null;
   /** Restaura borrador sucio sobre pestaña ya abierta desde disco. */
   applyPersistedTabDraft: (filePath: string, draft: ManuscriptTabDraft) => void;
+  /** Flush Lexical → caché y devuelve manuscrito activo para diff (FIX-013). */
+  prepareActiveManuscriptDraftForDiff: () => ParsedManuscript | null;
+  toggleDirtyDiffHighlight: () => void;
+  clearDirtyDiffHighlight: () => void;
 }
 
 let extractManuscriptFn: ExtractManuscriptFn | null = null;
@@ -245,6 +255,9 @@ const initialState = {
   unsavedAction: "open" as UnsavedAction,
   pendingFilePath: null as string | null,
   showExternalReloadDialog: false,
+  dirtyDiffVisible: false,
+  dirtyDiffBaselineVersion: 0,
+  dirtyDiffSavedBaseline: null as ParsedManuscript | null,
 };
 
 function syncTabInMap(
@@ -408,6 +421,7 @@ function patchSavedBaseline(
     tabs,
     savedBodyFingerprint: fingerprint,
     isDirty: false,
+    dirtyDiffBaselineVersion: state.dirtyDiffBaselineVersion + 1,
   };
   if (!options?.batch) {
     patch.saveStatus = "saved";
@@ -623,6 +637,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       beginEditorSession();
       set({
         tabs: flushed.tabs,
+        dirtyDiffVisible: false,
+        dirtyDiffSavedBaseline: null,
         ...activateTabView(tab),
       });
       audit.info("editor", "obs.editor.tab.switch", { from: fromPath, to: filePath });
@@ -971,17 +987,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (!isActive) {
           return { tabs: nextTabs };
         }
-        const patch: Partial<EditorState> = {
+        return {
+          ...patchSavedBaseline(state, filePath, fingerprint, options),
           tabs: nextTabs,
           manuscript: saved,
           document: fields.document,
-          savedBodyFingerprint: fingerprint,
-          isDirty: false,
+          dirtyDiffSavedBaseline: state.dirtyDiffVisible ? saved : state.dirtyDiffSavedBaseline,
         };
-        if (!options.batch) {
-          patch.saveStatus = "saved";
-        }
-        return patch;
       });
       return true;
     } catch (err) {
@@ -1389,6 +1401,59 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
       return { tabs };
     });
+  },
+
+  prepareActiveManuscriptDraftForDiff: () => {
+    const state = get();
+    if (
+      state.activeTabKind !== "manuscript" ||
+      !state.activeFilePath ||
+      !state.isDirty ||
+      !state.manuscript
+    ) {
+      return null;
+    }
+
+    const flushed = flushActiveTabToCache(state);
+    if (!flushed.manuscript) {
+      return null;
+    }
+
+    const activePath = state.activeFilePath;
+    set((s) => {
+      if (!projectPathsEqual(s.activeFilePath, activePath)) {
+        return s;
+      }
+      return {
+        tabs: flushed.tabs,
+        manuscript: flushed.manuscript,
+        document: flushed.document,
+      };
+    });
+
+    return flushed.manuscript;
+  },
+
+  toggleDirtyDiffHighlight: () => {
+    const state = get();
+    if (state.dirtyDiffVisible) {
+      set({ dirtyDiffVisible: false, dirtyDiffSavedBaseline: null });
+      return;
+    }
+    if (
+      state.activeTabKind !== "manuscript" ||
+      !state.activeFilePath ||
+      !state.isDirty
+    ) {
+      return;
+    }
+    set({ dirtyDiffVisible: true });
+  },
+
+  clearDirtyDiffHighlight: () => {
+    if (get().dirtyDiffVisible) {
+      set({ dirtyDiffVisible: false, dirtyDiffSavedBaseline: null });
+    }
   },
 
   reset: () => {

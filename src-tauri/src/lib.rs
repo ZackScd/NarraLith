@@ -58,6 +58,8 @@ pub fn run() {
             commands::editor::read_manuscript,
             commands::editor::parse_manuscript,
             commands::editor::save_manuscript,
+            commands::editor::read_project_file_text,
+            commands::editor::serialize_manuscript_preview,
             commands::editor::update_event_metadata,
             commands::editor::create_event_at_cursor,
             commands::editor::close_event_at_cursor,

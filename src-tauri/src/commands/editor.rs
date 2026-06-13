@@ -12,7 +12,7 @@ use crate::parser::{
     close_event_segment, create_event_segment, insert_inline_tag_in_segment,
     parse_file, parse_file_and_persist, parse_manuscript_and_persist,
     persist_parsed_document, sanitize_metadata, save_manuscript_and_persist,
-    serialize_blocks_to_disk, update_block_metadata as apply_block_metadata,
+    serialize_blocks_to_disk, serialize_manuscript, update_block_metadata as apply_block_metadata,
     update_event_segment_metadata, BarTag, EventSegment, FreeTextSegment,
     ManuscriptFileHeader, ManuscriptFormat, ManuscriptSegment, ParsedBlock, ParsedDocument,
     ParsedManuscript, scan_inline_tags,
@@ -207,6 +207,36 @@ pub fn save_manuscript(
     }
 
     Ok(result)
+}
+
+/// Texto literal del `.md` en disco (sin parse) — FIX-013 diff lado «guardado».
+#[tauri::command]
+pub fn read_project_file_text(
+    state: State<'_, ProjectState>,
+    file_path: String,
+) -> Result<String, AppError> {
+    state.with_db(|_db, root| {
+        let rel = crate::fs::paths::normalize_relative(&file_path)?;
+        if !rel.to_lowercase().ends_with(".md") {
+            return Err(AppError::new("error.editor.not_md"));
+        }
+        let full = resolve_under_root(root, &rel)?;
+        if !full.is_file() {
+            return Err(AppError::new("error.fs.not_found"));
+        }
+        fs::read_to_string(&full).map_err(|e| AppError::database(e.to_string()))
+    })
+}
+
+/// Serializa payload de guardado sin escribir a disco — FIX-013 diff lado «borrador».
+#[tauri::command]
+pub fn serialize_manuscript_preview(
+    file_path: String,
+    manuscript: SaveManuscriptPayload,
+) -> Result<String, AppError> {
+    let rel = crate::fs::paths::normalize_relative(&file_path)?;
+    let parsed = build_manuscript_from_save(&rel, manuscript)?;
+    serialize_manuscript(&parsed)
 }
 
 #[tauri::command]

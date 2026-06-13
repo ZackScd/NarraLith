@@ -30,6 +30,7 @@
 | **Ctrl+Shift+S** | Guarda **todas** las pestañas sucias **sin** cambiar la activa ni recorrer la barra (caché de tab; FIX-012 2b). |
 | Botón «Guardar todo» (panel 💾) | Igual que Ctrl+Shift+S. |
 | Autoguardado (configuración) | Solo la pestaña activa, sin iterar el resto. |
+| Ver cambios sin guardar (FIX-013 ⬜) | Panel herramientas → icono diff en cabecera compacta (§FIX-013); solo si `isDirty`. |
 
 Al guardar un manuscrito con eventos, el sync de fichas `Worldbuilding/Eventos/` es transparente: no debe cerrar pestañas ni marcar archivos como `ghost` en SQLite.
 

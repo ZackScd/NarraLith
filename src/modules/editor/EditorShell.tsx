@@ -31,6 +31,7 @@ import { WikiLinkNode } from "@/modules/editor/nodes/WikiLinkNode";
 import { ActiveEventContextPlugin } from "@/modules/editor/plugins/ActiveEventContextPlugin";
 import { ClickToFocusPlugin } from "@/modules/editor/plugins/ClickToFocusPlugin";
 
+import { DirtyDiffHighlightPlugin } from "@/modules/editor/plugins/DirtyDiffHighlightPlugin";
 import { DirtyStatePlugin } from "@/modules/editor/plugins/DirtyStatePlugin";
 
 import { ExtractBlocksPlugin } from "@/modules/editor/plugins/ExtractBlocksPlugin";
@@ -129,6 +130,8 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <ActiveEventContextPlugin />
 
         <DirtyStatePlugin />
+
+        <DirtyDiffHighlightPlugin />
 
         <ExtractBlocksPlugin />
 

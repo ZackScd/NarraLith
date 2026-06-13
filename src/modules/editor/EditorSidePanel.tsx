@@ -1,6 +1,7 @@
 import {
   CalendarClock,
   BookmarkPlus,
+  GitCompare,
   PanelRightClose,
   PanelRightOpen,
   Save,
@@ -31,11 +32,9 @@ import { TimeTagDialog } from "./sidePanel/TimeTagDialog";
 
 /**
  * Barra lateral derecha del editor:
- *  - Cabecera con dos botones (Etiquetas / Guardar todo).
+ *  - Cabecera compacta (solo iconos): contraer · etiquetas · guardar · diff.
  *  - Sección de tiempo con [3 T] última fecha añadida, [3.1] semana actual y
  *    [3.2] botón de añadir/editar la etiqueta de tiempo del bloque activo.
- *  - El diálogo flotante para componer la etiqueta de tiempo se monta en este
- *    mismo árbol vía portal hacia `body` para que pueda arrastrarse libremente.
  */
 export function EditorSidePanel() {
   const { t } = useTranslation("editor");
@@ -47,10 +46,7 @@ export function EditorSidePanel() {
   const inlineMetadataVisible = useLayoutStore((s) => s.inlineMetadataVisible);
   const toggleInlineMetadata = useLayoutStore((s) => s.toggleInlineMetadata);
   const rightPanelCollapsed = useLayoutStore((s) => s.rightPanelCollapsed);
-  const rightPanelWidth = useLayoutStore((s) => s.rightPanelWidth);
   const toggleRightPanelCollapsed = useLayoutStore((s) => s.toggleRightPanelCollapsed);
-
-  const compactToolbar = rightPanelWidth < 240;
 
   const tabOrder = useEditorStore((s) => s.tabOrder);
   const tabs = useEditorStore((s) => s.tabs);
@@ -60,6 +56,9 @@ export function EditorSidePanel() {
   const activeBlockIndex = useEditorStore((s) => s.activeBlockIndex);
   const activeEventContext = useEditorStore((s) => s.activeEventContext);
   const activeTabKind = useEditorStore((s) => s.activeTabKind);
+  const isDirty = useEditorStore((s) => s.isDirty);
+  const dirtyDiffVisible = useEditorStore((s) => s.dirtyDiffVisible);
+  const toggleDirtyDiffHighlight = useEditorStore((s) => s.toggleDirtyDiffHighlight);
   const insertInlineTagAtCursor = useEditorStore((s) => s.insertInlineTagAtCursor);
   const commitEventAtCursor = useEditorStore((s) => s.commitEventAtCursor);
   const updateEventAtCursor = useEditorStore((s) => s.updateEventAtCursor);
@@ -79,6 +78,7 @@ export function EditorSidePanel() {
 
   const hasDirtyTabs = tabOrder.some((path) => tabs[path]?.isDirty);
   const saving = saveStatus === "saving";
+  const canOpenDiff = showManuscriptTools && isDirty;
 
   const eventDraftCommitOk =
     !pending?.event?.name.trim() ||
@@ -93,6 +93,16 @@ export function EditorSidePanel() {
     pending?.filePath === activeFilePath &&
     ((Boolean(pending.event?.name.trim()) && eventDraftCommitOk) ||
       Boolean(pending.time));
+
+  const tagsTitle = inlineMetadataVisible
+    ? t("panel.hideInlineTags")
+    : t("panel.showInlineTags");
+  const saveTitle = saving ? t("header.saving") : t("header.saveAll");
+  const diffTitle = !canOpenDiff
+    ? t("diff.disabledClean")
+    : dirtyDiffVisible
+      ? t("diff.hide")
+      : t("diff.open");
 
   const commitPending = useCallback(async () => {
     if (!pending || !activeFilePath) {
@@ -168,10 +178,62 @@ export function EditorSidePanel() {
     rightPanelCollapsed,
   ]);
 
-  const tagsTitle = inlineMetadataVisible
-    ? t("panel.hideInlineTags")
-    : t("panel.showInlineTags");
-  const saveTitle = saving ? t("header.saving") : t("header.saveAll");
+  const manuscriptActionButtons = (compact: boolean) =>
+    showManuscriptTools ? (
+      <>
+        <Button
+          type="button"
+          variant={inlineMetadataVisible ? "secondary" : compact ? "ghost" : "outline"}
+          size="icon"
+          className={cn(
+            compact ? "size-8" : "size-7 shrink-0",
+            inlineMetadataVisible && !compact && "border-primary/40",
+            inlineMetadataVisible && compact && "border border-primary/40",
+          )}
+          aria-pressed={inlineMetadataVisible}
+          title={tagsTitle}
+          aria-label={tagsTitle}
+          onClick={toggleInlineMetadata}
+        >
+          <Tags className={compact ? "size-4" : "size-3.5"} />
+        </Button>
+        <Button
+          type="button"
+          variant={compact ? "ghost" : "outline"}
+          size="icon"
+          className={compact ? "size-8" : "size-7 shrink-0"}
+          disabled={!hasDirtyTabs || saving}
+          title={saveTitle}
+          aria-label={saveTitle}
+          onClick={() => void saveAllOpenTabs()}
+        >
+          <Save className={compact ? "size-4" : "size-3.5"} />
+        </Button>
+        <Button
+          type="button"
+          variant={
+            dirtyDiffVisible
+              ? "secondary"
+              : compact
+                ? "ghost"
+                : "outline"
+          }
+          size="icon"
+          className={cn(
+            compact ? "size-8" : "size-7 shrink-0",
+            dirtyDiffVisible && !compact && "border-primary/40",
+            dirtyDiffVisible && compact && "border border-primary/40",
+          )}
+          aria-pressed={dirtyDiffVisible}
+          disabled={!canOpenDiff && !dirtyDiffVisible}
+          title={diffTitle}
+          aria-label={diffTitle}
+          onClick={toggleDirtyDiffHighlight}
+        >
+          <GitCompare className={compact ? "size-4" : "size-3.5"} />
+        </Button>
+      </>
+    ) : null;
 
   if (rightPanelCollapsed) {
     return (
@@ -185,41 +247,19 @@ export function EditorSidePanel() {
           variant="ghost"
           className="size-8"
           title={t("panel.expandTools")}
+          aria-label={t("panel.expandTools")}
           onClick={toggleRightPanelCollapsed}
         >
           <PanelRightOpen className="size-4" />
         </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant={inlineMetadataVisible ? "secondary" : "ghost"}
-          className="size-8"
-          title={
-            inlineMetadataVisible
-              ? t("panel.hideInlineTags")
-              : t("panel.showInlineTags")
-          }
-          onClick={toggleInlineMetadata}
-        >
-          <Tags className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          title={t("header.saveAll")}
-          disabled={!hasDirtyTabs || saving}
-          onClick={() => void saveAllOpenTabs()}
-        >
-          <Save className="size-4" />
-        </Button>
+        {manuscriptActionButtons(true)}
         <Button
           type="button"
           size="icon"
           variant="ghost"
           className="size-8"
           title={t("panel.addTimeIcon")}
+          aria-label={t("panel.addTimeIcon")}
           disabled={activeTabKind !== "manuscript" || !activeFilePath}
           onClick={openAddTimeDialog}
         >
@@ -235,80 +275,19 @@ export function EditorSidePanel() {
       className="flex h-full w-full shrink-0 flex-col border-l border-border bg-card"
       aria-label={t("panel.title")}
     >
-      <div
-        className={cn(
-          "flex h-10 min-w-0 shrink-0 items-center overflow-hidden border-b border-border bg-card/70",
-          compactToolbar ? "gap-1 px-2" : "gap-2 px-3",
-        )}
-      >
+      <div className="flex h-10 min-w-0 shrink-0 items-center gap-1 overflow-hidden border-b border-border bg-card/70 px-2">
         <Button
           type="button"
           variant="outline"
           size="icon"
           className="size-7 shrink-0"
           title={t("panel.collapseTools")}
+          aria-label={t("panel.collapseTools")}
           onClick={toggleRightPanelCollapsed}
         >
           <PanelRightClose className="size-3.5" />
         </Button>
-        {compactToolbar ? (
-          <Button
-            type="button"
-            variant={inlineMetadataVisible ? "secondary" : "outline"}
-            size="icon"
-            className={cn(
-              "size-7 shrink-0",
-              inlineMetadataVisible && "border-primary/40",
-            )}
-            aria-pressed={inlineMetadataVisible}
-            title={tagsTitle}
-            onClick={toggleInlineMetadata}
-          >
-            <Tags className="size-3.5" />
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant={inlineMetadataVisible ? "secondary" : "outline"}
-            className={cn(
-              "h-7 min-w-0 flex-1 px-2 text-xs",
-              inlineMetadataVisible && "border-primary/40",
-            )}
-            aria-pressed={inlineMetadataVisible}
-            title={tagsTitle}
-            onClick={toggleInlineMetadata}
-          >
-            <Tags className="mr-1 size-3.5 shrink-0" />
-            <span className="truncate">{t("panel.tagsButton")}</span>
-          </Button>
-        )}
-        {compactToolbar ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-7 shrink-0"
-            disabled={!hasDirtyTabs || saving}
-            title={saveTitle}
-            onClick={() => void saveAllOpenTabs()}
-          >
-            <Save className="size-3.5" />
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-7 min-w-0 flex-1 px-2 text-xs"
-            disabled={!hasDirtyTabs || saving}
-            title={saveTitle}
-            onClick={() => void saveAllOpenTabs()}
-          >
-            <Save className="mr-1 size-3.5 shrink-0" />
-            <span className="truncate">
-              {saving ? t("header.saving") : t("header.saveAll")}
-            </span>
-          </Button>
-        )}
+        {manuscriptActionButtons(false)}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">

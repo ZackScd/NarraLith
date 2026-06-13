@@ -116,6 +116,18 @@
     "discard": "Discard",
     "cancel": "Cancel"
   },
+  "diff": {
+    "open": "View unsaved changes",
+    "hide": "Hide unsaved changes",
+    "disabledClean": "No unsaved changes on this tab",
+    "title": "Unsaved changes — {{name}}",
+    "diskLegend": "Saved on disk",
+    "draftLegend": "Current draft",
+    "empty": "No detectable differences.",
+    "close": "Close",
+    "loading": "Computing diff…",
+    "error": "Could not compute the diff."
+  },
   "externalReload": {
     "title": "File changed outside the app",
     "message": "This file was modified on disk. You have unsaved editor changes. Reload from disk and discard local edits?",

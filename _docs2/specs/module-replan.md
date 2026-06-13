@@ -17,7 +17,7 @@ Documento de trabajo para cerrar decisiones de producto antes de refactorizar m�
 | Sync eventos | Ficha en `Worldbuilding/Eventos/` al guardar |
 | Panel manuscrito | Evento + Tiempo + Referencias; futuro: ubicación desde mapa |
 | Tiempo dos capas | `barTags` = origen, inline = evolución (**mantener**) |
-| Guardado disco | Manual (Ctrl+S / Guardar todo); borrador sucio persistente al cerrar (FIX-007 ✅) |
+| Guardado disco | Manual (Ctrl+S / Guardar todo); borrador sucio persistente al cerrar (FIX-007 ✅); diff opcional FIX-013 ⬜ |
 | `[-]` / `[+]` | Un solo botón contextual |
 | Toggle etiquetas | Persistente en `localStorage` |
 | `ParsedDocument` adaptador | Mantener hasta II.5; migrar en II.4.1 después |
