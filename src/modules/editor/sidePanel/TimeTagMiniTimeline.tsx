@@ -66,6 +66,8 @@ import {
   type TimelineDisplayItem,
 } from "@/modules/timeline/timelineModel";
 import type { TimeDraft } from "@/stores/useTimeTagDialogStore";
+import { useCalendarStore } from "@/stores/useCalendarStore";
+import i18n from "i18next";
 
 export type MiniZoomLevel = "years" | "year1" | "months" | "days";
 
@@ -447,6 +449,7 @@ export function TimeTagMiniTimeline({
 }: TimeTagMiniTimelineProps) {
   const { t } = useTranslation("editor");
   const { t: tTimeline } = useTranslation("timeline");
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const { width, setContainer } = useContainerWidth();
 
   const previewTime = useMemo(
@@ -460,7 +463,12 @@ export function TimeTagMiniTimeline({
   );
 
   const layout = useMemo((): MiniTimelineLayout => {
-    const items = buildTimelineItems(events, calendar, ALL_TIMELINE_FILTERS).filter(
+    const items = buildTimelineItems(
+      events,
+      calendar,
+      ALL_TIMELINE_FILTERS,
+      baselineConfig,
+    ).filter(
       (item) => !isEditingBlock(item, filePath, blockIndex),
     );
 
@@ -684,7 +692,9 @@ export function TimeTagMiniTimeline({
     const barTop = axisY - BAR_HEIGHT / 2;
     const barBottom = axisY + BAR_HEIGHT / 2;
 
-    const insertLabel = filePath ? fileDisplayName(filePath) : t("panel.timeAddCta");
+    const insertLabel = filePath
+      ? fileDisplayName(filePath)
+      : i18n.getFixedT(null, "editor")("panel.timeAddCta");
     const insertLane: "manuscript" | "below" =
       filePath && isManuscriptPath(filePath) ? "manuscript" : "below";
     const { eventLabel: previewEventLabel, segmentId: previewSegmentId } =
@@ -705,6 +715,8 @@ export function TimeTagMiniTimeline({
         { day: safeDay, month: safeMonth, year: draft.year },
         calendar,
       ),
+      timeStatus: "valid",
+      rawTime: "",
       path: filePath ?? undefined,
       blockIndex: blockIndex ?? undefined,
       lane: insertLane,
@@ -822,6 +834,7 @@ export function TimeTagMiniTimeline({
       previewX,
     };
   }, [
+    baselineConfig,
     calendar,
     events,
     previewTime,
@@ -833,7 +846,6 @@ export function TimeTagMiniTimeline({
     safeMonth,
     width,
     zoomLevel,
-    t,
   ]);
 
   const maxPan = Math.max(0, layout.layoutWidth - width);

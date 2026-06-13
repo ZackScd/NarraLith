@@ -1,9 +1,10 @@
 import { toAbsoluteDay } from "@/lib/calendar";
+import { MAX_ABS_DAY as MAX_ABS_DAY_RENDER } from "@/lib/calendar/engine";
 import { effectiveCalendarForYear } from "@/lib/calendar/effectiveCalendar";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import type { TimelineDisplayItem } from "@/modules/timeline/timelineModel";
 
-export const MAX_ABS_DAY_RENDER = 5_000_000;
+export { MAX_ABS_DAY_RENDER };
 export const DEAD_GAP_THRESHOLD_DAYS = 120;
 export const MIN_YEAR_BLOCK_WIDTH = 44;
 export const YEAR_BREAK_WIDTH = 14;

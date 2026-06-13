@@ -109,6 +109,11 @@
     "addChip": "Añadir etiqueta a este bloque",
     "removeChip": "Quitar esta etiqueta"
   },
+  "timeTag": {
+    "invalid": "Requiere actualización",
+    "invalidDetail": "Esta fecha no es válida con el calendario actual ({{raw}})",
+    "structureStale": "Fecha desplazada por cambio de calendario"
+  },
   "unsaved": {
     "title": "Cambios sin guardar",
     "message": "Hay cambios sin guardar en el archivo actual. ¿Descartarlos y continuar?",

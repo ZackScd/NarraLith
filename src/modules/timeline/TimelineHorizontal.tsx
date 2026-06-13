@@ -321,6 +321,7 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
   const { t } = useTranslation("timeline");
   const { events, loading, errorKey } = useProjectTimeline();
   const calendar = useCalendarStore((s) => s.config);
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const filters = useTimelineStore((s) => s.filters);
   const zoomLevel = useTimelineStore((s) => s.zoomLevel);
   const setZoomLevel = useTimelineStore((s) => s.setZoomLevel);
@@ -361,8 +362,8 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
 
   const items = useMemo(() => {
     if (!calendar) return [];
-    return buildTimelineItems(events, calendar, filters);
-  }, [calendar, events, filters]);
+    return buildTimelineItems(events, calendar, filters, baselineConfig);
+  }, [calendar, baselineConfig, events, filters]);
 
   const itemsWithDate = useMemo(() => {
     if (!calendar) return [];

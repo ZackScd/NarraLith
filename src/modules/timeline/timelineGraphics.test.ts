@@ -14,6 +14,8 @@ function chip(
     eventLabel: null,
     segmentId: null,
     sortKey: 0n,
+    timeStatus: "valid",
+    rawTime: "",
     y: 10,
     width: 80,
     day: 1,

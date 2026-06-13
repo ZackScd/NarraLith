@@ -1,6 +1,6 @@
 # FIX-010b — Timeline: marcas obsoletas visibles (sin mover)
 
-> **Estado:** 📋 Planificado · **Esfuerzo:** Medio · **Riesgo:** Medio  
+> **Estado:** ✅ Completado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
 > **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** [010a](FIX-010a-classify-red-chips.md) · **Decisión:** D1, D2
 
 ---
@@ -46,10 +46,12 @@ interface TimelineDisplayItem {
 
 ## 4. Implementación
 
-- [ ] `timelineModel.ts` — incluir invalid/stale
-- [ ] `timelineGraphics.tsx` — chip SVG rojo
-- [ ] `timelineModel.test.ts` — regresión posición X
-- [ ] Tooltip i18n (reutilizar keys 010a)
+- [x] `timelineModel.ts` — incluir invalid/stale · `resolveMarkerPlacement` (vía `markerPlacement.ts`)
+- [x] `timelineGraphics.tsx` — chip SVG rojo + pin minimizado
+- [x] `timelineModel.test.ts` — regresión posición X / no drop
+- [x] Tooltip i18n (reutiliza keys 010a)
+- [x] `TimelineHorizontal` + `TimeTagMiniTimeline` pasan `baselineConfig`
+- [x] **Hotfix congelamiento:** `engine.ts` (`MAX_ABS_DAY`, avance O(1) en claves enormes) · claves sintéticas acotadas · guardas en `calendarMarkers` / `calendarEntries`
 
 ---
 
@@ -59,17 +61,34 @@ interface TimelineDisplayItem {
 |---------|--------|
 | `src/modules/timeline/timelineModel.ts` | Sin drop silencioso |
 | `src/modules/timeline/timelineGraphics.tsx` | Variante invalid |
-| `src/modules/timeline/TimelineHorizontal.tsx` | Revisar layout |
+| `src/modules/timeline/TimelineHorizontal.tsx` | `baselineConfig` |
+| `src/lib/calendar/markerPlacement.ts` | **Nuevo** — placement compartido timeline/calendario |
+| `src/lib/calendar/engine.ts` | `MAX_ABS_DAY` · sin bucle infinito en `fromAbsoluteDay` |
+| `src/lib/calendar/calendarEntries.ts` | Guardas + `resolveMarkerPlacement` (base 010c) |
+| `src/lib/calendar/timeTagUi.ts` | Helpers tooltip/stale compartidos |
 
 ---
 
 ## 6. QA
 
-| # | Acción | Esperado |
-|---|--------|----------|
-| B1 | Reset calendario → abrir timeline | Marcas rojas; **misma X** que antes |
-| B2 | `markerCount` | No baja 9→0 en silencio |
-| B3 | Mes insertado | Posición literal o timestamp; solo rojo |
+| # | Acción | Esperado | Resultado sesión `8852` |
+|---|--------|----------|-------------------------|
+| B1 | Reset calendario → abrir timeline | Marcas rojas; **misma X** que antes | ✅ `placedCount: 9`, rango `0 - 150098`, chips rojos (captura usuario) |
+| B2 | `markerCount` | No baja 9→0 en silencio | ✅ `obs.ui.calendarPanel.miniTimeline` → `markerCount: 9` estable |
+| B3 | Mes insertado | Posición literal o timestamp; solo rojo | ⏭️ no probado en esta sesión (calendario mínimo) |
+| B4 | Timeline + calendario tras reset | Sin congelamiento | ✅ `viewChange` editor→timeline→calendar→editor sin corte de log |
+
+**Logs:** `_debug/render-logs/ui-session-1781343876561-8852.ndjson` · `_debug/logs/session-1781343876561-8852.ndjson`
+
+**Nota visual:** con calendario mínimo (1 mes) y timestamps SQLite del calendario anterior, el eje puede mostrar años absolutos grandes (`138985`, `150098`); es coherente con D1 (posición X por timestamp, no re-parse).
+
+---
+
+## 7. Cierre
+
+**Estado:** ✅ Cerrado (jun 2026) · Tests: `timelineModel.test.ts`, `markerPlacement.test.ts`, `calendar.test.ts` (clave mythic).
+
+**Pendiente en 010c:** estilo rojo en filas del calendario mensual (`TimeEntryRow`) y recarga explícita post-reset en stores.
 
 ---
 

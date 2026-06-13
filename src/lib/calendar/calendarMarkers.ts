@@ -1,4 +1,4 @@
-import { fromAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
+import { fromAbsoluteDay, isRenderableAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
 import { isManuscriptPath, isTimedEventPath } from "@/modules/timeline/timelineModel";
 import type { CalendarConfig, CalendarAnnualEvent } from "@/lib/types/calendar";
 import type { TimelineEvent } from "@/lib/types/timeline";
@@ -17,6 +17,7 @@ function partsInYear(
   year: number,
   config: CalendarConfig,
 ): { month: number; day: number } | null {
+  if (!isRenderableAbsoluteDay(sortKey)) return null;
   const parts = fromAbsoluteDay(sortKey, config);
   if (parts.year !== year) return null;
   return { month: parts.month, day: parts.day };
@@ -50,7 +51,7 @@ export function yearsWithFileEntries(
         }
       }
     }
-    if (sortKey === null) continue;
+    if (sortKey === null || !isRenderableAbsoluteDay(sortKey)) continue;
     const parts = fromAbsoluteDay(sortKey, config);
     years.add(parts.year);
   }

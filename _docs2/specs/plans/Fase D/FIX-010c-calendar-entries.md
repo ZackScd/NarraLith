@@ -24,6 +24,8 @@ Entradas inválidas/obsoletas visibles en vista calendario y mini-timeline later
 - Entradas: `category: "invalid" | "stale"`, token `--destructive` / `--cal-invalid`.
 - `CalendarMonthToolPanel` / `TimeEntryRow`: borde rojo.
 
+> **Infra ya en 010b:** `buildCalendarTimeEntries` usa `resolveMarkerPlacement` + `isRenderableAbsoluteDay` (no congela; aún omite entradas fuera de año visible). Falta UI roja en filas.
+
 ---
 
 ## 3. Mini-timeline + side panel

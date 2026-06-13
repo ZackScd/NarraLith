@@ -17,6 +17,7 @@ import { useTimelineStore } from "@/stores/useTimelineStore";
 export function CalendarWorkspace() {
   const { t } = useTranslation("calendarView");
   const config = useCalendarStore((s) => s.config);
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const isLoading = useCalendarStore((s) => s.isLoading);
   const loadCalendar = useCalendarStore((s) => s.loadCalendar);
   const draft = useCalendarViewStore((s) => s.draft);
@@ -44,8 +45,8 @@ export function CalendarWorkspace() {
 
   const allEntries = useMemo(() => {
     if (!draft) return [];
-    return buildCalendarTimeEntries(viewYear, events, draft, filters);
-  }, [viewYear, events, draft, filters]);
+    return buildCalendarTimeEntries(viewYear, events, draft, filters, baselineConfig);
+  }, [viewYear, events, draft, filters, baselineConfig]);
 
   useEffect(() => {
     void loadCalendar();

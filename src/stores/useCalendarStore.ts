@@ -12,16 +12,21 @@ import type {
 
 interface CalendarState {
   config: CalendarConfig | null;
+  baselineConfig: CalendarConfig | null;
   isLoading: boolean;
   isSaving: boolean;
   lastErrorKey: string | null;
   loadCalendar: () => Promise<void>;
-  saveCalendar: (config: CalendarConfig) => Promise<boolean>;
+  saveCalendar: (
+    config: CalendarConfig,
+    options?: { reconcileBaseline?: boolean },
+  ) => Promise<boolean>;
   reset: () => void;
 }
 
 export const useCalendarStore = create<CalendarState>((set) => ({
   config: null,
+  baselineConfig: null,
   isLoading: false,
   isSaving: false,
   lastErrorKey: null,
@@ -29,23 +34,35 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   loadCalendar: async () => {
     set({ isLoading: true, lastErrorKey: null });
     try {
-      const config = await invokeCommand<CalendarConfig>("get_calendar_config");
-      set({ config, isLoading: false });
+      const [config, baselineConfig] = await Promise.all([
+        invokeCommand<CalendarConfig>("get_calendar_config"),
+        invokeCommand<CalendarConfig>("get_calendar_baseline"),
+      ]);
+      set({ config, baselineConfig, isLoading: false });
     } catch (err) {
       set({
         config: null,
+        baselineConfig: null,
         isLoading: false,
         lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
       });
     }
   },
 
-  saveCalendar: async (config) => {
+  saveCalendar: async (config, options) => {
+    const reconcileBaseline = options?.reconcileBaseline ?? true;
     set({ isSaving: true, lastErrorKey: null });
     try {
       const toSave = prepareCalendarConfigForSave(config);
-      await invokeCommand("set_calendar_config", { config: toSave });
-      set({ config, isSaving: false });
+      await invokeCommand("set_calendar_config", {
+        config: toSave,
+        reconcileBaseline,
+      });
+      set((state) => ({
+        config,
+        baselineConfig: reconcileBaseline ? config : state.baselineConfig,
+        isSaving: false,
+      }));
       return true;
     } catch (err) {
       set({
@@ -57,7 +74,13 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   },
 
   reset: () => {
-    set({ config: null, isLoading: false, isSaving: false, lastErrorKey: null });
+    set({
+      config: null,
+      baselineConfig: null,
+      isLoading: false,
+      isSaving: false,
+      lastErrorKey: null,
+    });
   },
 }));
 

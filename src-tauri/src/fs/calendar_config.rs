@@ -32,6 +32,7 @@ pub fn blank_calendar_json(locale: &str) -> &'static str {
     }
 }
 const CALENDAR_FILENAME: &str = "calendar.json";
+const CALENDAR_BASELINE_FILENAME: &str = "calendar-baseline.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -322,6 +323,81 @@ pub fn calendar_path(project_root: &Path) -> std::path::PathBuf {
     project_root.join(NARRALITH_DIR).join(CALENDAR_FILENAME)
 }
 
+pub fn calendar_baseline_path(project_root: &Path) -> std::path::PathBuf {
+    project_root
+        .join(NARRALITH_DIR)
+        .join(CALENDAR_BASELINE_FILENAME)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CalendarBaselineFile {
+    pub revision_id: String,
+    pub saved_at: String,
+    pub config: CalendarConfig,
+}
+
+fn new_revision_id() -> String {
+    let millis = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    format!("{millis:x}")
+}
+
+fn iso8601_now() -> String {
+    let millis = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    format!("{millis}")
+}
+
+pub fn save_calendar_baseline(
+    project_root: &Path,
+    config: &CalendarConfig,
+) -> Result<(), AppError> {
+    config.validate()?;
+    let path = calendar_baseline_path(project_root);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| AppError::database(e.to_string()))?;
+    }
+    let file = CalendarBaselineFile {
+        revision_id: new_revision_id(),
+        saved_at: iso8601_now(),
+        config: config.clone(),
+    };
+    let json = serde_json::to_string_pretty(&file)
+        .map_err(|e| AppError::database(e.to_string()))?;
+    fs::write(&path, json.as_bytes()).map_err(|e| AppError::database(e.to_string()))?;
+    Ok(())
+}
+
+pub fn load_calendar_baseline_file(
+    project_root: &Path,
+) -> Result<CalendarBaselineFile, AppError> {
+    let path = calendar_baseline_path(project_root);
+    if !path.exists() {
+        return Err(AppError::new("error.calendar.baseline_missing"));
+    }
+    let json = fs::read_to_string(&path).map_err(|e| AppError::database(e.to_string()))?;
+    let file: CalendarBaselineFile =
+        serde_json::from_str(&json).map_err(|_| AppError::new("error.calendar.invalid_json"))?;
+    file.config.validate()?;
+    Ok(file)
+}
+
+/// Baseline reconciliado con marcas de tiempo. Si falta, copia el calendario activo.
+pub fn ensure_calendar_baseline(project_root: &Path) -> Result<CalendarConfig, AppError> {
+    let path = calendar_baseline_path(project_root);
+    if path.exists() {
+        return load_calendar_baseline_file(project_root).map(|f| f.config);
+    }
+    let active = load_calendar_config(project_root)?;
+    save_calendar_baseline(project_root, &active)?;
+    Ok(active)
+}
+
 pub fn load_calendar_config(project_root: &Path) -> Result<CalendarConfig, AppError> {
     let path = calendar_path(project_root);
     let json = if path.exists() {
@@ -340,6 +416,7 @@ pub fn load_calendar_config(project_root: &Path) -> Result<CalendarConfig, AppEr
 pub fn save_calendar_config(
     project_root: &Path,
     config: &CalendarConfig,
+    reconcile_baseline: bool,
 ) -> Result<(), AppError> {
     config.validate()?;
     let path = calendar_path(project_root);
@@ -349,6 +426,9 @@ pub fn save_calendar_config(
     let json = serde_json::to_string_pretty(config)
         .map_err(|e| AppError::database(e.to_string()))?;
     fs::write(&path, json.as_bytes()).map_err(|e| AppError::database(e.to_string()))?;
+    if reconcile_baseline {
+        save_calendar_baseline(project_root, config)?;
+    }
     Ok(())
 }
 
@@ -366,6 +446,7 @@ pub fn ensure_calendar_config(project_root: &Path) -> Result<(), AppError> {
     save_calendar_config(
         project_root,
         &CalendarConfig::default_template_for_locale(&locale),
+        true,
     )
 }
 
@@ -381,9 +462,45 @@ mod tests {
         fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
 
         let default = CalendarConfig::default_template();
-        save_calendar_config(root, &default).unwrap();
+        save_calendar_config(root, &default, true).unwrap();
         let loaded = load_calendar_config(root).unwrap();
         assert_eq!(loaded, default);
+        let baseline = ensure_calendar_baseline(root).unwrap();
+        assert_eq!(baseline, default);
+    }
+
+    #[test]
+    fn calendar_baseline_created_on_first_ensure() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
+
+        let default = CalendarConfig::default_template();
+        save_calendar_config(root, &default, false).unwrap();
+        assert!(!calendar_baseline_path(root).exists());
+
+        let baseline = ensure_calendar_baseline(root).unwrap();
+        assert_eq!(baseline, default);
+        assert!(calendar_baseline_path(root).exists());
+    }
+
+    #[test]
+    fn calendar_save_without_reconcile_leaves_baseline() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
+
+        let default = CalendarConfig::default_template();
+        save_calendar_config(root, &default, true).unwrap();
+
+        let mut changed = default.clone();
+        changed.months[0].days = 28;
+        save_calendar_config(root, &changed, false).unwrap();
+
+        let active = load_calendar_config(root).unwrap();
+        assert_eq!(active.months[0].days, 28);
+        let baseline = ensure_calendar_baseline(root).unwrap();
+        assert_eq!(baseline.months[0].days, default.months[0].days);
     }
 
     #[test]

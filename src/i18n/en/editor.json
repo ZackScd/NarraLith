@@ -109,6 +109,11 @@
     "addChip": "Add tag to this block",
     "removeChip": "Remove this tag"
   },
+  "timeTag": {
+    "invalid": "Needs update",
+    "invalidDetail": "This date is not valid with the current calendar ({{raw}})",
+    "structureStale": "Date shifted by calendar change"
+  },
   "unsaved": {
     "title": "Unsaved changes",
     "message": "The current file has unsaved changes. Discard them and continue?",

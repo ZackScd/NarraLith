@@ -1,9 +1,10 @@
-import { fromAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
+import { fromAbsoluteDay, isRenderableAbsoluteDay, toAbsoluteDay } from "@/lib/calendar";
 import {
   annualKindToLegendCategory,
   type CalendarLegendCategory,
 } from "@/lib/calendar/legend";
 import { annualAppliesInYear } from "@/lib/calendar/calendarMarkers";
+import { resolveMarkerPlacement } from "@/lib/calendar/markerPlacement";
 import {
   fileDisplayName,
   isManuscriptPath,
@@ -34,23 +35,6 @@ function formatDateLabel(parts: { day: number; month: number; year: number }): s
   return `${parts.day}-${parts.month}-${parts.year}`;
 }
 
-function resolveSortKey(event: TimelineEvent, config: CalendarConfig): bigint | null {
-  if (event.timestamp) {
-    try {
-      return BigInt(event.timestamp);
-    } catch {
-      /* fall through */
-    }
-  }
-  const resolved = resolveTimeSortKey(event.rawTime, config);
-  if (!resolved) return null;
-  try {
-    return BigInt(resolved);
-  } catch {
-    return null;
-  }
-}
-
 function fileEntryAllowed(
   event: TimelineEvent,
   filters?: TimelineFilterState,
@@ -78,14 +62,15 @@ export function buildCalendarTimeEntries(
   events: TimelineEvent[],
   config: CalendarConfig,
   filters?: TimelineFilterState,
+  baselineConfig?: CalendarConfig | null,
 ): CalendarTimeEntry[] {
   const entries: CalendarTimeEntry[] = [];
 
   for (const event of events) {
     if (!fileEntryAllowed(event, filters)) continue;
-    const sortKey = resolveSortKey(event, config);
-    if (sortKey === null) continue;
-    const parts = fromAbsoluteDay(sortKey, config);
+    const placement = resolveMarkerPlacement(event, config, baselineConfig);
+    if (placement === null || !isRenderableAbsoluteDay(placement.sortKey)) continue;
+    const parts = fromAbsoluteDay(placement.sortKey, config);
     if (parts.year !== year) continue;
 
     const label = event.title?.trim() || fileDisplayName(event.path);
@@ -96,7 +81,7 @@ export function buildCalendarTimeEntries(
 
     entries.push({
       id: timelineMarkerId(event),
-      sortKey,
+      sortKey: placement.sortKey,
       year: parts.year,
       month: parts.month,
       day: parts.day,
@@ -106,7 +91,7 @@ export function buildCalendarTimeEntries(
       kind: "file",
       path: event.path,
       blockIndex: event.blockIndex,
-      rawTime: event.rawTime,
+      rawTime: placement.rawTime,
       dateLabel: formatDateLabel(parts),
     });
   }

@@ -9,6 +9,63 @@ import {
 
 const DATE_PATTERN = /^(\d+)\.(\d+)\.(-?\d+)$/;
 
+/** Límite de días absolutos renderizables (timeline, calendario, panel). */
+export const MAX_ABS_DAY = 5_000_000;
+
+const MAX_YEAR_SCAN = 500_000;
+
+export function isRenderableAbsoluteDay(key: bigint): boolean {
+  return key >= -BigInt(MAX_ABS_DAY) && key <= BigInt(MAX_ABS_DAY);
+}
+
+function advancePositiveYear(
+  remaining: bigint,
+  config: CalendarConfig,
+): { year: number; remaining: bigint } {
+  const baseLen = daysInYear(0, config);
+  if (baseLen <= 0n) {
+    return { year: 0, remaining: 0n };
+  }
+
+  const fastThreshold = baseLen * BigInt(MAX_YEAR_SCAN);
+  if (remaining >= fastThreshold) {
+    let year = MAX_YEAR_SCAN;
+    let rem = remaining - fastThreshold;
+    if (rem >= baseLen) {
+      rem = rem % baseLen;
+    }
+    return { year, remaining: rem };
+  }
+
+  let year = 0;
+  let rem = remaining;
+  while (year < MAX_YEAR_SCAN) {
+    const yearLen = daysInYear(year, config);
+    if (yearLen <= 0n) break;
+    if (rem < yearLen) break;
+    rem -= yearLen;
+    year += 1;
+  }
+  return { year, remaining: rem };
+}
+
+function advanceNegativeYear(
+  remaining: bigint,
+  config: CalendarConfig,
+): { year: number; remaining: bigint } {
+  let year = -1;
+  let guard = 0;
+  while (remaining < 0n && guard < MAX_YEAR_SCAN) {
+    guard += 1;
+    const yearLen = daysInYear(year, config);
+    if (yearLen <= 0n) break;
+    if (remaining + yearLen >= 0n) break;
+    remaining += yearLen;
+    year -= 1;
+  }
+  return { year, remaining };
+}
+
 function isLeapYearForEffective(year: number, eff: EffectiveYearCalendar): boolean {
   if (eff.specialCycle) return false;
   return leapExtraDaysForMonth(year, eff.leapRules.monthIndex, eff) > 0;
@@ -96,29 +153,11 @@ function fromAbsoluteFromOrigin(
   config: CalendarConfig,
 ): { day: number; month: number; year: number } {
   if (absoluteFromOrigin < 0n) {
-    let year = -1;
-    let remaining = absoluteFromOrigin;
-    while (remaining < 0n) {
-      const yearLen = daysInYear(year, config);
-      if (remaining + yearLen >= 0n) {
-        break;
-      }
-      remaining += yearLen;
-      year -= 1;
-    }
+    const { year, remaining } = advanceNegativeYear(absoluteFromOrigin, config);
     return splitYearRemainder(year, remaining, config);
   }
 
-  let remaining = absoluteFromOrigin;
-  let year = 0;
-  while (true) {
-    const yearLen = daysInYear(year, config);
-    if (remaining < yearLen) {
-      break;
-    }
-    remaining -= yearLen;
-    year += 1;
-  }
+  const { year, remaining } = advancePositiveYear(absoluteFromOrigin, config);
   return splitYearRemainder(year, remaining, config);
 }
 

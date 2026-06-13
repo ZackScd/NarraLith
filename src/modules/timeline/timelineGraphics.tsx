@@ -1,4 +1,9 @@
 import { cn } from "@/lib/utils";
+import i18n from "i18next";
+import {
+  isStaleTimeTagStatus,
+  staleTimeTagTooltipTitle,
+} from "@/lib/calendar/timeTagUi";
 import {
   CHIP_TRUNC_EVENT,
   CHIP_TRUNC_FILE,
@@ -247,6 +252,10 @@ export function TimelineChip({
   const dual = !!item.eventLabel;
   const h = chipHeight(item);
   const anchors = chipTextAnchors(item.y, dual);
+  const stale = isStaleTimeTagStatus(item.timeStatus);
+  const tooltipTitle = stale
+    ? staleTimeTagTooltipTitle(i18n.getFixedT(null, "editor"), item.timeStatus, item.rawTime)
+    : undefined;
 
   return (
     <g
@@ -268,6 +277,7 @@ export function TimelineChip({
       tabIndex={interactive ? 0 : undefined}
       aria-label={item.label}
     >
+      {tooltipTitle ? <title>{tooltipTitle}</title> : null}
       <rect
         x={left}
         y={item.y}
@@ -275,11 +285,13 @@ export function TimelineChip({
         height={h}
         rx={BOX_RX}
         className={cn(
-          highlighted
-            ? "fill-[color-mix(in_oklch,var(--primary)_18%,var(--timeline-chip-bg))] stroke-[var(--primary)]"
-            : "fill-[var(--timeline-chip-bg)] stroke-[var(--timeline-chip-border)] transition-colors hover:fill-[var(--timeline-chip-hover)]",
+          stale
+            ? "fill-[color-mix(in_oklch,var(--destructive)_12%,var(--timeline-chip-bg))] stroke-[var(--destructive)]"
+            : highlighted
+              ? "fill-[color-mix(in_oklch,var(--primary)_18%,var(--timeline-chip-bg))] stroke-[var(--primary)]"
+              : "fill-[var(--timeline-chip-bg)] stroke-[var(--timeline-chip-border)] transition-colors hover:fill-[var(--timeline-chip-hover)]",
         )}
-        strokeWidth={highlighted ? 2 : 1}
+        strokeWidth={highlighted && !stale ? 2 : 1}
       />
       {dual && "secondaryY" in anchors ? (
         <>
@@ -288,7 +300,7 @@ export function TimelineChip({
             y={anchors.secondaryY}
             textAnchor="middle"
             fontSize={CHIP_SECONDARY_SIZE}
-            fill="var(--timeline-date)"
+            fill={stale ? "var(--destructive)" : "var(--timeline-date)"}
             className="pointer-events-none"
           >
             {truncateForChip(item.fileLabel, CHIP_TRUNC_FILE)}
@@ -298,10 +310,12 @@ export function TimelineChip({
             y={anchors.primaryY}
             textAnchor="middle"
             className={cn(
-              "pointer-events-none text-[11px]",
-              highlighted
-                ? "fill-[var(--primary)] font-medium"
-                : "fill-[var(--timeline-chip-text)] font-medium",
+              "pointer-events-none text-[11px] font-medium",
+              stale
+                ? "fill-[var(--destructive)]"
+                : highlighted
+                  ? "fill-[var(--primary)]"
+                  : "fill-[var(--timeline-chip-text)]",
             )}
           >
             {truncateForChip(item.eventLabel!, CHIP_TRUNC_EVENT)}
@@ -314,9 +328,11 @@ export function TimelineChip({
           textAnchor="middle"
           className={cn(
             "pointer-events-none text-[11px]",
-            highlighted
-              ? "fill-[var(--primary)] font-medium"
-              : "fill-[var(--timeline-chip-text)]",
+            stale
+              ? "fill-[var(--destructive)] font-medium"
+              : highlighted
+                ? "fill-[var(--primary)] font-medium"
+                : "fill-[var(--timeline-chip-text)]",
           )}
         >
           {truncateForChip(item.label, CHIP_TRUNC_SIMPLE)}
@@ -340,6 +356,7 @@ export function TimelineMinimizedMarker({
   const barTop = axisY - BAR_HEIGHT / 2;
   const barBottom = axisY + BAR_HEIGHT / 2;
   const isManuscript = item.lane === "manuscript";
+  const stale = isStaleTimeTagStatus(item.timeStatus);
   const pinY = isManuscript
     ? item.y + MINIMIZED_PIN_RADIUS
     : item.y + MINIMIZED_MARKER_HEIGHT - MINIMIZED_PIN_RADIUS;
@@ -373,7 +390,7 @@ export function TimelineMinimizedMarker({
         cx={item.x}
         cy={pinY}
         r={MINIMIZED_PIN_RADIUS}
-        fill="var(--timeline-chip-text)"
+        fill={stale ? "var(--destructive)" : "var(--timeline-chip-text)"}
         pointerEvents="none"
       />
     </g>

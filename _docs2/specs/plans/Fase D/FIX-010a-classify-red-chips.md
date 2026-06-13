@@ -1,6 +1,6 @@
 # FIX-010a — Clasificador + chips rojos (editor)
 
-> **Estado:** 📋 Planificado · **Esfuerzo:** Medio · **Riesgo:** Medio  
+> **Estado:** ✅ Completado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
 > **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** [010g](FIX-010g-calendar-baseline.md) · **Bloquea:** 010b, 010c
 
 ---
@@ -96,10 +96,10 @@ Namespaces: `editor`.
 
 ## 6. Implementación
 
-- [ ] `classifyTimeTag.ts` + `classifyTimeTag.test.ts`
-- [ ] `calendarStructuralDiff.ts` + tests mes insertado
-- [ ] Refactor `TimeTagChip`
-- [ ] QA: reset blank → chips rojos
+- [x] `classifyTimeTag.ts` + `classifyTimeTag.test.ts`
+- [ ] `calendarStructuralDiff.ts` + tests mes insertado → [010i](FIX-010i-calendar-structural-diff.md)
+- [x] Refactor `TimeTagChip`
+- [x] QA: reset blank → chips rojos (validado jun 2026)
 
 ---
 

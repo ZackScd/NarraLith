@@ -1,4 +1,6 @@
-import { fromAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
+import { fromAbsoluteDay, isRenderableAbsoluteDay, toAbsoluteDay } from "@/lib/calendar";
+import { resolveMarkerPlacement } from "@/lib/calendar/markerPlacement";
+import type { TimeTagStatus } from "@/lib/calendar/classifyTimeTag";
 import { annualAppliesInYear } from "@/lib/calendar/calendarMarkers";
 import { annualKindToLegendCategory } from "@/lib/calendar/legend";
 import type { CalendarAnnualEvent, CalendarConfig } from "@/lib/types/calendar";
@@ -16,6 +18,8 @@ export interface TimelineDisplayItem {
   eventLabel: string | null;
   segmentId: string | null;
   sortKey: bigint;
+  timeStatus: TimeTagStatus;
+  rawTime: string;
   path?: string;
   blockIndex?: number;
   lane: "manuscript" | "below";
@@ -62,24 +66,24 @@ function tagKindOrder(tagKind: string | null | undefined): number {
   return 2;
 }
 
-function sortKeyForEvent(
+function resolveTimelineMarkerPlacement(
   event: TimelineEvent,
+  activeConfig: CalendarConfig,
+  baselineConfig: CalendarConfig | null | undefined,
+) {
+  return resolveMarkerPlacement(event, activeConfig, baselineConfig);
+}
+
+function placableItemYears(
+  items: TimelineDisplayItem[],
   calendar: CalendarConfig,
-): bigint | null {
-  if (event.timestamp) {
-    try {
-      return BigInt(event.timestamp);
-    } catch {
-      /* fall through */
-    }
+): number[] {
+  const years: number[] = [];
+  for (const item of items) {
+    if (!isRenderableAbsoluteDay(item.sortKey)) continue;
+    years.push(Number(fromAbsoluteDay(item.sortKey, calendar).year));
   }
-  const resolved = resolveTimeSortKey(event.rawTime, calendar);
-  if (!resolved) return null;
-  try {
-    return BigInt(resolved);
-  } catch {
-    return null;
-  }
+  return years;
 }
 
 function matchesFileFilters(
@@ -118,13 +122,18 @@ export function buildTimelineItems(
   events: TimelineEvent[],
   calendar: CalendarConfig,
   filters: TimelineFilterState,
+  baselineCalendar?: CalendarConfig | null,
 ): TimelineDisplayItem[] {
   const items: TimelineDisplayItem[] = [];
 
   for (const event of events) {
     if (!matchesFileFilters(event, filters)) continue;
-    const sortKey = sortKeyForEvent(event, calendar);
-    if (sortKey === null) continue;
+    const placement = resolveTimelineMarkerPlacement(
+      event,
+      calendar,
+      baselineCalendar,
+    );
+    if (placement === null) continue;
 
     const manuscript = isManuscriptPath(event.path);
     const fileLabel = fileDisplayName(event.path);
@@ -137,7 +146,9 @@ export function buildTimelineItems(
       fileLabel,
       eventLabel,
       segmentId: event.segmentId ?? null,
-      sortKey,
+      sortKey: placement.sortKey,
+      timeStatus: placement.timeStatus,
+      rawTime: placement.rawTime,
       path: event.path,
       blockIndex: event.blockIndex,
       lane: manuscript ? "manuscript" : "below",
@@ -148,38 +159,40 @@ export function buildTimelineItems(
 
   const annualActive = filters.festivals || filters.anniversaries || filters.cosmic;
   if (annualActive && items.length > 0) {
-    const years = items.map((item) =>
-      Number(fromAbsoluteDay(item.sortKey, calendar).year),
-    );
-    const minYear = Math.min(...years);
-    const maxYear = Math.max(...years);
+    const years = placableItemYears(items, calendar);
+    if (years.length > 0) {
+      const minYear = Math.min(...years);
+      const maxYear = Math.max(...years);
 
-    for (const annual of calendar.annualEvents ?? []) {
-      if (!annual.day || annual.day < 1) continue;
-      if (!annualMatchesFilter(annual, filters)) continue;
+      for (const annual of calendar.annualEvents ?? []) {
+        if (!annual.day || annual.day < 1) continue;
+        if (!annualMatchesFilter(annual, filters)) continue;
 
-      for (let year = minYear; year <= maxYear; year++) {
-        if (!annualAppliesInYear(annual, year)) continue;
-        const sortKey = toAbsoluteDay(
-          { day: annual.day, month: annual.month, year },
-          calendar,
-        );
-        items.push({
-          id: `annual:${annual.id}:${year}`,
-          kind: "annual",
-          label: annual.name,
-          fileLabel: annual.name,
-          eventLabel: null,
-          segmentId: null,
-          sortKey,
-          lane: "below",
-          tagKind: null,
-          charOffset: null,
-          annualKind:
-            annualKindToLegendCategory(annual.kind) === "cosmic"
-              ? "cosmic"
-              : "birthday",
-        });
+        for (let year = minYear; year <= maxYear; year++) {
+          if (!annualAppliesInYear(annual, year)) continue;
+          const sortKey = toAbsoluteDay(
+            { day: annual.day, month: annual.month, year },
+            calendar,
+          );
+          items.push({
+            id: `annual:${annual.id}:${year}`,
+            kind: "annual",
+            label: annual.name,
+            fileLabel: annual.name,
+            eventLabel: null,
+            segmentId: null,
+            sortKey,
+            timeStatus: "valid",
+            rawTime: "",
+            lane: "below",
+            tagKind: null,
+            charOffset: null,
+            annualKind:
+              annualKindToLegendCategory(annual.kind) === "cosmic"
+                ? "cosmic"
+                : "birthday",
+          });
+        }
       }
     }
   }

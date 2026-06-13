@@ -1,4 +1,4 @@
-import { fromAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
+import { fromAbsoluteDay, isRenderableAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
 import { yearsWithFileEntries } from "@/lib/calendar/calendarMarkers";
 import { findLastAddedTimeInDocument, parseTimeTag } from "@/lib/calendar/dateTags";
 import { timelineMarkerId } from "@/lib/calendar/timeMarks";
@@ -135,7 +135,7 @@ export function findLatestEventYear(
     }
   }
 
-  if (bestKey === null) return null;
+  if (bestKey === null || !isRenderableAbsoluteDay(bestKey)) return null;
   return fromAbsoluteDay(bestKey, config).year;
 }
 

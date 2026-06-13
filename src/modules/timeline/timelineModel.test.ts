@@ -55,6 +55,8 @@ function placed(
     x: 0,
     y: 0,
     width: 80,
+    timeStatus: "valid",
+    rawTime: "",
     ...item,
   };
 }
@@ -115,6 +117,55 @@ describe("buildTimelineItems", () => {
     const items = buildTimelineItems(events, sampleConfig, allFilters);
     expect(items[0]?.eventLabel).toBeNull();
     expect(items[0]?.label).toBe("scene");
+  });
+
+  it("incluye marcas invalid con timestamp en lugar de omitirlas", () => {
+    const events = [
+      marker({
+        path: "Manuscrito/stale.md",
+        blockIndex: 0,
+        rawTime: "not-a-date",
+        timestamp: "12345",
+      }),
+    ];
+
+    const items = buildTimelineItems(events, sampleConfig, allFilters);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      timeStatus: "invalid",
+      sortKey: 12345n,
+    });
+  });
+
+  it("marca structure_stale sin omitir del timeline", () => {
+    const baseline = sampleConfig;
+    const active: CalendarConfig = {
+      ...sampleConfig,
+      epoch: { year: 0, month: 1, day: 2 },
+    };
+    const events = [
+      marker({
+        path: "Manuscrito/shift.md",
+        blockIndex: 0,
+        rawTime: "15.1.100",
+      }),
+    ];
+
+    const items = buildTimelineItems(events, active, allFilters, baseline);
+    expect(items).toHaveLength(1);
+    expect(items[0]?.timeStatus).toBe("structure_stale");
+  });
+
+  it("omite solo marcas sin rawTime", () => {
+    const events = [
+      marker({
+        path: "Manuscrito/empty.md",
+        blockIndex: 0,
+        rawTime: "",
+      }),
+    ];
+
+    expect(buildTimelineItems(events, sampleConfig, allFilters)).toHaveLength(0);
   });
 });
 

@@ -4,6 +4,7 @@ import { daysInMonth } from "@/lib/calendar/dateTags";
 import {
   daysInYear,
   fromAbsoluteDay,
+  isRenderableAbsoluteDay,
   parseDateString,
   toAbsoluteDay,
 } from "@/lib/calendar/engine";
@@ -54,6 +55,23 @@ describe("calendar engine", () => {
     const absolute = toAbsoluteDay({ day: 10, month: 2, year: 5 }, sampleConfig);
     const parts = fromAbsoluteDay(absolute, sampleConfig);
     expect(parts).toEqual({ day: 10, month: 2, year: 5 });
+  });
+
+  it("no cuelga con calendario degenerado (meses vacíos)", () => {
+    const emptyMonths: CalendarConfig = {
+      ...sampleConfig,
+      months: [],
+    };
+    expect(() => fromAbsoluteDay(100n, emptyMonths)).not.toThrow();
+    expect(daysInYear(0, emptyMonths)).toBe(0n);
+  });
+
+  it("no cuelga con claves absolutas fuera de rango (mythic/unknown)", () => {
+    const huge = 9223372036854775806n;
+    const start = performance.now();
+    expect(() => fromAbsoluteDay(huge, sampleConfig)).not.toThrow();
+    expect(performance.now() - start).toBeLessThan(50);
+    expect(isRenderableAbsoluteDay(huge)).toBe(false);
   });
 
   it("parses mythic and unknown labels", () => {

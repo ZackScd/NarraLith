@@ -78,6 +78,7 @@ pub fn run() {
             commands::entity::get_entity_timeline,
             commands::entity::get_location_inhabitants,
             commands::calendar::get_calendar_config,
+            commands::calendar::get_calendar_baseline,
             commands::calendar::set_calendar_config,
             commands::calendar::reset_calendar_config,
             commands::timeline::get_timeline_events,

@@ -28,6 +28,8 @@ function placed(
     y: 0,
     width: 80,
     blockIndex: 0,
+    timeStatus: "valid",
+    rawTime: "",
     ...item,
   };
 }

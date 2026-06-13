@@ -1,6 +1,6 @@
 # FIX-010g — Baseline calendario en disco
 
-> **Estado:** 📋 Planificado · **Esfuerzo:** Medio · **Riesgo:** Medio  
+> **Estado:** ✅ Completado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
 > **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** — · **Bloquea:** 010a, 010i, 010e
 
 ---
@@ -58,6 +58,12 @@ Distinto de `CalendarConfig.version` (esquema JSON, hoy `1`).
 ---
 
 ## 5. Implementación
+
+- [x] Rust: `save_calendar_baseline`, `load_calendar_baseline_file`, `ensure_calendar_baseline`
+- [x] IPC `get_calendar_baseline` · `set_calendar_config` + `reconcileBaseline`
+- [x] `useCalendarStore`: `baselineConfig` · carga paralela en `loadCalendar()`
+- [x] Tests Rust en `calendar_config.rs` (round-trip, ensure, save sin reconcile)
+- [x] QA visual: reset calendario · chips rojos en editor (sesión jun 2026)
 
 ### Rust (`calendar_config.rs`)
 
