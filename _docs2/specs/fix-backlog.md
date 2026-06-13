@@ -734,8 +734,12 @@ Aplica también a retiradas de UI (p. ej. tarea 4): quitar un panel no debe deja
 #### Comportamiento deseado
 
 - La app **no crashea** ni oculta las marcas.
-- Toda etiqueta que **no resuelve** correctamente contra el calendario activo se muestra en **estado de error visual** (p. ej. chip/borde rojo en manuscrito, timeline, panel tiempo) con mensaje del tipo *«Requiere actualización»*.
-- Timeline/calendario: pueden seguir mostrando la marca en carril «desconocido» o excluirla del eje ordenado — **pero en el editor debe verse en rojo**, no desaparecer.
+- Toda etiqueta que **no resuelve** correctamente contra el calendario activo se muestra en **estado de error visual** (chip/borde rojo en manuscrito, timeline, panel tiempo) con tooltip *«Requiere actualización»*.
+- Timeline: marcas obsoletas **visibles en la misma posición X** (solo rojo; sin carril «desconocido») — decisión D1/D2 en plan FIX-010.
+
+#### Plan detallado
+
+Índice épica + sub-planes: [`plans/Fase D/FIX-010-calendar-stale-time-chips.md`](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md) (010g → 010a … 010e).
 
 #### Estado actual (brecha)
 
@@ -746,14 +750,16 @@ Aplica también a retiradas de UI (p. ej. tarea 4): quitar un panel no debe deja
 | Chips `TimeTagChip` / barra evento | Sin estado «stale/invalid» |
 | Calendario en disco | Un config por proyecto; borrar/reemplazar no deja huella en marcas (`rawTime` no referencia id de calendario) |
 
-#### Dirección de implementación (futura, no cerrada)
+#### Dirección de implementación
 
-1. **Clasificador** `classifyTimeTag(raw, calendar) → valid | stale | syntax_invalid` (reutilizar `parseDateString`).
-2. **UI:** prop `invalid` en `TimeTagChip`, barra evento, mini-timeline; clase `text-destructive` / borde rojo (tokens existentes, no paleta nueva).
-3. **Opcional v2:** al guardar calendario, snapshot `calendarRevision` en proyecto; marcas indexadas con revisión en `time_markers` — solo si hace falta distinguir «inválido» vs «válido en otro calendario».
-4. **Panel lateral / consistencia:** listado de marcas obsoletas con enlace al bloque.
+Ver FIX-010 (planificado): clasificador `classifyTimeTag`, baseline en disco (010g), UI roja por superficie, migración opcional v2 (010e). Obsoleto: «carril desconocido» descartado (D2).
 
-*Pendiente de ampliar cuando el usuario añada más reglas de calendario.*
+1. **Clasificador** `classifyTimeTag` → `valid | invalid | structure_stale | mythic | unknown`.
+2. **UI:** `TimeTagChip`, timeline, calendario, mini-timeline — prop destructive + tooltip.
+3. **Baseline** `.narralith/calendar-baseline.json` (no `calendarRevision` por marca en v1).
+4. **Panel consistencia / migración:** [010e](plans/Fase%20D/FIX-010e-migration-wizard.md) v2.
+
+*Reglas adicionales de calendario: sub-planes FIX-010a … 010i.*
 
 ---
 

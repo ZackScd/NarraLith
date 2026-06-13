@@ -29,7 +29,7 @@
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
 | **B** | FIX-004…007, OBS-001, FIX-012, **FIX-013** | Fixes medianos (editor + UX) + observabilidad | 8 |
 | **C** | FIX-008…009, **OBS-002** | Fixes explorador / timeline + registro UI | 8 ✅ |
-| **D** | FIX-010…011 | Épica «eliminar no rompe» (primeros escenarios) | 2 |
+| **D** | FIX-010…011 (+ sub 010g–i) | Épica «eliminar no rompe» | 10+ |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
 | **F** | MAP-000…012 | Refactor mapas Era III | 13 |
 | **G** | WB-001… | Post-WB v2 (aplazado) | — |
@@ -84,7 +84,16 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-010** | ⬜ | **6.A** — Calendario sustituido: chips de tiempo inválidos en rojo | Alto (acotado) | [`fix-backlog.md` §6.A](fix-backlog.md) |
+| **FIX-010** | 📋 | **6.A** — Épica calendario obsoleto (**[índice](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md)**) | Alto | Sub-planes **010g→a→b→c→d→h→i→e** · VER-001 |
+| **FIX-010g** | 📋 | Baseline `.narralith/calendar-baseline.json` | Medio | [plan](plans/Fase%20D/FIX-010g-calendar-baseline.md) |
+| **FIX-010a** | 📋 | `classifyTimeTag` + chips rojos editor | Medio | [plan](plans/Fase%20D/FIX-010a-classify-red-chips.md) |
+| **FIX-010b** | 📋 | Timeline visible sin mover posición | Medio | [plan](plans/Fase%20D/FIX-010b-timeline-stale-display.md) |
+| **FIX-010c** | 📋 | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
+| **FIX-010d** | 📋 | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
+| **FIX-010h** | 📋 | Borrador calendario localStorage | Bajo–Medio | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
+| **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) |
+| **FIX-010e** | 📋 | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · v2 |
+| **VER-001** | ⬜ | Reparar historial Git (snapshots + diff) | Alto | Era IV · complementa 010e |
 | **FIX-011** | ⬜ | **6.B** — Evento WB huérfano si se borra `+++event` del manuscrito | Alto (acotado) | [`fix-backlog.md` §6.B](fix-backlog.md) |
 
 > Escenarios **6.C, 6.D…** se añaden a esta fase cuando el usuario los defina — no bloquean Era II ni MAP.
@@ -175,7 +184,14 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 11d | FIX-009d | Auditoría pathIndex árbol filtrado ✅ |
 | 11e | OBS-002 | Registro interfaz: 3 toggles (sistema / UI / UI verbose) ✅ |
 | 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) ✅ |
-| 13 | FIX-010 | Épica 6.A calendario obsoleto |
+| 13 | FIX-010g | Baseline calendario en disco 📋 |
+| 13a | FIX-010a | Clasificador + chips rojos 📋 |
+| 13b | FIX-010b | Timeline stale visible 📋 |
+| 13c | FIX-010c | Calendario + mini-timeline 📋 |
+| 13d | FIX-010d | Editar marcas tiempo 📋 |
+| 13h | FIX-010h | Borrador calendario LS 📋 |
+| 13i | FIX-010i | Diff estructural calendario 📋 |
+| 13e | FIX-010e | Migración + consistencia (v2) 📋 |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
 | 15 | ERAII-001 | M7 un solo modelo manuscrito |
 | 16 | ERAII-002 | M8 QA manual §7 |
@@ -241,6 +257,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-009d: auditoría pathIndex + fix árbol filtrado manuscript; QA `session-1781323873949-29056` |
 | 2026-06-11 | OBS-002 planificado: registro UI multi-módulo + 3 toggles (sistema / interfaz / verbose) · `plans/Fase C/OBS-002-ui-render-audit-log.md` |
 | 2026-06-13 | **Fase C cerrada ✅:** FIX-009…009c (timeline chip dual, anclas, hover lectura), FIX-009d, OBS-002; tests Vitest + QA `_debug` |
+| 2026-06-11 | FIX-010 split: índice épica + planes 010g, 010a–d, 010h, 010i, 010e (010f dentro de 010e) |
+| 2026-06-13 | FIX-010 planificado (6.A): auditoría + plan [`plans/Fase D/FIX-010-calendar-stale-time-chips.md`](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md) |
 
 ---
 
