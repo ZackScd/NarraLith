@@ -29,7 +29,7 @@
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
 | **B** | FIX-004…007, OBS-001, FIX-012, **FIX-013** | Fixes medianos (editor + UX) + observabilidad | 8 |
 | **C** | FIX-008…009, **OBS-002** | Fixes explorador / timeline + registro UI | 8 ✅ |
-| **D** | FIX-010…011 (+ sub 010g–i) | Épica «eliminar no rompe» | 10+ |
+| **D** | **OBS-003**, FIX-010…011 (+ sub 010g–i) | Acciones UI + épica «eliminar no rompe» | 11+ |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
 | **F** | MAP-000…012 | Refactor mapas Era III | 13 |
 | **G** | WB-001… | Post-WB v2 (aplazado) | — |
@@ -91,7 +91,8 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 | **FIX-010c** | ✅ | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
 | **FIX-010d** | ✅ | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
 | **FIX-010h** | ✅ | Borrador calendario en sesión + diálogos unsaved | Bajo | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
-| **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) |
+| **OBS-003** | 📋 | **Registro de acciones** (intent journal) + menú debug unificado | Alto | [**plan**](plans/Fase%20D/OBS-003-action-audit-log.md) · **siguiente en D** · antes 010i |
+| **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) · QA vía OBS-003 |
 | **FIX-010e** | 📋 | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · v2 |
 | **VER-001** | ⬜ | Reparar historial Git (snapshots + diff) | Alto | Era IV · complementa 010e |
 | **FIX-011** | ⬜ | **6.B** — Evento WB huérfano si se borra `+++event` del manuscrito | Alto (acotado) | [`fix-backlog.md` §6.B](fix-backlog.md) |
@@ -262,6 +263,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-010g, 010a, 010b ✅ — QA timeline/calendario sesión NDJSON `8852` (calendario mínimo post-reset) |
 | 2026-06-11 | FIX-010c ✅ — QA calendario sesión `2156` (año 15, marcas obsoletas en panel + grid) |
 | 2026-06-11 | FIX-010d ✅ · FIX-010h ✅ cerrado · docs alineados |
+| 2026-06-11 | **OBS-003** planificado: registro acciones usuario (session + verbose), menú «eliminar todo» / «sesión única» unificados · [`plans/Fase D/OBS-003-action-audit-log.md`](plans/Fase%20D/OBS-003-action-audit-log.md) · prioridad antes FIX-010i |
 
 ---
 

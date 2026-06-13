@@ -44,6 +44,7 @@ flowchart LR
   g --> i[010i diff UI]
   i --> e[010e migración]
   h[010h borrador sesión] -.-> i
+  obs[OBS-003 acciones] -.-> i
   e --> f[010f consistencia]
   ver[VER-001 Git] -.-> e
 ```
@@ -56,12 +57,13 @@ flowchart LR
 | **010c** | [FIX-010c-calendar-entries.md](FIX-010c-calendar-entries.md) | Vista calendario + mini-timeline · recarga post-reset | v1 · ✅ |
 | **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit · §12 reset baseline | v1 · ✅ |
 | **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador en sesión + diálogos unsaved | v1 · ✅ cerrado |
+| **OBS-003** | [OBS-003-action-audit-log.md](OBS-003-action-audit-log.md) | Registro acciones UI (QA sin narrar pasos) | v1 · 📋 **antes 010i** |
 | **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Diff estructural borrador vs disco | v1 |
 | **010e** | [FIX-010e-migration-wizard.md](FIX-010e-migration-wizard.md) | Asistente migración modos A/B/C + vista previa | v2 |
 | **010f** | *(incluido en 010e)* | Panel consistencia fechas · re-ejecutar migración | v2 |
 | **VER-001** | [`implementation-plan.md`](../../implementation-plan.md) | Historial Git roto · diff `calendar.json` | Era IV |
 
-**Orden de implementación sugerido:** `010g → 010a → 010b → 010c → 010d → 010h → 010i → 010e`
+**Orden de implementación sugerido:** `010g → 010a → 010b → 010c → 010d → 010h → **OBS-003** → 010i → 010e`
 
 **v1 sin 010e:** guardar calendario con diff estructural **no bloquea** el save; baseline no avanza → marcas en rojo hasta migración manual (010d) o wizard v2 (010e).
 
