@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { useAutoSnapshotIndicator } from "@/hooks/useAutoSnapshotIndicator";
+import { useUiRenderAudit } from "@/lib/render-audit/hooks/useUiRenderAudit";
 import { useAuditBootstrap } from "@/hooks/useAuditBootstrap";
 import { useAuditLogShortcut } from "@/hooks/useAuditLogShortcut";
 import { useEditorAutoSave } from "@/hooks/useEditorAutoSave";
@@ -58,6 +59,7 @@ export function WorkspaceShell() {
 
   useEntityIndexBootstrap();
   useAuditBootstrap();
+  useUiRenderAudit();
   useAuditLogShortcut();
   useSaveShortcut();
   useFsWatcher();

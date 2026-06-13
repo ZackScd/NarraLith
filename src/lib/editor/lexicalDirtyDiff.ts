@@ -122,6 +122,23 @@ function highlightRangeInParagraph(paragraph: ParagraphNode, range: TextRange): 
   }
 }
 
+export function listDirtyDiffRegions(
+  saved: ParsedManuscript,
+): Array<{ paragraphIndex: number; from: number; to: number }> {
+  const savedLines = collectEditableLines(saved);
+  const draftLines = collectLexicalParagraphLines();
+  const rangesByParagraph = computeParagraphAddRangesFromLines(savedLines, draftLines);
+  const regions: Array<{ paragraphIndex: number; from: number; to: number }> = [];
+
+  for (const [paragraphIndex, ranges] of rangesByParagraph.entries()) {
+    for (const range of ranges) {
+      regions.push({ paragraphIndex, from: range.start, to: range.end });
+    }
+  }
+
+  return regions;
+}
+
 export function applyDirtyDiffHighlights(saved: ParsedManuscript): void {
   clearDirtyDiffHighlights();
 

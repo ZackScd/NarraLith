@@ -28,7 +28,7 @@
 |------|----------|-----|--------|
 | **A** | FIX-001…003 | Fixes pequeños | 3 |
 | **B** | FIX-004…007, OBS-001, FIX-012, **FIX-013** | Fixes medianos (editor + UX) + observabilidad | 8 |
-| **C** | FIX-008…009 | Fixes explorador / timeline | 3 |
+| **C** | FIX-008…009, **OBS-002** | Fixes explorador / timeline + registro UI | 4 |
 | **D** | FIX-010…011 | Épica «eliminar no rompe» (primeros escenarios) | 2 |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
 | **F** | MAP-000…012 | Refactor mapas Era III | 13 |
@@ -73,6 +73,8 @@
 | **FIX-009a** | ⬜ | Conectores borde lateral + **chips ancho autoajustado** | Bajo–Medio | [**plan**](plans/Fase%20C/FIX-009a-timeline-connector-edge-anchors.md) · cierra FIX-009 |
 | **FIX-009b** | 🔄 | Hover: enlaces orden escritura (v1: solo **next**, solo `segmentId`) | Medio–Alto | [**plan**](plans/Fase%20C/FIX-009b-timeline-writing-order-links.md) · QA `session-1781321526405-27876` |
 | **FIX-009c** | ⬜ | Hover: **prev + next**, cadena **por archivo** (incl. prosa libre) | Medio | [**plan**](plans/Fase%20C/FIX-009c-timeline-writing-order-hover-neighbors.md) · cierra gap 009b |
+| **FIX-009d** | ✅ | Auditoría pathIndex árbol filtrado manuscript (regresión D→eventoTest) | Bajo | [**auditoría**](plans/Fase%20C/FIX-009d-audit-writing-order-path-index.md) |
+| **OBS-002** | ✅ | Registro **interfaz completa**: catálogo `obs.ui.*` multi-módulo + **3 toggles** (sistema / interfaz / interfaz detallada) · 2 NDJSON UI | Medio–Alto | [**plan**](plans/Fase%20C/OBS-002-ui-render-audit-log.md) · solo `tauri dev` |
 
 ---
 
@@ -170,6 +172,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 11a | FIX-009a | Anclas borde + chips autoajustados |
 | 11b | FIX-009b | Hover enlace orden escritura 🔄 v1 parcial |
 | 11c | FIX-009c | Hover prev+next, todos los chips, cadena por archivo |
+| 11d | FIX-009d | Auditoría pathIndex árbol filtrado ✅ |
+| 11e | OBS-002 | Registro interfaz: 3 toggles (sistema / UI / UI verbose), catálogo completo |
 | 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) ✅ |
 | 13 | FIX-010 | Épica 6.A calendario obsoleto |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
@@ -234,6 +238,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-009 planificado: chip dual archivo+evento, conectores por `segmentId`, filtro panel (`plans/Fase C/FIX-009-timeline-dual-chip-connectors.md`) |
 | 2026-06-11 | FIX-009 v1 implementado; QA `session-1781319870943` → plan FIX-009a (anclas borde) + FIX-009b (hover orden escritura / árbol manuscrito) |
 | 2026-06-11 | FIX-009b v1 en código; QA `session-1781321526405-27876` → FIX-009c (prev+next, prosa libre, cadena por archivo) |
+| 2026-06-11 | FIX-009d: auditoría pathIndex + fix árbol filtrado manuscript; QA `session-1781323873949-29056` |
+| 2026-06-11 | OBS-002 planificado: registro UI multi-módulo + 3 toggles (sistema / interfaz / verbose) · `plans/Fase C/OBS-002-ui-render-audit-log.md` |
 
 ---
 

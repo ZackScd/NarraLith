@@ -32,6 +32,7 @@ import { ActiveEventContextPlugin } from "@/modules/editor/plugins/ActiveEventCo
 import { ClickToFocusPlugin } from "@/modules/editor/plugins/ClickToFocusPlugin";
 
 import { DirtyDiffHighlightPlugin } from "@/modules/editor/plugins/DirtyDiffHighlightPlugin";
+import { EditorRenderAuditPlugin } from "@/modules/editor/plugins/EditorRenderAuditPlugin";
 import { DirtyStatePlugin } from "@/modules/editor/plugins/DirtyStatePlugin";
 
 import { ExtractBlocksPlugin } from "@/modules/editor/plugins/ExtractBlocksPlugin";
@@ -132,6 +133,8 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <DirtyStatePlugin />
 
         <DirtyDiffHighlightPlugin />
+
+        <EditorRenderAuditPlugin />
 
         <ExtractBlocksPlugin />
 

@@ -5,7 +5,6 @@ import type { PlacedTimelineItem } from "@/modules/timeline/timelineModel";
 
 import {
   buildManuscriptPathWritingIndex,
-  buildManuscriptPathWritingIndexFromTreeOnly,
   buildWritingOrderNeighbors,
   compareWritingOrder,
   compareWritingOrderWithinFile,
@@ -41,13 +40,6 @@ describe("parseSegmentIndex", () => {
 });
 
 describe("buildManuscriptPathWritingIndex", () => {
-  const tree: FileTreeNode[] = [
-    dir("Manuscrito", "Manuscrito", [
-      file("Manuscrito/a.md", "a.md"),
-      file("Manuscrito/b.md", "b.md"),
-    ]),
-  ];
-
   it("recorre subcarpetas en pre-order", () => {
     const nestedTree: FileTreeNode[] = [
       dir("Manuscrito", "Manuscrito", [

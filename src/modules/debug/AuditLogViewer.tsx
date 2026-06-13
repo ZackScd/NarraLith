@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { audit } from "@/lib/audit";
 import { AUDIT_LEVEL_RANK } from "@/lib/audit/defaults";
 import type { AuditEntry, AuditLevel } from "@/lib/audit/types";
+import { renderAudit } from "@/lib/render-audit";
 import { cn } from "@/lib/utils";
-import { useAuditStore } from "@/stores/useAuditStore";
+import { useAuditStore, type AuditViewerTab } from "@/stores/useAuditStore";
 
 const LEVELS: AuditLevel[] = ["trace", "debug", "info", "warn", "error"];
 
@@ -88,18 +89,55 @@ function AuditEntryRow({ entry }: { entry: AuditEntry }) {
   );
 }
 
+function useAuditEntries(tab: AuditViewerTab) {
+  return useSyncExternalStore(
+    (listener) => {
+      if (tab === "system") {
+        return audit.subscribe(listener);
+      }
+      if (tab === "ui") {
+        return renderAudit.subscribeStandard(listener);
+      }
+      return renderAudit.subscribeVerbose(listener);
+    },
+    () => {
+      if (tab === "system") {
+        return audit.getSnapshot();
+      }
+      if (tab === "ui") {
+        return renderAudit.getStandardSnapshot();
+      }
+      return renderAudit.getVerboseSnapshot();
+    },
+    () => {
+      if (tab === "system") {
+        return audit.getSnapshot();
+      }
+      if (tab === "ui") {
+        return renderAudit.getStandardSnapshot();
+      }
+      return renderAudit.getVerboseSnapshot();
+    },
+  );
+}
+
 function AuditLogViewerPanel() {
   const { t } = useTranslation("debug");
   const setViewerOpen = useAuditStore((s) => s.setViewerOpen);
-  const enabled = useAuditStore((s) => s.settings?.enabled ?? false);
+  const viewerTab = useAuditStore((s) => s.viewerTab);
+  const setViewerTab = useAuditStore((s) => s.setViewerTab);
+  const settings = useAuditStore((s) => s.settings);
   const [query, setQuery] = useState("");
   const [minLevel, setMinLevel] = useState<AuditLevel>("info");
 
-  const entries = useSyncExternalStore(
-    (listener) => audit.subscribe(listener),
-    () => audit.getSnapshot(),
-    () => audit.getSnapshot(),
-  );
+  const entries = useAuditEntries(viewerTab);
+
+  const channelEnabled =
+    viewerTab === "system"
+      ? (settings?.enabled ?? false)
+      : viewerTab === "ui"
+        ? (settings?.renderLogEnabled ?? false)
+        : (settings?.renderVerboseEnabled ?? false);
 
   const filteredEntries = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -117,6 +155,12 @@ function AuditLogViewerPanel() {
     }
   };
 
+  const tabs: { id: AuditViewerTab; label: string }[] = [
+    { id: "system", label: t("viewerTabSystem") },
+    { id: "ui", label: t("viewerTabUi") },
+    { id: "uiVerbose", label: t("viewerTabUiVerbose") },
+  ];
+
   return (
     <aside
       className="fixed inset-y-0 right-0 z-[60] flex w-full max-w-md flex-col border-l border-border bg-card shadow-xl"
@@ -128,7 +172,7 @@ function AuditLogViewerPanel() {
           <h2 className="text-sm font-semibold">{t("viewLog")}</h2>
           <p className="text-xs text-muted-foreground">
             {t("viewerEntryCount", { count: filteredEntries.length })}
-            {!enabled ? ` · ${t("loggingDisabled")}` : ""}
+            {!channelEnabled ? ` · ${t("loggingDisabled")}` : ""}
           </p>
         </div>
         <button
@@ -140,6 +184,24 @@ function AuditLogViewerPanel() {
           <X className="size-4" />
         </button>
       </header>
+
+      <div className="flex gap-1 border-b border-border px-3 py-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={cn(
+              "rounded px-2 py-1 text-xs",
+              viewerTab === tab.id
+                ? "bg-muted font-medium text-foreground"
+                : "text-muted-foreground hover:bg-muted/60",
+            )}
+            onClick={() => setViewerTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-2 border-b border-border px-3 py-2">
         <Input

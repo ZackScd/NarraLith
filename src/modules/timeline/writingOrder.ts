@@ -114,7 +114,7 @@ function manuscriptChildrenContainer(tree: FileTreeNode[]): FileTreeNode[] {
     children: [],
   };
   tree.push(manuscriptRoot);
-  return manuscriptRoot.children;
+  return manuscriptRoot.children ?? [];
 }
 
 /** Inserta un .md bajo Manuscrito/ creando carpetas virtuales si faltan. */
@@ -149,7 +149,7 @@ function injectManuscriptFilePath(tree: FileTreeNode[], filePath: string): void 
     } else if (!child.children) {
       child.children = [];
     }
-    currentChildren = child.children;
+    currentChildren = child.children!;
   }
 
   if (!findChildNode(currentChildren, normalized)) {

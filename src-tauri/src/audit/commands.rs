@@ -1,7 +1,9 @@
 use tauri::State;
 
 use crate::audit::state::{AuditSettingsPatch, AuditState};
-use crate::audit::types::{AuditConfigResponse, AuditEntry, AuditLogPathResponse};
+use crate::audit::types::{
+    AuditConfigResponse, AuditEntry, AuditLogPathResponse, RenderLogChannel, RenderLogClearTarget,
+};
 use crate::error::AppError;
 
 #[tauri::command]
@@ -23,6 +25,22 @@ pub fn audit_set_enabled(
 }
 
 #[tauri::command]
+pub fn audit_set_render_log_enabled(
+    state: State<'_, AuditState>,
+    enabled: bool,
+) -> Result<AuditConfigResponse, AppError> {
+    state.set_render_log_enabled(enabled)
+}
+
+#[tauri::command]
+pub fn audit_set_render_verbose_enabled(
+    state: State<'_, AuditState>,
+    enabled: bool,
+) -> Result<AuditConfigResponse, AppError> {
+    state.set_render_verbose_enabled(enabled)
+}
+
+#[tauri::command]
 pub fn audit_patch_settings(
     state: State<'_, AuditState>,
     patch: AuditSettingsPatch,
@@ -36,11 +54,28 @@ pub fn audit_clear_logs(state: State<'_, AuditState>) -> Result<AuditConfigRespo
 }
 
 #[tauri::command]
+pub fn audit_clear_render_logs(
+    state: State<'_, AuditState>,
+    target: RenderLogClearTarget,
+) -> Result<AuditConfigResponse, AppError> {
+    state.clear_render_logs(target)
+}
+
+#[tauri::command]
 pub fn audit_append_entry(
     state: State<'_, AuditState>,
     entry: AuditEntry,
 ) -> Result<(), AppError> {
     state.append_entry(entry)
+}
+
+#[tauri::command]
+pub fn audit_append_render_entry(
+    state: State<'_, AuditState>,
+    channel: RenderLogChannel,
+    entry: AuditEntry,
+) -> Result<(), AppError> {
+    state.append_render_entry(channel, entry)
 }
 
 #[tauri::command]

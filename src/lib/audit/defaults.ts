@@ -18,4 +18,12 @@ export const DEFAULT_AUDIT_SETTINGS: AuditDebugSettings = {
   logIpcArgs: false,
   logStorePatches: false,
   maxBufferSize: DEFAULT_MAX_BUFFER_SIZE,
+  renderLogEnabled: false,
+  renderClearLogsOnNextBoot: false,
+  renderMaxBufferSize: 800,
+  renderLevel: "info",
+  renderVerboseEnabled: false,
+  renderVerboseClearLogsOnNextBoot: false,
+  renderVerboseMaxBufferSize: 400,
+  renderVerboseLevel: "debug",
 };

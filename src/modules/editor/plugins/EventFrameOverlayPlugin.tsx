@@ -6,6 +6,8 @@ import {
   type EventFrameRect,
 } from "@/lib/editor/measureEventFrames";
 import { EventFrameOverlayLayer } from "@/modules/editor/components/EventFrameOverlayLayer";
+import { patchEditorRenderAudit } from "@/lib/render-audit/editorRenderAuditBridge";
+import { renderAudit } from "@/lib/render-audit";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useEventFramePendingStore } from "@/stores/useEventFramePendingStore";
 import { useLayoutStore } from "@/stores/useLayoutStore";
@@ -41,7 +43,11 @@ export function EventFrameOverlayPlugin() {
         if (!editor.getRootElement()) {
           return;
         }
-        setFrames(measureEventFrames(editor));
+        const nextFrames = measureEventFrames(editor);
+        setFrames(nextFrames);
+        if (renderAudit.isStandardEnabled() || renderAudit.isVerboseEnabled()) {
+          patchEditorRenderAudit({ eventFrames: nextFrames });
+        }
       });
     });
   }, [editor]);
@@ -60,6 +66,7 @@ export function EventFrameOverlayPlugin() {
     return editor.registerRootListener((rootElement) => {
       if (!rootElement) {
         setFrames([]);
+        patchEditorRenderAudit({ eventFrames: [] });
         return;
       }
 

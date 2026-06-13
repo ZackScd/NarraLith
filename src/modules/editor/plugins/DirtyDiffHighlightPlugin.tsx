@@ -5,8 +5,11 @@ import { LEXICAL_HYDRATE_TAG } from "@/lib/editor/editorSyncGuard";
 import {
   clearDirtyDiffHighlights,
   DIRTY_DIFF_TAG,
+  listDirtyDiffRegions,
   refreshDirtyDiffHighlights,
 } from "@/lib/editor/lexicalDirtyDiff";
+import { patchEditorRenderAudit } from "@/lib/render-audit/editorRenderAuditBridge";
+import { renderAudit } from "@/lib/render-audit";
 import { audit } from "@/lib/audit";
 import { invokeCommand } from "@/lib/ipc";
 import { projectPathsEqual } from "@/lib/pathUtils";
@@ -40,12 +43,20 @@ export function DirtyDiffHighlightPlugin() {
     if (!dirtyDiffVisible) {
       savedRef.current = null;
       editor.update(() => clearDirtyDiffHighlights(), { tag: DIRTY_DIFF_TAG });
+      patchEditorRenderAudit({ dirtyDiffRegions: [] });
       return;
     }
 
     const applyBaseline = (saved: ParsedManuscript) => {
       savedRef.current = saved;
       refreshDirtyDiffHighlights(editor, saved);
+      if (renderAudit.isStandardEnabled() || renderAudit.isVerboseEnabled()) {
+        editor.getEditorState().read(() => {
+          patchEditorRenderAudit({
+            dirtyDiffRegions: listDirtyDiffRegions(saved).slice(0, 40),
+          });
+        });
+      }
       audit.info(
         "editor",
         isBaselineRefresh ? "obs.editor.diff.refresh" : "obs.editor.diff.open",

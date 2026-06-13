@@ -32,6 +32,22 @@ pub struct AuditDebugSettings {
     pub log_store_patches: bool,
     #[serde(default = "default_max_buffer_size")]
     pub max_buffer_size: u32,
+    #[serde(default)]
+    pub render_log_enabled: bool,
+    #[serde(default)]
+    pub render_clear_logs_on_next_boot: bool,
+    #[serde(default = "default_render_max_buffer_size")]
+    pub render_max_buffer_size: u32,
+    #[serde(default)]
+    pub render_level: AuditLevel,
+    #[serde(default)]
+    pub render_verbose_enabled: bool,
+    #[serde(default)]
+    pub render_verbose_clear_logs_on_next_boot: bool,
+    #[serde(default = "default_render_verbose_max_buffer_size")]
+    pub render_verbose_max_buffer_size: u32,
+    #[serde(default = "default_render_verbose_level")]
+    pub render_verbose_level: AuditLevel,
 }
 
 fn default_enabled() -> bool {
@@ -40,6 +56,18 @@ fn default_enabled() -> bool {
 
 fn default_max_buffer_size() -> u32 {
     2_000
+}
+
+fn default_render_max_buffer_size() -> u32 {
+    800
+}
+
+fn default_render_verbose_max_buffer_size() -> u32 {
+    400
+}
+
+fn default_render_verbose_level() -> AuditLevel {
+    AuditLevel::Debug
 }
 
 impl Default for AuditDebugSettings {
@@ -51,6 +79,14 @@ impl Default for AuditDebugSettings {
             log_ipc_args: false,
             log_store_patches: false,
             max_buffer_size: default_max_buffer_size(),
+            render_log_enabled: false,
+            render_clear_logs_on_next_boot: false,
+            render_max_buffer_size: default_render_max_buffer_size(),
+            render_level: AuditLevel::Info,
+            render_verbose_enabled: false,
+            render_verbose_clear_logs_on_next_boot: false,
+            render_verbose_max_buffer_size: default_render_verbose_max_buffer_size(),
+            render_verbose_level: default_render_verbose_level(),
         }
     }
 }
@@ -79,6 +115,9 @@ pub struct AuditEntry {
 pub struct AuditConfigResponse {
     pub settings: AuditDebugSettings,
     pub session_log_path: Option<String>,
+    pub render_standard_log_path: Option<String>,
+    pub render_verbose_log_path: Option<String>,
+    pub boot_id: String,
     pub repo_debug_root: String,
 }
 
@@ -86,5 +125,23 @@ pub struct AuditConfigResponse {
 #[serde(rename_all = "camelCase")]
 pub struct AuditLogPathResponse {
     pub session_log_path: Option<String>,
+    pub render_standard_log_path: Option<String>,
+    pub render_verbose_log_path: Option<String>,
     pub logs_dir: String,
+    pub render_logs_dir: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RenderLogChannel {
+    Standard,
+    Verbose,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RenderLogClearTarget {
+    Standard,
+    Verbose,
+    All,
 }

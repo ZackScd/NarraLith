@@ -9,6 +9,7 @@ import {
   toAbsoluteDay,
 } from "@/lib/calendar";
 import { useProjectTimeline } from "@/hooks/useProjectTimeline";
+import { useTimelineRenderAudit } from "@/lib/render-audit/hooks/useTimelineRenderAudit";
 import { resolveInitialCalendarYear } from "@/lib/calendar/lastProjectTime";
 import { timelineMarkerId } from "@/lib/calendar/timeMarks";
 import { formatTimelineRangeLabel } from "@/lib/timeline/formatRangeLabel";
@@ -939,6 +940,15 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
     placedById,
   ]);
 
+  const timelineFiltersSnapshot = useMemo(
+    () => ({
+      ...filters,
+      showEventConnectors,
+      showWritingOrderHoverLink,
+    }),
+    [filters, showEventConnectors, showWritingOrderHoverLink],
+  );
+
   const allowHoursLevel = showHours && calendar?.hoursEnabled !== false;
   const collapseYearZoom = collapseDeadTime && collapseLevels.years;
   const allowedTopYearZoom = layout
@@ -956,6 +966,20 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
   const effectiveZoomLevel = effectiveOrder.includes(zoomLevel)
     ? zoomLevel
     : effectiveOrder[0]!;
+
+  useTimelineRenderAudit({
+    zoomLevel: effectiveZoomLevel,
+    rangeLabel: layout?.rangeLabel ?? null,
+    placed: placedForLinks,
+    eventLinks,
+    writingOrderHoverLinks,
+    writingOrderNeighbors,
+    hoveredTimelineMarkerId,
+    manuscriptPathIndex,
+    showEventConnectors,
+    showWritingOrderHoverLink,
+    filtersSnapshot: timelineFiltersSnapshot,
+  });
 
   useEffect(() => {
     if (effectiveOrder.includes(zoomLevel)) return;

@@ -9,7 +9,8 @@ export type AuditDomain =
   | "explorer"
   | "watcher"
   | "entity"
-  | "system";
+  | "system"
+  | "ui";
 
 export interface AuditEntry {
   id: string;
@@ -31,6 +32,14 @@ export interface AuditDebugSettings {
   logIpcArgs: boolean;
   logStorePatches: boolean;
   maxBufferSize: number;
+  renderLogEnabled: boolean;
+  renderClearLogsOnNextBoot: boolean;
+  renderMaxBufferSize: number;
+  renderLevel: AuditLevel;
+  renderVerboseEnabled: boolean;
+  renderVerboseClearLogsOnNextBoot: boolean;
+  renderVerboseMaxBufferSize: number;
+  renderVerboseLevel: AuditLevel;
 }
 
 export interface AuditApi {
