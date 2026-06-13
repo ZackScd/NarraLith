@@ -16,6 +16,7 @@ import {
 import { listSiblingPaths } from "@/lib/explorer/treeNav";
 import type { ExplorerLayout, ExplorerViewMode, FileTreeNode } from "@/lib/types/fs";
 import type { ExplorerDialogState } from "@/modules/explorer/ExplorerDialogs";
+import { resolveNewFileName, resolveRenameDiskName, trimCreateName } from "@/lib/explorer/newFileName";
 
 const LAYOUT_STORAGE_KEY = "narralith-explorer-layout";
 
@@ -47,6 +48,30 @@ function parentDir(path: string): string {
   return idx === -1 ? "" : path.slice(0, idx);
 }
 
+export type InlineCreateKind = "file" | "folder";
+
+export type InlineCreateState =
+  | { kind: InlineCreateKind; parentPath: string }
+  | null;
+
+function expandPathAndAncestors(path: string): Record<string, boolean> {
+  if (!path) {
+    return {};
+  }
+  const expanded: Record<string, boolean> = {};
+  const parts = path.split("/").filter(Boolean);
+  let acc = "";
+  for (const part of parts) {
+    acc = acc ? `${acc}/${part}` : part;
+    expanded[acc] = true;
+  }
+  return expanded;
+}
+
+export type InlineRenameState =
+  | { path: string; isDir: boolean; fileName: string }
+  | null;
+
 interface FileTreeState {
   tree: FileTreeNode[];
   explorerOrder: ExplorerOrderMap;
@@ -62,6 +87,8 @@ interface FileTreeState {
   searchQuery: string;
   searchOpen: boolean;
   explorerDialog: ExplorerDialogState;
+  inlineCreate: InlineCreateState;
+  inlineRename: InlineRenameState;
 
   setViewMode: (mode: ExplorerViewMode) => void;
   setExplorerLayout: (layout: ExplorerLayout) => void;
@@ -84,6 +111,12 @@ interface FileTreeState {
   closeSearch: () => void;
   openExplorerDialog: (dialog: ExplorerDialogState) => void;
   closeExplorerDialog: () => void;
+  startInlineCreate: (kind: InlineCreateKind, parentPath: string) => void;
+  cancelInlineCreate: () => void;
+  commitInlineCreate: (rawName: string) => Promise<void>;
+  startInlineRename: (path: string, isDir: boolean, fileName: string) => void;
+  cancelInlineRename: () => void;
+  commitInlineRename: (rawName: string) => Promise<void>;
   reorderExplorerSibling: (
     parentPath: string,
     sourcePath: string,
@@ -119,6 +152,8 @@ const initialState = {
   searchQuery: "",
   searchOpen: false,
   explorerDialog: { type: "none" } as ExplorerDialogState,
+  inlineCreate: null as InlineCreateState,
+  inlineRename: null as InlineRenameState,
 };
 
 async function persistExplorerOrder(order: ExplorerOrderMap) {
@@ -157,6 +192,134 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       ...(dialog.type === "createEntity" ? { lastErrorKey: null } : {}),
     }),
   closeExplorerDialog: () => set({ explorerDialog: { type: "none" } }),
+
+  startInlineCreate: (kind, parentPath) => {
+    const state = get();
+    if (state.explorerLayout === "cards") {
+      state.setExplorerLayout("tree");
+    }
+    state.closeSearch();
+    const ancestorExpansions = expandPathAndAncestors(parentPath);
+    set({
+      inlineCreate: { kind, parentPath },
+      inlineRename: null,
+      lastErrorKey: null,
+      expandedPaths: { ...state.expandedPaths, ...ancestorExpansions },
+    });
+    audit.info("explorer", "obs.explorer.inline_create.start", { kind, parentPath });
+  },
+
+  cancelInlineCreate: () => {
+    const { inlineCreate } = get();
+    if (inlineCreate) {
+      audit.info("explorer", "obs.explorer.inline_create.cancel", {
+        kind: inlineCreate.kind,
+        parentPath: inlineCreate.parentPath,
+      });
+    }
+    set({ inlineCreate: null });
+  },
+
+  commitInlineCreate: async (rawName) => {
+    const { inlineCreate } = get();
+    if (!inlineCreate) {
+      return;
+    }
+
+    const trimmed = trimCreateName(rawName);
+    if (!trimmed) {
+      get().cancelInlineCreate();
+      return;
+    }
+
+    const diskName =
+      inlineCreate.kind === "file" ? resolveNewFileName(trimmed) : trimmed;
+    if (!diskName) {
+      get().cancelInlineCreate();
+      return;
+    }
+
+    audit.info("explorer", "obs.explorer.inline_create.commit", {
+      kind: inlineCreate.kind,
+      parentPath: inlineCreate.parentPath,
+      diskName,
+    });
+
+    const ok =
+      inlineCreate.kind === "file"
+        ? await get().createFile(inlineCreate.parentPath, diskName)
+        : await get().createFolder(inlineCreate.parentPath, diskName);
+
+    audit.info("explorer", "obs.explorer.create.end", {
+      kind: inlineCreate.kind,
+      parentPath: inlineCreate.parentPath,
+      diskName,
+      ok,
+      ...(ok ? {} : { errorKey: get().lastErrorKey }),
+    });
+
+    if (ok) {
+      set({ inlineCreate: null });
+    }
+  },
+
+  startInlineRename: (path, isDir, fileName) => {
+    const state = get();
+    if (state.explorerLayout === "cards") {
+      state.setExplorerLayout("tree");
+    }
+    state.closeSearch();
+    const ancestorExpansions = expandPathAndAncestors(path);
+    set({
+      inlineRename: { path, isDir, fileName },
+      inlineCreate: null,
+      lastErrorKey: null,
+      selectedPath: path,
+      expandedPaths: { ...state.expandedPaths, ...ancestorExpansions },
+    });
+    audit.info("explorer", "obs.explorer.inline_rename.start", { path, isDir });
+  },
+
+  cancelInlineRename: () => {
+    const { inlineRename } = get();
+    if (inlineRename) {
+      audit.info("explorer", "obs.explorer.inline_rename.cancel", {
+        path: inlineRename.path,
+      });
+    }
+    set({ inlineRename: null });
+  },
+
+  commitInlineRename: async (rawName) => {
+    const { inlineRename } = get();
+    if (!inlineRename) {
+      return;
+    }
+
+    const diskName = resolveRenameDiskName(rawName, inlineRename.isDir);
+    if (!diskName || diskName === inlineRename.fileName) {
+      get().cancelInlineRename();
+      return;
+    }
+
+    audit.info("explorer", "obs.explorer.inline_rename.commit", {
+      path: inlineRename.path,
+      diskName,
+    });
+
+    const ok = await get().renamePath(inlineRename.path, diskName);
+
+    audit.info("explorer", "obs.explorer.rename.end", {
+      path: inlineRename.path,
+      diskName,
+      ok,
+      ...(ok ? {} : { errorKey: get().lastErrorKey }),
+    });
+
+    if (ok) {
+      set({ inlineRename: null });
+    }
+  },
 
   setExplorerLayout: (layout) => {
     localStorage.setItem(LAYOUT_STORAGE_KEY, layout);
@@ -456,6 +619,8 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       ...initialState,
       explorerLayout: loadExplorerLayout(),
       expandedPaths: {},
+      inlineCreate: null,
+      inlineRename: null,
     }),
 }));
 

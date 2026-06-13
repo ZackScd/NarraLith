@@ -10,7 +10,7 @@ Documento de **planificación** (jun 2026). Detalle por fix.
 | # | Tarea | Tipo | Esfuerzo | Estado |
 |---|-------|------|----------|--------|
 | 1 | Deshabilitar cuadro «Información guardada» del navegador | UI / plataforma | Bajo | ✅ |
-| 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | Pendiente · [FIX-008](plans/Fase%20C/FIX-008-explorer-inline-create.md) |
+| 2 | Crear archivo/carpeta inline en el explorador (estilo VS Code) | UX explorador | Medio | ✅ · [FIX-008](plans/Fase%20C/FIX-008-explorer-inline-create.md) |
 | 3 | Timeline: chip doble (archivo + evento) y conectores por evento | UX timeline | Medio–Alto | Pendiente |
 | 4 | Quitar pestaña/panel «Referencias» del lateral del manuscrito | UX editor | Bajo | ✅ |
 | 5 | Botón carpeta: abrir carpeta raíz del proyecto en el SO sin diálogo | UX explorador | Bajo | ✅ |
@@ -315,9 +315,11 @@ No queda modal para crear archivo/carpeta; la creación inline replica el flujo 
 
 ### Notas
 
-- **Renombrar** sigue en modal por ahora; el usuario no pidió inline rename (se puede abordar en tarea futura).
+- **Renombrar** inline en FIX-008b (mismo patrón que create); ya no modal.
 - **`createEntity`** no cambia.
-- **QA jun 2026:** recorrido modal actual (`session-1781315188472-9108`) confirma doble refresh al crear archivo (D3) y descubre bug al renombrar sin `.md` con pestaña abierta → **FIX-008b** en [plan FIX-008 §2.5.5](plans/Fase%20C/FIX-008-explorer-inline-create.md) (fuera alcance cierre inline create).
+- **QA jun 2026:** recorrido modal actual (`session-1781315188472-9108`) confirma doble refresh al crear archivo (D3) y descubre bug al renombrar sin `.md` con pestaña abierta → **FIX-008b** en [plan FIX-008b](plans/Fase%20C/FIX-008b-rename-extension.md).
+- **FIX-008 ✅** inline create QA `session-1781317457105-5412`.
+- **FIX-008b ✅** rename inline + regla `.md` QA `session-1781318644915-6724`; create inline sin regresión (confirmado manual).
 
 ---
 

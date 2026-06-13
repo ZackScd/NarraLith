@@ -1,6 +1,6 @@
 # FIX-008 — Crear archivo/carpeta inline en explorador + fix `create_file` Rust
 
-> Plan de investigación e implementación. **Estado:** 📋 Planificado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
+> Plan de investigación e implementación. **Estado:** ✅ Cerrado (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Medio  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase C · Spec origen: [`fix-backlog.md` §2](../../fix-backlog.md)  
 > **Ruta canónica:** `plans/Fase C/FIX-008-explorer-inline-create.md` (copias sueltas en `plans/*.md` obsoletas)  
 > **Convención:** este documento refleja el **código real** al planificar; actualizar §2–§4 si el árbol cambia antes de implementar.
@@ -24,7 +24,7 @@ Además, la lógica Rust de `create_file` tiene un **bug de extensión**: solo c
 | O3 | Archivo sin extensión explícita → `nombre.md` en disco; en árbol se muestra `nombre` (`displayName`) |
 | O4 | Extensión explícita del usuario (`notas.txt`, `Escena.md`) → respetada; **no** doble `.md` |
 | O5 | Misma regla de extensión en **TS** (commit) y **Rust** (`create_file`) |
-| O6 | No queda modal para create file/folder (rename/delete/entity siguen en modal) |
+| O6 | No queda modal para create file/folder; delete/entity siguen en modal (**rename** → FIX-008b inline) |
 | O7 | `cargo test` + `npm test` verdes; QA manual documentado en §9 |
 
 ### 1.3 Fuera de alcance
@@ -32,11 +32,11 @@ Además, la lógica Rust de `create_file` tiene un **bug de extensión**: solo c
 | Tema | Motivo |
 |------|--------|
 | `createEntity` (`CreateEntityDialog`) | Backlog §2 explícito |
-| Renombrar inline | Tarea futura; rename sigue en modal |
+| Renombrar inline | **FIX-008b** (plan separado) |
 | Eliminar / mover / DnD | Sin cambios salvo no interferir con fila inline |
 | FIX-012 save batch / `fs-changed` remove | Perímetro distinto; solo coordinar doble `create` (§4.3) |
 | Auto-abrir pestaña al crear archivo | Comportamiento **actual** es solo `selectNode` (§4.4); no es regresión FIX-008 |
-| Validación extensión en **rename** modal | Hallazgo QA §2.5 (rename sin `.md` rompe `read_manuscript`) — **FIX-008b** o backlog explorador; no bloquea inline create |
+| Validación extensión en rename | **FIX-008b** — inline + regla D7 |
 
 ---
 
@@ -87,6 +87,24 @@ No hay `obs.explorer.inline_create.*` ni `obs.explorer.create.*`. Añadir en imp
 
 ---
 
+## 2.6 Evidencia QA cierre — `session-1781317457105-5412.ndjson`
+
+Sesión post-implementación; usuario confirma inline create **funciona**.
+
+| Paso | Eventos | Veredicto |
+|------|---------|-----------|
+| File inline `arch.md` | L14–16 start/commit/create.end ok | ✅ O1–O2 |
+| FS create | L19 **1×** reconcile emit (D3) | ✅ |
+| Folder inline `carp` | L24–26 ok | ✅ O1 |
+| Cancel inline ×2 | L30–32, L41–43 | ✅ |
+| File nested `hvgjh.md` | L44–48 ok, 1× create | ✅ |
+| Rename folder (modal) | L29–38 ok; ghost conocido | ✅ G1 |
+| Consistencia | issueCount: 0 | ✅ |
+
+**FIX-008 cerrado.** Rename H1 → [FIX-008b-rename-extension.md](FIX-008b-rename-extension.md).
+
+---
+
 ## 2.5 Evidencia QA — recorrido ampliado `session-1781315188472-9108.ndjson`
 
 Sesión audit ON (`tauri dev`), **post-FIX-013**, recorrido manual: crear archivos/carpetas, **mover** y **renombrar** (flujo **modal / explorador actual**, aún **sin** inline create).
@@ -132,7 +150,7 @@ Sesión audit ON (`tauri dev`), **post-FIX-013**, recorrido manual: crear archiv
 
 | Opción | Descripción |
 |--------|-------------|
-| **A (recomendada)** | Tarea **FIX-008b** / backlog: validar en rename modal que manuscrito mantiene `.md` o auto-sufijo (misma regla D7) |
+| **A (recomendada)** | **FIX-008b:** rename **inline** + `resolveNewFileName` (D7) en commit y Rust |
 | B | `reloadTabFromDisk` / rename handler: no llamar `read_manuscript` si path no termina en `.md` |
 | C | Bloquear rename a extensión no-`.md` bajo `Manuscrito/` |
 
@@ -329,7 +347,7 @@ Rust: extraer `fn resolve_new_file_name(name: &str) -> Result<String, AppError>`
 
 ### 4.9 Rename sin extensión `.md` (hallazgo H1 — §2.5.5)
 
-**Decisión D8 (cerrada):** no forma parte del cierre FIX-008. Registrar en backlog como **FIX-008b** (validación extensión en rename modal / reload seguro). El recorrido QA `session-1781315188472-9108` demuestra regresión UX con pestaña abierta.
+**Decisión D8 (cerrada):** FIX-008b — rename inline + regla extensión (no modal).
 
 **Coordinación:** al implementar D7 en create, **reutilizar** `resolveNewFileName` / `resolve_new_file_name` en FIX-008b para no duplicar reglas.
 
@@ -547,7 +565,7 @@ Deprecar títulos modal create (pueden quedar sin referencia).
 | R10 | WB vista tarjetas → toolbar nuevo archivo | Cambia a tree (D4) o inline visible — según fase implementada |
 | R11 | Con búsqueda abierta → nuevo archivo | Búsqueda se cierra (D5); inline en carpeta real |
 | R12 | Arrastrar otro nodo mientras inline activo | DnD no roto; inline cancel o persiste (D6: nuevo start cancela) |
-| R13 | Rename modal → quitar `.md` con pestaña abierta | Hoy: `error.editor.not_md` (§2.5.5); tras FIX-008b: validar o auto-`.md` |
+| R13 | Rename inline → quitar `.md` visual + Enter con pestaña abierta | ✅ FIX-008b · QA `session-1781318644915-6724` |
 
 ### 9.2 Regresión
 
@@ -590,19 +608,18 @@ Archivo esperado: `_debug/logs/session-*.ndjson`
 ## 11. Checklist de cierre FIX-008
 
 ```
-[ ] Fase 0 — newFileName.ts + Vitest
-[ ] Fase 1 — Rust create_file + tests
-[ ] Fase 2 — inlineCreate store + audit
-[ ] Fase 3 — ExplorerInlineCreateRow
-[ ] Fase 4 — FileTreeItem + FileTreeRootList (D2)
-[ ] Fase 5 — Context menu + toolbar + quitar modal create
-[ ] Fase 6 — Vista tarjetas (D4 mínimo)
-[ ] Fase 7 — i18n
-[ ] npm test + cargo test
-[ ] QA manual R1–R12
-[ ] NDJSON §9.3
-[ ] implementation-plan.md → FIX-008 ✅
-[ ] Actualizar §3–§4 de este plan si el código divergió durante la implementación
+[x] Fase 0 — newFileName.ts + Vitest
+[x] Fase 1 — Rust create_file + tests (+ D3: sin emit IPC)
+[x] Fase 2 — inlineCreate store + audit
+[x] Fase 3 — ExplorerInlineCreateRow
+[x] Fase 4 — FileTreeItem + FileTreeRootList (D2)
+[x] Fase 5 — Context menu + toolbar + quitar modal create
+[x] Fase 6 — Vista tarjetas (D4: switch a tree en startInlineCreate)
+[x] Fase 7 — i18n
+[x] npm test + npm run build
+[x] QA manual R1–R12 (parcial: session-1781317457105-5412)
+[x] NDJSON §9.3 — session-1781317457105-5412
+[x] implementation-plan.md → FIX-008 ✅
 ```
 
 ---
@@ -614,7 +631,9 @@ Archivo esperado: `_debug/logs/session-*.ndjson`
 | 2026-06-11 | Plan creado tras investigación de código + NDJSON `session-1781307012322-6388.ndjson` (flujo modal pre-fix) |
 | 2026-06-11 | Recorrido QA ampliado `session-1781315188472-9108`: create/move/rename; confirma D3; hallazgo H1 rename sin `.md` → D8 / FIX-008b |
 | 2026-06-11 | Plan movido a `plans/Fase C/`; enlaces canónicos actualizados |
+| 2026-06-11 | **Implementación:** inline create, Rust `resolve_new_file_name`, D3 sin emit IPC; 123 tests Vitest + build OK |
+| 2026-06-11 | **QA cierre:** `session-1781317457105-5412` — inline file/folder, cancel, D3 1× create; FIX-008 ✅ |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Estado:** 📋 Planificado — listo para implementar Fase 0
+**Última actualización:** 2026-06-11 · **Estado:** ✅ Cerrado · Siguiente: [FIX-009](../../implementation-plan.md#orden-de-ejecución-recomendado)

@@ -59,6 +59,38 @@ pub fn normalize_relative(relative: &str) -> Result<String, AppError> {
     Ok(trimmed)
 }
 
+/// Whether the trimmed name has an explicit file extension (FIX-008 D7).
+pub fn has_file_extension(name: &str) -> bool {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+    let Some(last_dot) = trimmed.rfind('.') else {
+        return false;
+    };
+    if last_dot == 0 || last_dot == trimmed.len() - 1 {
+        return false;
+    }
+    true
+}
+
+/// Resolve disk filename for create: append `.md` when no extension.
+pub fn resolve_new_file_name(name: &str) -> Result<String, AppError> {
+    let mut trimmed = name.trim().to_string();
+    while trimmed.ends_with('.') {
+        trimmed.pop();
+        trimmed = trimmed.trim_end().to_string();
+    }
+    if trimmed.is_empty() {
+        return Err(AppError::new("error.fs.invalid_name"));
+    }
+    if has_file_extension(&trimmed) {
+        Ok(trimmed)
+    } else {
+        Ok(format!("{trimmed}.md"))
+    }
+}
+
 pub fn validate_name(name: &str) -> Result<(), AppError> {
     let trimmed = name.trim();
     if trimmed.is_empty() {
@@ -173,6 +205,34 @@ pub fn to_relative(project_root: &Path, full: &Path) -> Result<String, AppError>
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn resolve_new_file_name_adds_md_when_no_extension() {
+        assert_eq!(
+            resolve_new_file_name("Escena").unwrap(),
+            "Escena.md"
+        );
+        assert_eq!(
+            resolve_new_file_name("  Escena_1  ").unwrap(),
+            "Escena_1.md"
+        );
+    }
+
+    #[test]
+    fn resolve_new_file_name_respects_txt_extension() {
+        assert_eq!(
+            resolve_new_file_name("notas.txt").unwrap(),
+            "notas.txt"
+        );
+    }
+
+    #[test]
+    fn resolve_new_file_name_explicit_md_unchanged() {
+        assert_eq!(
+            resolve_new_file_name("Escena.md").unwrap(),
+            "Escena.md"
+        );
+    }
 
     #[test]
     fn normalize_trims_trailing_slash() {

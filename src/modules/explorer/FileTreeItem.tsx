@@ -16,6 +16,8 @@ import {
   isInsertBefore,
   isManuscriptDropIntoFolder,
 } from "@/modules/explorer/ExplorerDropGuide";
+import { ExplorerInlineCreateRow } from "@/modules/explorer/ExplorerInlineCreateRow";
+import { ExplorerInlineRenameRow } from "@/modules/explorer/ExplorerInlineRenameRow";
 import { ExplorerListEndDrop } from "@/modules/explorer/ExplorerListEndDrop";
 import {
   manuscriptContentPaddingLeft,
@@ -52,6 +54,8 @@ export function FileTreeItem({
   const toggleExpanded = useFileTreeStore((s) => s.toggleExpanded);
   const selectNode = useFileTreeStore((s) => s.selectNode);
   const viewMode = useFileTreeStore((s) => s.viewMode);
+  const inlineCreate = useFileTreeStore((s) => s.inlineCreate);
+  const inlineRename = useFileTreeStore((s) => s.inlineRename);
   const requestOpenDocument = useEditorStore((s) => s.requestOpenDocument);
   const activeFilePath = useEditorStore((s) => s.activeFilePath);
   const activeTabKind = useEditorStore((s) => s.activeTabKind);
@@ -60,6 +64,15 @@ export function FileTreeItem({
   const isExpanded = expandedPaths[node.path] ?? depth < 2;
   const isSelected = selectedPath === node.path;
   const hasChildren = node.isDir && (node.children?.length ?? 0) > 0;
+  const showInlineHere =
+    node.isDir &&
+    inlineCreate != null &&
+    inlineCreate.parentPath === node.path;
+  const showChildrenBlock =
+    node.isDir && isExpanded && (hasChildren || showInlineHere);
+  const isRenaming = inlineRename != null && inlineRename.path === node.path;
+  const showFolderChevron =
+    node.isDir && (isManuscript || hasChildren || showInlineHere || isRenaming);
   const isManuscriptPath = (path: string) =>
     path.replace(/\\/g, "/").toLowerCase().startsWith("manuscrito/");
 
@@ -90,6 +103,7 @@ export function FileTreeItem({
   } = useDraggable({
     id: node.path,
     data: { isDir: node.isDir, parentPath },
+    disabled: isRenaming,
   });
 
   const { setNodeRef: setDropRef } = useDroppable({
@@ -111,7 +125,18 @@ export function FileTreeItem({
     onContextMenu(node, e);
   }
 
-  const rowButton = (
+  const rowButton = isRenaming && inlineRename ? (
+    <ExplorerInlineRenameRow
+      path={inlineRename.path}
+      isDir={inlineRename.isDir}
+      fileName={inlineRename.fileName}
+      depth={depth}
+      compact={isManuscript}
+      embedded={isManuscript}
+      showChevron={showFolderChevron}
+      isExpanded={isExpanded}
+    />
+  ) : (
     <button
       ref={setDragRef}
       type="button"
@@ -134,7 +159,7 @@ export function FileTreeItem({
       }}
     >
       {node.isDir ? (
-        isManuscript || hasChildren ? (
+        showFolderChevron ? (
           isExpanded ? (
             <ChevronDown className={chevronClass} />
           ) : (
@@ -197,7 +222,7 @@ export function FileTreeItem({
 
         <ExplorerInsertGuide active={showLineAfter} depth={depth} compact />
 
-        {node.isDir && isExpanded && hasChildren ? (
+        {showChildrenBlock ? (
           <>
             <div className="relative">
               <div
@@ -207,7 +232,7 @@ export function FileTreeItem({
                 }}
                 aria-hidden
               />
-              {node.children!.map((child) => (
+              {node.children?.map((child) => (
                 <FileTreeItem
                   key={child.path}
                   node={child}
@@ -217,6 +242,14 @@ export function FileTreeItem({
                   onContextMenu={onContextMenu}
                 />
               ))}
+              {showInlineHere && inlineCreate ? (
+                <ExplorerInlineCreateRow
+                  kind={inlineCreate.kind}
+                  parentPath={node.path}
+                  depth={depth + 1}
+                  compact
+                />
+              ) : null}
             </div>
             <ExplorerListEndDrop
               id={EXPLORER_DND.end(node.path)}
@@ -249,9 +282,9 @@ export function FileTreeItem({
 
       <ExplorerInsertGuide active={showLineAfter} depth={depth} />
 
-      {node.isDir && isExpanded && hasChildren ? (
+      {showChildrenBlock ? (
         <div className="ml-[9px]">
-          {node.children!.map((child) => (
+          {node.children?.map((child) => (
             <FileTreeItem
               key={child.path}
               node={child}
@@ -261,6 +294,13 @@ export function FileTreeItem({
               onContextMenu={onContextMenu}
             />
           ))}
+          {showInlineHere && inlineCreate ? (
+            <ExplorerInlineCreateRow
+              kind={inlineCreate.kind}
+              parentPath={node.path}
+              depth={depth + 1}
+            />
+          ) : null}
           <ExplorerListEndDrop
             id={EXPLORER_DND.end(node.path)}
             parentPath={node.path}
@@ -288,6 +328,9 @@ export function FileTreeRootList({
 }) {
   const isManuscriptRoot = parentPath === MANUSCRIPT_ROOT;
   const showEndDrop = isManuscriptRoot || nodes.length > 0;
+  const inlineCreate = useFileTreeStore((s) => s.inlineCreate);
+  const showInlineAtRoot =
+    inlineCreate != null && inlineCreate.parentPath === parentPath;
 
   return (
     <div className={cn(isManuscriptRoot && "flex min-h-0 flex-1 flex-col")}>
@@ -301,6 +344,14 @@ export function FileTreeRootList({
           onContextMenu={onContextMenu}
         />
       ))}
+      {showInlineAtRoot && inlineCreate ? (
+        <ExplorerInlineCreateRow
+          kind={inlineCreate.kind}
+          parentPath={parentPath}
+          depth={0}
+          compact={isManuscriptRoot}
+        />
+      ) : null}
       {showEndDrop ? (
         <ExplorerListEndDrop
           id={EXPLORER_DND.end(parentPath)}

@@ -32,6 +32,14 @@
     "delete": "Eliminar",
     "moveHere": "Soltar aquí para mover"
   },
+  "inlineCreate": {
+    "file": "Nombre del nuevo archivo",
+    "folder": "Nombre de la nueva carpeta"
+  },
+  "inlineRename": {
+    "file": "Nuevo nombre del archivo",
+    "folder": "Nuevo nombre de la carpeta"
+  },
   "createFile": {
     "title": "Nuevo archivo",
     "nameLabel": "Nombre del archivo",

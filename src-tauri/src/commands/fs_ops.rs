@@ -53,14 +53,11 @@ pub fn create_folder(
 
 #[tauri::command]
 pub fn create_file(
-    app: AppHandle,
     state: State<'_, ProjectState>,
     parent_path: String,
     name: String,
 ) -> Result<String, AppError> {
-    let new_path = state.with_db(|db, root| crud::create_file(db, root, parent_path, name))?;
-    reconcile::emit_fs_changed(&app, "create", vec![new_path.clone()], None)?;
-    Ok(new_path)
+    state.with_db(|db, root| crud::create_file(db, root, parent_path, name))
 }
 
 #[tauri::command]

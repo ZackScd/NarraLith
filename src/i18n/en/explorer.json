@@ -32,6 +32,14 @@
     "delete": "Delete",
     "moveHere": "Drop here to move"
   },
+  "inlineCreate": {
+    "file": "New file name",
+    "folder": "New folder name"
+  },
+  "inlineRename": {
+    "file": "Rename file",
+    "folder": "Rename folder"
+  },
   "createFile": {
     "title": "New file",
     "nameLabel": "File name",

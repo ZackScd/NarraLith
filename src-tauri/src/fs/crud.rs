@@ -55,15 +55,16 @@ pub fn create_file(
     parent_path: String,
     name: String,
 ) -> Result<String, AppError> {
-    let mut file_name = name.trim().to_string();
-    if !file_name.to_lowercase().ends_with(".md") {
-        file_name.push_str(".md");
-    }
-    paths::validate_name(
-        file_name
+    let file_name = paths::resolve_new_file_name(&name)?;
+    if file_name.to_lowercase().ends_with(".md") {
+        let stem = file_name
             .strip_suffix(".md")
-            .unwrap_or(&file_name),
-    )?;
+            .or_else(|| file_name.strip_suffix(".MD"))
+            .unwrap_or(&file_name);
+        paths::validate_name(stem)?;
+    } else {
+        paths::validate_name(&file_name)?;
+    }
 
     let full = resolve_new_child(project_root, &parent_path, &file_name)?;
     if full.exists() {
@@ -95,13 +96,32 @@ pub fn rename_path(
     path: String,
     new_name: String,
 ) -> Result<PathRenameOutcome, AppError> {
-    paths::validate_name(&new_name)?;
     let from_full = resolve_under_root(project_root, &path)?;
     if !from_full.exists() {
         return Err(AppError::new("error.fs.not_found"));
     }
     if reconcile::should_ignore(&from_full) {
         return Err(AppError::new("error.fs.invalid_path"));
+    }
+
+    let new_name = if from_full.is_file() {
+        paths::resolve_new_file_name(&new_name)?
+    } else {
+        new_name.trim().to_string()
+    };
+
+    if from_full.is_file() {
+        if new_name.to_lowercase().ends_with(".md") {
+            let stem = new_name
+                .strip_suffix(".md")
+                .or_else(|| new_name.strip_suffix(".MD"))
+                .unwrap_or(&new_name);
+            paths::validate_name(stem)?;
+        } else {
+            paths::validate_name(&new_name)?;
+        }
+    } else {
+        paths::validate_name(&new_name)?;
     }
 
     let parent = from_full
@@ -345,6 +365,118 @@ mod tests {
         let doc = parse_file(&root, &rel).unwrap();
         assert_eq!(doc.blocks.len(), 1);
         assert_eq!(doc.blocks[0].metadata["title"], "Nueva Escena");
+    }
+
+    #[test]
+    fn create_file_respects_txt_extension() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let db = ProjectDb::open(&root).unwrap();
+        fs::create_dir_all(root.join("Manuscrito")).unwrap();
+
+        let rel = create_file(
+            &db,
+            &root,
+            "Manuscrito".to_string(),
+            "notas.txt".to_string(),
+        )
+        .unwrap();
+
+        assert_eq!(rel, "Manuscrito/notas.txt");
+        assert!(root.join("Manuscrito/notas.txt").is_file());
+        assert!(!root.join("Manuscrito/notas.txt.md").exists());
+    }
+
+    #[test]
+    fn create_file_adds_md_when_no_extension() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let db = ProjectDb::open(&root).unwrap();
+        fs::create_dir_all(root.join("Manuscrito")).unwrap();
+
+        let rel = create_file(
+            &db,
+            &root,
+            "Manuscrito".to_string(),
+            "Prueba".to_string(),
+        )
+        .unwrap();
+
+        assert_eq!(rel, "Manuscrito/Prueba.md");
+    }
+
+    #[test]
+    fn create_file_explicit_md_unchanged() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let db = ProjectDb::open(&root).unwrap();
+        fs::create_dir_all(root.join("Manuscrito")).unwrap();
+
+        let rel = create_file(
+            &db,
+            &root,
+            "Manuscrito".to_string(),
+            "Escena.md".to_string(),
+        )
+        .unwrap();
+
+        assert_eq!(rel, "Manuscrito/Escena.md");
+    }
+
+    #[test]
+    fn rename_manuscript_file_without_extension_gets_md() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let db = ProjectDb::open(&root).unwrap();
+        fs::create_dir_all(root.join("Manuscrito")).unwrap();
+
+        let rel = create_file(
+            &db,
+            &root,
+            "Manuscrito".to_string(),
+            "Escena.md".to_string(),
+        )
+        .unwrap();
+        let outcome = rename_path(&db, &root, rel, "Capitulo".to_string()).unwrap();
+        assert_eq!(outcome.new_path, "Manuscrito/Capitulo.md");
+        assert!(root.join("Manuscrito/Capitulo.md").is_file());
+    }
+
+    #[test]
+    fn rename_manuscript_file_preserves_txt() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let db = ProjectDb::open(&root).unwrap();
+        fs::create_dir_all(root.join("Manuscrito")).unwrap();
+
+        let rel = create_file(
+            &db,
+            &root,
+            "Manuscrito".to_string(),
+            "notas.txt".to_string(),
+        )
+        .unwrap();
+        let outcome = rename_path(&db, &root, rel, "apuntes.txt".to_string()).unwrap();
+        assert_eq!(outcome.new_path, "Manuscrito/apuntes.txt");
+    }
+
+    #[test]
+    fn rename_folder_unchanged() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path().canonicalize().unwrap();
+        let db = ProjectDb::open(&root).unwrap();
+        fs::create_dir_all(root.join("Manuscrito")).unwrap();
+
+        let rel = create_folder(
+            &db,
+            &root,
+            "Manuscrito".to_string(),
+            "carp".to_string(),
+        )
+        .unwrap();
+        let outcome = rename_path(&db, &root, rel, "carpea".to_string()).unwrap();
+        assert_eq!(outcome.new_path, "Manuscrito/carpea");
+        assert!(root.join("Manuscrito/carpea").is_dir());
     }
 
     #[test]

@@ -24,6 +24,8 @@ export function ExplorerContextMenu({
   const viewMode = useFileTreeStore((s) => s.viewMode);
   const explorerLayout = useFileTreeStore((s) => s.explorerLayout);
   const cardPath = useFileTreeStore((s) => s.cardPath);
+  const startInlineCreate = useFileTreeStore((s) => s.startInlineCreate);
+  const startInlineRename = useFileTreeStore((s) => s.startInlineRename);
   const ref = useRef<HTMLDivElement>(null);
   const showEntityCreate = viewMode === "worldbuilding";
 
@@ -63,7 +65,7 @@ export function ExplorerContextMenu({
       <MenuButton
         label={t("context.newFile")}
         onClick={() => {
-          onOpenDialog({ type: "createFile", parentPath });
+          startInlineCreate("file", parentPath);
           onClose();
         }}
       />
@@ -79,7 +81,7 @@ export function ExplorerContextMenu({
       <MenuButton
         label={t("context.newFolder")}
         onClick={() => {
-          onOpenDialog({ type: "createFolder", parentPath });
+          startInlineCreate("folder", parentPath);
           onClose();
         }}
       />
@@ -101,11 +103,7 @@ export function ExplorerContextMenu({
           <MenuButton
             label={t("context.rename")}
             onClick={() => {
-              onOpenDialog({
-                type: "rename",
-                path: targetPath,
-                currentName: targetName,
-              });
+              startInlineRename(targetPath, isDir, targetName);
               onClose();
             }}
           />

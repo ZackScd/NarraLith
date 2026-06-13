@@ -173,7 +173,7 @@ export function WorkspaceTopBar() {
   const tree = useFileTreeStore((s) => s.tree);
   const viewMode = useFileTreeStore((s) => s.viewMode);
   const selectedPath = useFileTreeStore((s) => s.selectedPath);
-  const openExplorerDialog = useFileTreeStore((s) => s.openExplorerDialog);
+  const startInlineCreate = useFileTreeStore((s) => s.startInlineCreate);
   const expandedPaths = useFileTreeStore((s) => s.expandedPaths);
   const searchOpen = useFileTreeStore((s) => s.searchOpen);
   const searchQuery = useFileTreeStore((s) => s.searchQuery);
@@ -363,9 +363,7 @@ export function WorkspaceTopBar() {
               className="size-7"
               title={t("toolbar.newFile")}
               aria-label={t("toolbar.newFile")}
-              onClick={() =>
-                openExplorerDialog({ type: "createFile", parentPath: createParentPath })
-              }
+              onClick={() => startInlineCreate("file", createParentPath)}
             >
               <FilePlus className="size-4" />
             </Button>
@@ -376,12 +374,7 @@ export function WorkspaceTopBar() {
               className="size-7"
               title={t("toolbar.newFolder")}
               aria-label={t("toolbar.newFolder")}
-              onClick={() =>
-                openExplorerDialog({
-                  type: "createFolder",
-                  parentPath: createParentPath,
-                })
-              }
+              onClick={() => startInlineCreate("folder", createParentPath)}
             >
               <FolderPlus className="size-4" />
             </Button>

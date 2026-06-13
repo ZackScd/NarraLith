@@ -67,8 +67,8 @@
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-008** | ⬜ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan detallado**](plans/Fase%20C/FIX-008-explorer-inline-create.md) |
-| **FIX-008b** | ⬜ | Rename modal: validar extensión `.md` / reload seguro (hallazgo H1 QA) | Bajo | Derivado de [FIX-008 §2.5.5](plans/Fase%20C/FIX-008-explorer-inline-create.md) · no bloquea FIX-008 |
+| **FIX-008** | ✅ | Crear archivo/carpeta inline en explorador (estilo VS Code) + fix `create_file` Rust | Medio | [`fix-backlog.md` §2](fix-backlog.md) · [**plan**](plans/Fase%20C/FIX-008-explorer-inline-create.md) · QA `session-1781317457105-5412` |
+| **FIX-008b** | ✅ | Renombrar **inline** en explorador + regla extensión `.md` | Medio | [**plan**](plans/Fase%20C/FIX-008b-rename-extension.md) · QA `session-1781318644915-6724` |
 | **FIX-009** | ⬜ | Timeline: chip doble (archivo + evento) y conectores por evento | Medio–Alto | [`fix-backlog.md` §3](fix-backlog.md) |
 
 ---
@@ -162,7 +162,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 8 | FIX-012 | Guardar: pestaña estable, tabs no se cierran, save-all sin switch ✅ |
 | 9 | FIX-007 | Borrador sucio al cerrar app ✅ |
 | 10 | FIX-008 | Explorador inline VS Code |
-| 10b | FIX-008b | Rename: validar extensión `.md` (hallazgo QA) |
+| 10b | FIX-008b | Renombrar inline + extensión `.md` ✅ |
 | 11 | FIX-009 | Timeline chips + conectores |
 | 12 | FIX-013 | Diff disco vs borrador sucio (panel herramientas) ✅ |
 | 13 | FIX-010 | Épica 6.A calendario obsoleto |
@@ -223,6 +223,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-013 ✅ cerrado: diff inline Lexical (`DirtyDiffHighlightPlugin`), refresh al guardar vía `dirtyDiffSavedBaseline`; QA `session-1781310443496-13516` |
 | 2026-06-11 | Planes reorganizados por fase (`plans/Fase A|B|C/`); enlaces canónicos actualizados en esta lista |
 | 2026-06-11 | FIX-008 plan actualizado: QA recorrido `session-1781315188472-9108` (create/move/rename); confirma D3; hallazgo H1 rename sin `.md` → FIX-008b |
+| 2026-06-11 | FIX-008 ✅ cerrado: QA `session-1781317457105-5412`; plan FIX-008b rename extensión redactado |
+| 2026-06-11 | FIX-008b replanteado: rename **inline** (sin modal), mismo estilo que create + regla D7 + Rust |
+| 2026-06-11 | FIX-008b ✅ cerrado: QA `session-1781318644915-6724`; inline rename + regla `.md`; H1 resuelto |
 
 ---
 
