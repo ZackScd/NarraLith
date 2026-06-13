@@ -1,7 +1,7 @@
 # FIX-010i — Diff estructural calendario (pre-guardado)
 
 > **Estado:** 📋 Planificado · **Esfuerzo:** Medio · **Riesgo:** Bajo  
-> **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** [010g](FIX-010g-calendar-baseline.md), `calendarStructuralDiff.ts` ([010a](FIX-010a-classify-red-chips.md)) · **Patrón:** [FIX-013](../Fase%20B/FIX-013-dirty-diff-viewer.md)
+> **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** [010g](FIX-010g-calendar-baseline.md), `calendarStructuralDiff.ts` ([010a](FIX-010a-classify-red-chips.md)), [010h](FIX-010h-calendar-draft-persist.md) ✅ · **Patrón:** [FIX-013](../Fase%20B/FIX-013-dirty-diff-viewer.md)
 
 ---
 
@@ -69,4 +69,4 @@ Enlace opcional «Ver JSON completo» → `DiffViewer` cuando VER-001 operativo.
 
 ---
 
-**Anterior:** [010h](FIX-010h-calendar-draft-persist.md) · **Siguiente:** [010e](FIX-010e-migration-wizard.md)
+**Anterior:** [010h](FIX-010h-calendar-draft-persist.md) ✅ · **Siguiente:** [010e](FIX-010e-migration-wizard.md)

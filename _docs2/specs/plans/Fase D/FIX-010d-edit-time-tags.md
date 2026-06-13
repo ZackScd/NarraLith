@@ -154,7 +154,7 @@ Decorators (`InlineTimeTagNode`, `EventTagBarNode`) deben repintar chip tras mut
 ### Fuera de este plan (no mezclar)
 
 - Diff calendario [010i](FIX-010i-calendar-structural-diff.md)
-- Borrador LS [010h](FIX-010h-calendar-draft-persist.md)
+- Diálogos unsaved calendario [010h](FIX-010h-calendar-draft-persist.md) ✅ cerrado
 - Wizard [010e](FIX-010e-migration-wizard.md)
 
 ---
@@ -224,7 +224,7 @@ Decorators (`InlineTimeTagNode`, `EventTagBarNode`) deben repintar chip tras mut
 
 ### 8.4 Cierre del plan
 
-**Estado:** ✅ Cerrado (jun 2026) · **Siguiente en épica:** [010h](FIX-010h-calendar-draft-persist.md)
+**Estado:** ✅ Cerrado (jun 2026) · **Siguiente en épica:** [010i](FIX-010i-calendar-structural-diff.md)
 
 | Entregable | Estado |
 |------------|--------|
@@ -548,7 +548,7 @@ Incluir captura de `.narralith/calendar-baseline.json` revisionId en informe QA.
 4. **La plantilla por defecto no es el origen**; el desajuste baseline/activo tras restaurar plantilla sí.
 5. **Decisiones P1–P4 cerradas** en §11.10 · glosario cabecera §11.14.
 
-**Siguiente paso (histórico):** ~~implementar §12~~ ✅ · **010d cerrado** → [010h](FIX-010h-calendar-draft-persist.md)
+**Siguiente paso (histórico):** ~~§12~~ ✅ · ~~010h~~ ✅ → [010i](FIX-010i-calendar-structural-diff.md)
 
 ---
 
@@ -814,4 +814,4 @@ Decisión **P5** (jun 2026): la edición estructural del calendario **no debe** 
 
 ---
 
-**Siguiente:** [010h](FIX-010h-calendar-draft-persist.md) · **Estado:** ✅ Cerrado (jun 2026)
+**Siguiente:** [010i](FIX-010i-calendar-structural-diff.md) · **010d / 010h:** ✅ cerrados (jun 2026)

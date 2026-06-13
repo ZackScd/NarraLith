@@ -89,8 +89,8 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 | **FIX-010a** | ✅ | `classifyTimeTag` + chips rojos editor | Medio | [plan](plans/Fase%20D/FIX-010a-classify-red-chips.md) |
 | **FIX-010b** | ✅ | Timeline visible sin mover posición | Medio | [plan](plans/Fase%20D/FIX-010b-timeline-stale-display.md) |
 | **FIX-010c** | ✅ | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
-| **FIX-010d** | 📋 | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
-| **FIX-010h** | 📋 | Borrador calendario localStorage | Bajo–Medio | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
+| **FIX-010d** | ✅ | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
+| **FIX-010h** | ✅ | Borrador calendario en sesión + diálogos unsaved | Bajo | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
 | **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) |
 | **FIX-010e** | 📋 | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · v2 |
 | **VER-001** | ⬜ | Reparar historial Git (snapshots + diff) | Alto | Era IV · complementa 010e |
@@ -188,8 +188,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 13a | FIX-010a | Clasificador + chips rojos ✅ |
 | 13b | FIX-010b | Timeline stale visible ✅ |
 | 13c | FIX-010c | Calendario + mini-timeline ✅ |
-| 13d | FIX-010d | Editar marcas tiempo 📋 |
-| 13h | FIX-010h | Borrador calendario LS 📋 |
+| 13d | FIX-010d | Editar marcas tiempo ✅ |
+| 13h | FIX-010h | Borrador calendario sesión + diálogos unsaved ✅ |
 | 13i | FIX-010i | Diff estructural calendario 📋 |
 | 13e | FIX-010e | Migración + consistencia (v2) 📋 |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
@@ -261,7 +261,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-13 | FIX-010 planificado (6.A): auditoría + plan [`plans/Fase D/FIX-010-calendar-stale-time-chips.md`](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md) |
 | 2026-06-11 | FIX-010g, 010a, 010b ✅ — QA timeline/calendario sesión NDJSON `8852` (calendario mínimo post-reset) |
 | 2026-06-11 | FIX-010c ✅ — QA calendario sesión `2156` (año 15, marcas obsoletas en panel + grid) |
+| 2026-06-11 | FIX-010d ✅ · FIX-010h ✅ cerrado · docs alineados |
 
 ---
 
-**Última actualización:** 2026-06-13
+**Última actualización:** 2026-06-11

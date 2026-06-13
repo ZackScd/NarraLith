@@ -31,7 +31,7 @@ Paridad conceptual con FIX-007:
 |------------|------------|
 | Disco guardado | `.narralith/calendar.json` activo |
 | Baseline reconciliación | `.narralith/calendar-baseline.json` |
-| Borrador crash | [010h](FIX-010h-calendar-draft-persist.md) |
+| Dirty en sesión + diálogos unsaved | [010h](FIX-010h-calendar-draft-persist.md) ✅ cerrado |
 
 ```typescript
 type CalendarBaselineFile = {

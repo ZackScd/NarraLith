@@ -27,7 +27,9 @@ export function CalendarWorkspace() {
   const draft = useCalendarViewStore((s) => s.draft);
   const viewYear = useCalendarViewStore((s) => s.viewYear);
   const expandedMonthIndex = useCalendarViewStore((s) => s.expandedMonthIndex);
-  const initFromConfig = useCalendarViewStore((s) => s.initFromConfig);
+  const initCalendarDraftForProject = useCalendarViewStore(
+    (s) => s.initCalendarDraftForProject,
+  );
   const setViewYear = useCalendarViewStore((s) => s.setViewYear);
   const calendarYearHydratedProjectKey = useCalendarViewStore(
     (s) => s.calendarYearHydratedProjectKey,
@@ -37,9 +39,6 @@ export function CalendarWorkspace() {
   );
   const setCalendarYearHydratedProjectKey = useCalendarViewStore(
     (s) => s.setCalendarYearHydratedProjectKey,
-  );
-  const markCalendarDraftInitialized = useCalendarViewStore(
-    (s) => s.markCalendarDraftInitialized,
   );
   const resetCalendarSession = useCalendarViewStore((s) => s.resetCalendarSession);
   const setDraft = useCalendarViewStore((s) => s.setDraft);
@@ -97,21 +96,19 @@ export function CalendarWorkspace() {
     resetCalendarSession,
   ]);
 
-  /** Carga el borrador una vez por proyecto y sesión (persiste al remontar la vista). */
+  /** Carga el borrador una vez por proyecto y sesión. */
   useEffect(() => {
     if (!config || !activeProject) return;
 
     const projectKey = activeProject.rootPath;
     if (calendarDraftInitializedProjectKey === projectKey) return;
 
-    initFromConfig(config);
-    markCalendarDraftInitialized(projectKey);
+    initCalendarDraftForProject(projectKey, config);
   }, [
     config,
     activeProject,
     calendarDraftInitializedProjectKey,
-    initFromConfig,
-    markCalendarDraftInitialized,
+    initCalendarDraftForProject,
   ]);
 
   /** Año inicial del manuscrito: una vez por proyecto y sesión de app. */

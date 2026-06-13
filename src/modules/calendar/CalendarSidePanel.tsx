@@ -9,7 +9,6 @@ import {
   TimelineFiltersSection,
   WorkspaceRightPanel,
 } from "@/components/workspace-ui";
-import { CalendarDraftDialogs } from "@/modules/calendar/CalendarDraftDialogs";
 import { CalendarEditPanel } from "@/modules/calendar/CalendarEditPanel";
 import { calendarErrorI18nKey } from "@/stores/useCalendarStore";
 import { useCalendarViewStore } from "@/stores/useCalendarViewStore";
@@ -141,8 +140,6 @@ export function CalendarSidePanel({
           />
         </div>
       </WorkspaceRightPanel>
-
-      <CalendarDraftDialogs />
     </>
   );
 }

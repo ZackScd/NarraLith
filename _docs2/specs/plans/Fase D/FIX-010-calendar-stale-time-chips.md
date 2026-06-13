@@ -43,7 +43,7 @@ flowchart LR
   a --> d[010d editar]
   g --> i[010i diff UI]
   i --> e[010e migración]
-  h[010h borrador LS] -.-> i
+  h[010h borrador sesión] -.-> i
   e --> f[010f consistencia]
   ver[VER-001 Git] -.-> e
 ```
@@ -55,7 +55,7 @@ flowchart LR
 | **010b** | [FIX-010b-timeline-stale-display.md](FIX-010b-timeline-stale-display.md) | Timeline visible · `displaySortKey` · SVG rojo | v1 · ✅ |
 | **010c** | [FIX-010c-calendar-entries.md](FIX-010c-calendar-entries.md) | Vista calendario + mini-timeline · recarga post-reset | v1 · ✅ |
 | **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit · §12 reset baseline | v1 · ✅ |
-| **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador calendario en localStorage (FIX-007) | v1 |
+| **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador en sesión + diálogos unsaved | v1 · ✅ cerrado |
 | **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Diff estructural borrador vs disco | v1 |
 | **010e** | [FIX-010e-migration-wizard.md](FIX-010e-migration-wizard.md) | Asistente migración modos A/B/C + vista previa | v2 |
 | **010f** | *(incluido en 010e)* | Panel consistencia fechas · re-ejecutar migración | v2 |
@@ -96,7 +96,7 @@ Auditoría completa (persistencia, stores, OBS): ver commit inicial jun 2026 o s
 - Marcas inválidas/obsoletas **en rojo** en editor, timeline y calendario.
 - Timeline: **misma posición X**; solo estilo destructive.
 - `structure_stale` **persiste tras reinicio** (010g).
-- Borrador calendario recuperado tras crash (010h).
+- Diálogo unsaved al navegar con calendario sucio (010h).
 - Diff estructural pre-guardado (010i).
 - Edición inline + barTag (010d).
 - Tests + build verdes; guardado no borra obsoletos sin acción del usuario.
@@ -116,7 +116,7 @@ Checklists QA por sub-plan; plantilla común:
 | R4b–R4c | Editar chips | 010d |
 | R4d | Editar calendario (quitar mes) → marcas no se desplazan en silencio | 010d §13 · 010e |
 | R8 | Reinicio → stale persiste | 010g |
-| R9 | Borrador calendario | 010h |
+| R9 | Diálogo unsaved calendario (sesión) | 010h |
 | R10 | Toggle diff | 010i |
 
 ---
@@ -145,7 +145,8 @@ Checklists QA por sub-plan; plantilla común:
 | 2026-06-11 | **010d §12** implementado · QA `5836`: baseline alineado tras reset plantilla |
 | 2026-06-11 | **010d §13** · QA `19672`: editar calendario (quitar abril) reposiciona marcas en mayo mismo día · limitación v1 documentada |
 | 2026-06-11 | **010d cerrado** · QA §8 D3 automatizado + build verde |
+| 2026-06-11 | **010h ✅ cerrado** — dirty sesión + diálogos en shell |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010h](FIX-010h-calendar-draft-persist.md) · **Bloqueador producto v2:** [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) → [010i](FIX-010i-calendar-structural-diff.md) + [010e](FIX-010e-migration-wizard.md)
+**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010i](FIX-010i-calendar-structural-diff.md) · **Bloqueador producto v2:** [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) → [010i](FIX-010i-calendar-structural-diff.md) + [010e](FIX-010e-migration-wizard.md)

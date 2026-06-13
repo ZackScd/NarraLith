@@ -26,6 +26,7 @@ import { GraphView } from "@/modules/graph/GraphView";
 import { MapWorkspace } from "@/modules/maps/MapWorkspace";
 import { ConsistencyPanel } from "@/modules/consistency/ConsistencyPanel";
 import { CalendarWorkspace } from "@/modules/calendar/CalendarWorkspace";
+import { CalendarDraftDialogs } from "@/modules/calendar/CalendarDraftDialogs";
 import { TimelineView } from "@/modules/timeline/TimelineView";
 import { TimelineSidePanel } from "@/modules/timeline/TimelineSidePanel";
 import { VersionHistoryPanel } from "@/modules/versions/VersionHistoryPanel";
@@ -140,6 +141,7 @@ export function WorkspaceShell() {
       ) : null}
 
       <UnsavedChangesDialog />
+      <CalendarDraftDialogs />
       <ExternalReloadDialog />
       <SettingsDialog
         open={settingsOpen}

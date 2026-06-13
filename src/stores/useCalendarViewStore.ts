@@ -59,6 +59,8 @@ interface CalendarViewState {
   setExpandedSpecialMonth: (expand: SpecialMonthExpand | null) => void;
   setMonthDeletePending: (index: number | null) => void;
   initFromConfig: (config: CalendarConfig, initialYear?: number) => void;
+  /** Init borrador desde disco una vez por proyecto y sesión (FIX-010h, sin LS). */
+  initCalendarDraftForProject: (projectKey: string, diskConfig: CalendarConfig) => void;
   setDraft: (config: CalendarConfig) => void;
   patchDraft: (patch: Partial<CalendarConfig>) => void;
   isDirty: () => boolean;
@@ -196,6 +198,14 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
       editExpanded: get().editExpanded,
       recurringExpanded: get().recurringExpanded,
     });
+  },
+
+  initCalendarDraftForProject: (projectKey, diskConfig) => {
+    if (get().calendarDraftInitializedProjectKey === projectKey) {
+      return;
+    }
+    get().initFromConfig(diskConfig);
+    get().markCalendarDraftInitialized(projectKey);
   },
 
   setDraft: (draft) => set({ draft }),
