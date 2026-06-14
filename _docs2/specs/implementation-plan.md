@@ -84,16 +84,16 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **FIX-010** | 📋 | **6.A** — Épica calendario obsoleto (**[índice](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md)**) | Alto | Sub-planes **010g→a→b→c→d→h→i→e** · VER-001 |
+| **FIX-010** | ✅ | **6.A** — Épica calendario obsoleto v1 (**[índice](plans/Fase%20D/FIX-010-calendar-stale-time-chips.md)**) | Alto | 010g→a→b→c→d→h→i ✅ · 010e pospuesto v2 |
 | **FIX-010g** | ✅ | Baseline `.narralith/calendar-baseline.json` | Medio | [plan](plans/Fase%20D/FIX-010g-calendar-baseline.md) |
 | **FIX-010a** | ✅ | `classifyTimeTag` + chips rojos editor | Medio | [plan](plans/Fase%20D/FIX-010a-classify-red-chips.md) |
 | **FIX-010b** | ✅ | Timeline visible sin mover posición | Medio | [plan](plans/Fase%20D/FIX-010b-timeline-stale-display.md) |
 | **FIX-010c** | ✅ | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
 | **FIX-010d** | ✅ | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
 | **FIX-010h** | ✅ | Borrador calendario en sesión + diálogos unsaved | Bajo | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
-| **OBS-003** | ✅ | **Registro de acciones** (intent journal) + menú debug unificado | Alto | [**plan**](plans/Fase%20D/OBS-003-action-audit-log.md) · Fases 0–3 cerradas · **siguiente: FIX-010i** |
-| **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) · QA vía OBS-003 |
-| **FIX-010e** | 📋 | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · v2 |
+| **OBS-003** | ✅ | **Registro de acciones** (intent journal) + menú debug unificado | Alto | [**plan**](plans/Fase%20D/OBS-003-action-audit-log.md) · Fases 0–3 cerradas |
+| **FIX-010i** | ✅ | Motor diff + `reconcileBaseline` en save (UI diff cancelada) | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) |
+| **FIX-010e** | ⏸️ | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · **pospuesto v2** |
 | **VER-001** | ⬜ | Reparar historial Git (snapshots + diff) | Alto | Era IV · complementa 010e |
 | **FIX-011** | ⬜ | **6.B** — Evento WB huérfano si se borra `+++event` del manuscrito | Alto (acotado) | [`fix-backlog.md` §6.B](fix-backlog.md) |
 
@@ -191,8 +191,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 13c | FIX-010c | Calendario + mini-timeline ✅ |
 | 13d | FIX-010d | Editar marcas tiempo ✅ |
 | 13h | FIX-010h | Borrador calendario sesión + diálogos unsaved ✅ |
-| 13i | FIX-010i | Diff estructural calendario 📋 |
-| 13e | FIX-010e | Migración + consistencia (v2) 📋 |
+| 13i | FIX-010i | Motor diff + reconcileBaseline en save ✅ (UI diff cancelada) |
+| 13e | FIX-010e | Migración + consistencia (v2) ⏸️ pospuesto |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano |
 | 15 | ERAII-001 | M7 un solo modelo manuscrito |
 | 16 | ERAII-002 | M8 QA manual §7 |
@@ -265,6 +265,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-010d ✅ · FIX-010h ✅ cerrado · docs alineados |
 | 2026-06-11 | **OBS-003** planificado: registro acciones usuario (session + verbose), menú «eliminar todo» / «sesión única» unificados · [`plans/Fase D/OBS-003-action-audit-log.md`](plans/Fase%20D/OBS-003-action-audit-log.md) · prioridad antes FIX-010i |
 | 2026-06-11 | **OBS-003 ✅ cerrado:** Fases 0–3 (código + docs §13 plantilla QA); siguiente FIX-010i |
+| 2026-06-11 | **FIX-010i ✅** motor diff + save · UI diff cancelada · QA `9020` |
+| 2026-06-11 | **FIX-010 v1 ✅ cerrada** · 010e pospuesto v2 |
 
 ---
 

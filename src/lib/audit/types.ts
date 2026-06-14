@@ -11,7 +11,8 @@ export type AuditDomain =
   | "entity"
   | "system"
   | "ui"
-  | "action";
+  | "action"
+  | "calendar";
 
 export interface AuditEntry {
   id: string;

@@ -1,6 +1,6 @@
 # FIX-010i — Diff estructural calendario (pre-guardado)
 
-> **Estado:** 📋 Planificado (auditoría jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Bajo–Medio  
+> **Estado:** ✅ **v1 cerrado (parcial)** — motor diff + save · UI diff **cancelada** (jun 2026) · **Esfuerzo:** Medio · **Riesgo:** Bajo–Medio  
 > **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** [010g](FIX-010g-calendar-baseline.md) ✅, [010a](FIX-010a-classify-red-chips.md) ✅, [010h](FIX-010h-calendar-draft-persist.md) ✅ · **Patrón UI:** [FIX-013](../Fase%20B/FIX-013-dirty-diff-viewer.md) · **Resuelve deuda:** [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672), [010g §4](FIX-010g-calendar-baseline.md)
 
 ---
@@ -9,33 +9,28 @@
 
 ### 0.1 Qué es este plan (en una frase)
 
-Antes de **Guardar** el calendario, el usuario ve **qué cambió de estructura** (meses, días, epoch…) entre el borrador en RAM y el `calendar.json` en disco, y un aviso si eso puede **desplazar marcas de tiempo** — sin wizard ([010e](FIX-010e-migration-wizard.md)). Además, `saveDraft` deja de avanzar baseline en silencio cuando hay diff estructural que afecta marcas.
+Antes de **Guardar** el calendario, el motor calcula diff estructural borrador vs disco y `saveDraft` pasa `reconcileBaseline: false` cuando afecta marcas — sin wizard ([010e](FIX-010e-migration-wizard.md)). **Panel/toggle diff UI:** cancelado (decisión producto); la deuda §13 se cierra por comportamiento de save, no por aviso visual.
 
 ### 0.2 Estado del código vs plan
 
-| Pieza | Plan | Código hoy | Gap |
-|-------|------|------------|-----|
-| `calendarStructuralDiff.ts` | §5 | **No existe** (010a lo difirió aquí) | **Bloqueante implementación** |
-| `CalendarStructuralDiffPanel.tsx` | §5 | No existe | Pendiente |
-| `classifyTimeTag.ts` | Dep 010a | ✅ | Usar para contar marcas afectadas |
-| `useCalendarStore.saveCalendar` | §4 | ✅ `reconcileBaseline` opcional | **No usado** desde `saveDraft` |
-| `useCalendarViewStore.saveDraft` | §4 | Llama `saveCalendar(normalized)` **sin options** | Siempre `reconcileBaseline: true` → bug §13 |
-| `baselineConfig` en RAM | 010g | ✅ cargado en `loadCalendar` | Input para `affectsTimeMarkers` |
-| Toggle diff UI | §3 | Solo FIX-013 en `EditorSidePanel` (`GitCompare`) | Espejar en panel calendario |
-| Tests escenarios §3 / §3.1 010a | §6 | Solo `classifyTimeTag.test.ts` | Faltan casos mes insertado/eliminado en diff |
+| Pieza | Plan | Código | Estado |
+|-------|------|--------|--------|
+| `calendarStructuralDiff.ts` | §5 | ✅ | Implementado |
+| `calendarMonthAlign.ts` | §5 | ✅ | Implementado |
+| `CalendarStructuralDiffPanel.tsx` | §5 | — | **Cancelado** |
+| `classifyTimeTag.ts` | Dep 010a | ✅ | Usado en `countAffectedTimeMarkers` |
+| `useCalendarStore.saveCalendar` | §4 | ✅ `reconcileBaseline` opcional | OK |
+| `useCalendarViewStore.saveDraft` | §4 | ✅ diff + `reconcileBaseline: !affectsTimeMarkers` | OK |
+| `baselineConfig` en RAM | 010g | ✅ | Input para diff |
+| Toggle diff UI | §3 | — | **Cancelado** |
+| Tests escenarios | §6 | ✅ `calendarStructuralDiff.test.ts` (8) | OK |
+| Audit `obs.calendar.save.draft` | §0.6 | ✅ dominio `calendar` | OK |
 
-### 0.3 Deuda que 010i debe cerrar (no opcional)
+### 0.3 Deuda §13 — cerrada (save)
 
-Hoy ([`useCalendarViewStore.saveDraft`](../../../../src/stores/useCalendarViewStore.ts) L249):
+**010i v1 entregó:** `reconcileBaseline: false` cuando `affectsTimeMarkers` (regla [010g §4](FIX-010g-calendar-baseline.md)). QA sesión `9020`: quitar mes → guardar → `reconcileBaseline: false` en action log; marcas pasan a rojo vía 010a, no reposición silenciosa.
 
-```typescript
-const ok = await useCalendarStore.getState().saveCalendar(normalized);
-// → reconcileBaseline: true por defecto
-```
-
-Consecuencia documentada en [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672): quitar Abril → marcas `14.4.*` se **muestran en mayo** con chip **normal** (baseline avanzó junto al activo).
-
-**010i v1 corrige:** diff visible + `reconcileBaseline: false` cuando `affectsTimeMarkers` (regla [010g §4](FIX-010g-calendar-baseline.md)). **No** reescribe marcas (eso es 010e).
+**No entregado (cancelado):** panel diff pre-guardado. **No** reescribe marcas (eso sería [010e](FIX-010e-migration-wizard.md) v2, pospuesto).
 
 ### 0.4 Qué NO es 010i
 
@@ -266,7 +261,9 @@ Nivel audit `"level": "info"` en settings es suficiente para eventos de guardado
 | 2026-06-11 | Plan inicial |
 | 2026-06-11 | **Auditoría:** `calendarStructuralDiff` inexistente; `saveDraft` siempre reconcilia; UI espejo FIX-013; §13 = motivación principal |
 | 2026-06-11 | **§8 alineado OBS-003 ✅:** QA mínimo con toggle ④ + `action-session-*`; ① opcional para `reconcileBaseline` post-010i |
+| 2026-06-11 | **Implementado:** motor diff, tests, `saveDraft` + audit · **UI diff cancelada** |
+| 2026-06-11 | **✅ v1 cerrado** · QA `9020` confirma `reconcileBaseline: false` al quitar mes |
 
 ---
 
-**Anterior:** [010h](FIX-010h-calendar-draft-persist.md) ✅ · **Siguiente:** [010e](FIX-010e-migration-wizard.md)
+**Anterior:** [010h](FIX-010h-calendar-draft-persist.md) ✅ · **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) ✅ v1 · **v2 opcional:** [010e](FIX-010e-migration-wizard.md)

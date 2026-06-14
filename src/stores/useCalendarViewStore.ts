@@ -4,10 +4,12 @@ import {
   calendarConfigRevision,
   isCalendarDraftDirty,
 } from "@/lib/calendar/calendarRevision";
+import { calendarStructuralDiff } from "@/lib/calendar/calendarStructuralDiff";
 import { effectiveCalendarForYear } from "@/lib/calendar/effectiveCalendar";
 import { normalizeCalendarConfig } from "@/lib/calendar/normalizeCalendarConfig";
 import { normalizeAnnualEventsForDraft } from "@/lib/calendar/recurringEvents";
 import { calendarErrorKey } from "@/lib/calendar/calendarErrors";
+import { audit } from "@/lib/audit";
 import { trackAction } from "@/lib/action-audit/trackAction";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import type { SpecialMonthExpand } from "@/modules/calendar/SpecialYearMonthsEditor";
@@ -304,7 +306,22 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
     }
 
     set({ draftValidationKey: null, isSavingDraft: true });
-    const ok = await useCalendarStore.getState().saveCalendar(normalized);
+
+    const disk = useCalendarStore.getState().config;
+    const diff =
+      disk != null
+        ? calendarStructuralDiff(disk, normalized, {
+            baselineConfig: useCalendarStore.getState().baselineConfig,
+            timelineRawTimes: useProjectTimelineStore
+              .getState()
+              .events.map((event) => event.rawTime),
+          })
+        : null;
+    const reconcileBaseline = diff ? !diff.affectsTimeMarkers : true;
+
+    const ok = await useCalendarStore
+      .getState()
+      .saveCalendar(normalized, { reconcileBaseline });
     const lastErrorKey = useCalendarStore.getState().lastErrorKey;
     set({ isSavingDraft: false });
 
@@ -313,12 +330,19 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
         savedRevision: calendarConfigRevision(normalized),
         draftValidationKey: null,
       });
+      audit.info("calendar", "obs.calendar.save.draft", {
+        reconcileBaseline,
+        affectsTimeMarkers: diff?.affectsTimeMarkers ?? false,
+        affectedMarkerCount: diff?.affectedMarkerCount ?? 0,
+      });
     } else if (lastErrorKey) {
       set({ draftValidationKey: calendarErrorKey(lastErrorKey) });
     }
     trackAction("calendar", "draft.save", {
       dirty,
       ok,
+      reconcileBaseline: ok ? reconcileBaseline : undefined,
+      affectsTimeMarkers: diff?.affectsTimeMarkers,
       validationKey: ok ? null : (get().draftValidationKey ?? lastErrorKey),
     });
     return ok;

@@ -1,6 +1,6 @@
 # FIX-010e — Migración de marcas + panel consistencia (010f)
 
-> **Estado:** 📋 Planificado · **Esfuerzo:** Alto · **Riesgo:** Alto · **Fase:** v2  
+> **Estado:** ⏸️ **Pospuesto v2** (no bloquea FIX-010 v1) · **Esfuerzo:** Alto · **Riesgo:** Alto · **Fase:** v2  
 > **Épica:** [FIX-010 índice](FIX-010-calendar-stale-time-chips.md) · **Depende de:** 010a–d, 010g, 010i · **Relacionado:** VER-001, FIX-011
 
 Incluye **010f** (panel consistencia fechas) en el mismo plan.

@@ -1,6 +1,6 @@
 # FIX-010 — Épica 6.A: marcas de tiempo obsoletas (índice)
 
-> **Estado épica:** 📋 Planificado (jun 2026) · **Esfuerzo total:** Alto (acotado) · **Riesgo:** Medio  
+> **Estado épica:** ✅ **v1 cerrada** (jun 2026) · **Esfuerzo total:** Alto (acotado) · **Riesgo:** Medio · **v2:** [010e](FIX-010e-migration-wizard.md) pospuesto  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase D · **Origen:** [`fix-backlog.md` §6.A](../../fix-backlog.md)  
 > **No confundir con:** FIX-011 (evento WB huérfano · 6.B)
 
@@ -41,8 +41,8 @@ flowchart LR
   a --> b[010b timeline]
   a --> c[010c calendario]
   a --> d[010d editar]
-  g --> i[010i diff UI]
-  i --> e[010e migración]
+  g --> i[010i save + diff motor]
+  i -.-> e[010e migración v2]
   h[010h borrador sesión] -.-> i
   obs[OBS-003 acciones] -.-> i
   e --> f[010f consistencia]
@@ -58,16 +58,16 @@ flowchart LR
 | **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit · §12 reset baseline | v1 · ✅ |
 | **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador en sesión + diálogos unsaved | v1 · ✅ cerrado |
 | **OBS-003** | [OBS-003-action-audit-log.md](OBS-003-action-audit-log.md) | Registro acciones UI (QA sin narrar pasos) | ✅ v1 · **010i desbloqueado** |
-| **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Diff estructural borrador vs disco | v1 |
-| **010e** | [FIX-010e-migration-wizard.md](FIX-010e-migration-wizard.md) | Asistente migración modos A/B/C + vista previa | v2 |
+| **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Motor diff + `reconcileBaseline` en save · UI diff **cancelada** | v1 · ✅ |
+| **010e** | [FIX-010e-migration-wizard.md](FIX-010e-migration-wizard.md) | Asistente migración modos A/B/C + vista previa | v2 · **pospuesto** |
 | **010f** | *(incluido en 010e)* | Panel consistencia fechas · re-ejecutar migración | v2 |
 | **VER-001** | [`implementation-plan.md`](../../implementation-plan.md) | Historial Git roto · diff `calendar.json` | Era IV |
 
 **Orden de implementación sugerido:** `010g → 010a → 010b → 010c → 010d → 010h → **OBS-003** → 010i → 010e`
 
-**v1 sin 010e:** guardar calendario con diff estructural **no bloquea** el save; baseline no avanza → marcas en rojo hasta migración manual (010d) o wizard v2 (010e).
+**v1 sin 010e:** guardar calendario con diff estructural **no bloquea** el save; si `affectsTimeMarkers`, baseline **no avanza** ([010i](FIX-010i-calendar-structural-diff.md)) → marcas en **rojo** hasta edición manual ([010d](FIX-010d-edit-time-tags.md)) o wizard v2 ([010e](FIX-010e-migration-wizard.md), pospuesto).
 
-> **⚠️ Deuda implementación (jun 2026):** `saveDraft()` hoy llama `saveCalendar` con `reconcileBaseline: true` por defecto — **no** respeta aún la regla 010g «baseline no avanza con diff estructural». Eso produce un bug de producto documentado en [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672): al eliminar un mes, las marcas **se reposicionan** en el mes que ocupa el mismo índice (p. ej. abril → mayo, mismo día) con `rawTime` literal intacto y chip **normal** (no rojo). Resolución: [010i](FIX-010i-calendar-structural-diff.md) (aviso) + [010e](FIX-010e-migration-wizard.md) (migración explícita).
+> **Limitación v1 cerrada:** sin panel diff ni wizard. El usuario no ve lista pre-guardado de cambios estructurales; sí ve chips rojos tras guardar. Migración masiva A/B/C queda para v2.
 
 ---
 
@@ -93,13 +93,13 @@ Auditoría completa (persistencia, stores, OBS): ver commit inicial jun 2026 o s
 
 ## 5. Criterios de aceptación (épica)
 
-### v1 (010g + 010a–d + 010h + 010i)
+### v1 (010g + 010a–d + 010h + 010i save) — ✅ cumplido
 
 - Marcas inválidas/obsoletas **en rojo** en editor, timeline y calendario.
 - Timeline: **misma posición X**; solo estilo destructive.
 - `structure_stale` **persiste tras reinicio** (010g).
 - Diálogo unsaved al navegar con calendario sucio (010h).
-- Diff estructural pre-guardado (010i).
+- Guardar con diff estructural que afecta marcas: `reconcileBaseline: false` (010i motor).
 - Edición inline + barTag (010d).
 - Tests + build verdes; guardado no borra obsoletos sin acción del usuario.
 
@@ -116,10 +116,10 @@ Checklists QA por sub-plan; plantilla común:
 | R3, R3b | Timeline posición + mes insertado | 010b, 010a |
 | R4 | Calendario mensual | 010c |
 | R4b–R4c | Editar chips | 010d |
-| R4d | Editar calendario (quitar mes) → marcas no se desplazan en silencio | 010d §13 · 010e |
+| R4d | Editar calendario (quitar mes) → guardar → marcas **rojas**, no reposición silenciosa | 010i · QA `9020` |
 | R8 | Reinicio → stale persiste | 010g |
 | R9 | Diálogo unsaved calendario (sesión) | 010h |
-| R10 | Toggle diff | 010i |
+| ~~R10~~ | ~~Toggle diff~~ | Cancelado (010i UI) |
 
 ---
 
@@ -148,7 +148,10 @@ Checklists QA por sub-plan; plantilla común:
 | 2026-06-11 | **010d §13** · QA `19672`: editar calendario (quitar abril) reposiciona marcas en mayo mismo día · limitación v1 documentada |
 | 2026-06-11 | **010d cerrado** · QA §8 D3 automatizado + build verde |
 | 2026-06-11 | **010h ✅ cerrado** — dirty sesión + diálogos en shell |
+| 2026-06-11 | **OBS-003 ✅** — registro acciones (commit `b77fa09`) |
+| 2026-06-11 | **010i ✅ parcial** — `calendarStructuralDiff` + `reconcileBaseline` en `saveDraft`; UI diff cancelada |
+| 2026-06-11 | **FIX-010 v1 ✅ cerrada** — 010e pospuesto v2 |
 
 ---
 
-**Última actualización:** 2026-06-11 · **Siguiente paso:** [FIX-010i](FIX-010i-calendar-structural-diff.md) · **Bloqueador producto v2:** [010d §13](FIX-010d-edit-time-tags.md#13-hallazgo-qa--edición-calendario-reposiciona-marcas-sesión-19672) → [010i](FIX-010i-calendar-structural-diff.md) + [010e](FIX-010e-migration-wizard.md)
+**Última actualización:** 2026-06-11 · **Épica v1 cerrada.** **v2 (opcional):** [010e](FIX-010e-migration-wizard.md) migración A/B/C · **Siguiente Fase D:** [FIX-011](FIX-011-*) o backlog §6.C
