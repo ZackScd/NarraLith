@@ -8,6 +8,7 @@ import { effectiveCalendarForYear } from "@/lib/calendar/effectiveCalendar";
 import { normalizeCalendarConfig } from "@/lib/calendar/normalizeCalendarConfig";
 import { normalizeAnnualEventsForDraft } from "@/lib/calendar/recurringEvents";
 import { calendarErrorKey } from "@/lib/calendar/calendarErrors";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import type { SpecialMonthExpand } from "@/modules/calendar/SpecialYearMonthsEditor";
 import type { CalendarConfig } from "@/lib/types/calendar";
@@ -44,7 +45,7 @@ interface CalendarViewState {
   dataRevision: number;
   returnView: "timeline" | "editor";
   setReturnView: (view: "timeline" | "editor") => void;
-  setViewYear: (year: number) => void;
+  setViewYear: (year: number, meta?: { source?: string }) => void;
   setCalendarYearHydratedProjectKey: (key: string | null) => void;
   markCalendarDraftInitialized: (key: string) => void;
   resetCalendarSession: () => void;
@@ -109,8 +110,17 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
 
   setReturnView: (returnView) => set({ returnView }),
 
-  setViewYear: (viewYear) =>
-    set({ viewYear, expandedMonthIndex: null, selectedDay: null }),
+  setViewYear: (viewYear, meta?: { source?: string }) => {
+    const from = get().viewYear;
+    if (from !== viewYear) {
+      trackAction(
+        "calendar",
+        meta?.source ? "topBar.yearChange" : "yearChange",
+        { from, to: viewYear, source: meta?.source ?? "store" },
+      );
+    }
+    set({ viewYear, expandedMonthIndex: null, selectedDay: null });
+  },
 
   setCalendarYearHydratedProjectKey: (calendarYearHydratedProjectKey) =>
     set({ calendarYearHydratedProjectKey }),
@@ -125,16 +135,27 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
     }),
 
   openMonth: (monthIndex) => {
-    const run = () =>
-      set({ expandedMonthIndex: monthIndex, selectedDay: null, editExpanded: false });
     if (get().expandedMonthIndex === monthIndex) return;
+    const run = () => {
+      trackAction("calendar", "openMonth", {
+        monthIndex,
+        viewYear: get().viewYear,
+      });
+      set({ expandedMonthIndex: monthIndex, selectedDay: null, editExpanded: false });
+    };
     get().guardNavigation(run, "section");
   },
 
   closeMonth: () => {
     if (get().expandedMonthIndex === null) return;
     get().guardNavigation(
-      () => set({ expandedMonthIndex: null, selectedDay: null }),
+      () => {
+        trackAction("calendar", "closeMonth", {
+          monthIndex: get().expandedMonthIndex,
+          viewYear: get().viewYear,
+        });
+        set({ expandedMonthIndex: null, selectedDay: null });
+      },
       "section",
     );
   },
@@ -142,6 +163,8 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
   shiftMonth: (delta) => {
     const { expandedMonthIndex, viewYear, draft } = get();
     if (expandedMonthIndex === null || !draft) return;
+    const fromMonthIndex = expandedMonthIndex;
+    const fromYear = viewYear;
     let month = expandedMonthIndex + delta;
     let year = viewYear;
     if (month < 0) {
@@ -155,16 +178,36 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
         year += 1;
       }
     }
+    trackAction("calendar", "month.shift", {
+      delta,
+      fromMonthIndex,
+      fromYear,
+      toMonthIndex: month,
+      toYear: year,
+    });
     set({ expandedMonthIndex: month, viewYear: year, selectedDay: null });
   },
 
-  selectDay: (selectedDay) => set({ selectedDay }),
+  selectDay: (selectedDay) => {
+    trackAction("calendar", "day.select", {
+      day: selectedDay,
+      monthIndex: get().expandedMonthIndex,
+      viewYear: get().viewYear,
+    });
+    set({ selectedDay });
+  },
 
   setEditExpanded: (editExpanded) => {
     const wasOpen = get().editExpanded;
     if (wasOpen && !editExpanded) {
-      get().guardNavigation(() => set({ editExpanded: false }), "section");
+      get().guardNavigation(() => {
+        trackAction("calendar", "panel.editToggle", { expanded: false });
+        set({ editExpanded: false });
+      }, "section");
       return;
+    }
+    if (!wasOpen && editExpanded) {
+      trackAction("calendar", "panel.editToggle", { expanded: true });
     }
     set({ editExpanded });
   },
@@ -182,7 +225,15 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
   },
 
   setExpandedSpecialMonth: (expandedSpecialMonth) => set({ expandedSpecialMonth }),
-  setMonthDeletePending: (monthDeletePending) => set({ monthDeletePending }),
+  setMonthDeletePending: (monthDeletePending) => {
+    if (monthDeletePending !== null) {
+      trackAction("calendar", "monthDelete.dialog", {
+        index: monthDeletePending,
+        choice: "prompt",
+      });
+    }
+    set({ monthDeletePending });
+  },
 
   initFromConfig: (config, initialYear) => {
     const draft = applyDraftFromConfig(config);
@@ -223,6 +274,7 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
       action();
       return;
     }
+    trackAction("calendar", "draft.unsavedDialog", { context, result: "blocked" });
     set({
       unsavedDialogOpen: true,
       unsavedContext: context,
@@ -234,10 +286,16 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
     const draft = get().draft;
     if (!draft) return false;
 
+    const dirty = get().isDirty();
     const normalized = normalizeCalendarConfig(draft);
     const err = validateCalendarDraft(normalized);
     if (err) {
       set({ draft: normalized, draftValidationKey: err });
+      trackAction("calendar", "draft.save", {
+        dirty,
+        ok: false,
+        validationKey: err,
+      });
       return false;
     }
 
@@ -258,19 +316,35 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
     } else if (lastErrorKey) {
       set({ draftValidationKey: calendarErrorKey(lastErrorKey) });
     }
+    trackAction("calendar", "draft.save", {
+      dirty,
+      ok,
+      validationKey: ok ? null : (get().draftValidationKey ?? lastErrorKey),
+    });
     return ok;
   },
 
   discardDraft: () => {
     const config = useCalendarStore.getState().config;
     if (!config) return;
+    trackAction("calendar", "draft.discard", { dirty: get().isDirty() });
     get().initFromConfig(config);
   },
 
-  cancelUnsaved: () => set({ unsavedDialogOpen: false, pendingNavigation: null }),
+  cancelUnsaved: () => {
+    trackAction("calendar", "draft.unsavedDialog", {
+      context: get().unsavedContext,
+      choice: "cancel",
+    });
+    set({ unsavedDialogOpen: false, pendingNavigation: null });
+  },
 
   confirmDiscardUnsaved: () => {
     const action = get().pendingNavigation;
+    trackAction("calendar", "draft.unsavedDialog", {
+      context: get().unsavedContext,
+      choice: "discard",
+    });
     get().discardDraft();
     set({ unsavedDialogOpen: false, pendingNavigation: null });
     action?.();
@@ -278,13 +352,22 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
 
   confirmSaveUnsaved: async () => {
     const action = get().pendingNavigation;
+    trackAction("calendar", "draft.unsavedDialog", {
+      context: get().unsavedContext,
+      choice: "save",
+    });
     const ok = await get().saveDraft();
     if (!ok) return;
     set({ unsavedDialogOpen: false, pendingNavigation: null });
     action?.();
   },
 
-  setDeleteDialogOpen: (deleteDialogOpen) => set({ deleteDialogOpen }),
+  setDeleteDialogOpen: (deleteDialogOpen) => {
+    if (deleteDialogOpen) {
+      trackAction("calendar", "deleteCalendar", { open: true });
+    }
+    set({ deleteDialogOpen });
+  },
 
   resetCalendarToDefault: async () => {
     const locale = useSettingsStore.getState().locale;
@@ -303,11 +386,19 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
         draftValidationKey: null,
         dataRevision: get().dataRevision + 1,
       });
+      trackAction("calendar", "deleteCalendar.choice", {
+        choice: "restoreDefault",
+        ok: true,
+      });
       return true;
     } catch (err) {
       set({
         draftValidationKey:
           calendarErrorKey(parseAppError(err)?.key) ?? "errors.unknown",
+      });
+      trackAction("calendar", "deleteCalendar.choice", {
+        choice: "restoreDefault",
+        ok: false,
       });
       return false;
     } finally {
@@ -332,11 +423,19 @@ export const useCalendarViewStore = create<CalendarViewState>((set, get) => ({
         draftValidationKey: null,
         dataRevision: get().dataRevision + 1,
       });
+      trackAction("calendar", "deleteCalendar.choice", {
+        choice: "leaveBlank",
+        ok: true,
+      });
       return true;
     } catch (err) {
       set({
         draftValidationKey:
           calendarErrorKey(parseAppError(err)?.key) ?? "errors.unknown",
+      });
+      trackAction("calendar", "deleteCalendar.choice", {
+        choice: "leaveBlank",
+        ok: false,
       });
       return false;
     } finally {

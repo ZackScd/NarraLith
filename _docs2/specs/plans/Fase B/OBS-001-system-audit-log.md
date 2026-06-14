@@ -96,6 +96,8 @@
 
 Revisión del repo para definir **qué instrumentar**, **qué excluir** y **cómo no romper dev/release**.
 
+> **OBS-003 (jun 2026):** las acciones de usuario orientadas a QA (`obs.action.*`) viven en [`action-logs/`](../Fase%20D/OBS-003-action-audit-log.md) — OBS-001 no las duplica ni las reemplaza; conviven en archivos distintos con el mismo `bootId`.
+
 #### 2.4.1 Punto único IPC (frontend)
 
 | Hallazgo | Implicación OBS-001 |
@@ -709,6 +711,8 @@ OBS-001 v1  ✅  (módulo cerrado — no reabrir salvo bug crítico del propio a
 | Menú debug (plan) | `src/modules/debug/DebugNavMenu.tsx` |
 | Bootstrap one-shot | `src/hooks/useAuditBootstrap.ts` |
 | Caso uso inmediato | `plans/FIX-012-save-tab-navigation.md` |
+| Acciones usuario (OBS-003) | [`plans/Fase D/OBS-003-action-audit-log.md`](../Fase%20D/OBS-003-action-audit-log.md) |
+| Estado UI (OBS-002) | [`plans/Fase C/OBS-002-ui-render-audit-log.md`](../Fase%20C/OBS-002-ui-render-audit-log.md) |
 
 ---
 

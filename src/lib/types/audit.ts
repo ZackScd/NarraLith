@@ -13,6 +13,8 @@ export interface AuditConfigResponse {
   sessionLogPath: string | null;
   renderStandardLogPath: string | null;
   renderVerboseLogPath: string | null;
+  actionSessionLogPath: string | null;
+  actionVerboseLogPath: string | null;
   bootId: string;
   repoDebugRoot: string;
 }
@@ -22,11 +24,17 @@ export interface AuditLogPathResponse {
   sessionLogPath: string | null;
   renderStandardLogPath: string | null;
   renderVerboseLogPath: string | null;
+  actionSessionLogPath: string | null;
+  actionVerboseLogPath: string | null;
   logsDir: string;
   renderLogsDir: string;
+  actionLogsDir: string;
+  repoDebugRoot: string;
 }
 
 export type RenderLogChannel = "standard" | "verbose";
 export type RenderLogClearTarget = "standard" | "verbose" | "all";
+export type ActionLogChannel = "session" | "verbose";
+export type ActionLogClearTarget = "session" | "verbose" | "all";
 
 export type AuditSettingsPatch = Partial<AuditDebugSettings>;

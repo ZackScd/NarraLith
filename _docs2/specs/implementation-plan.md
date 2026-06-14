@@ -91,7 +91,7 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 | **FIX-010c** | ✅ | Calendario + mini-timeline entradas | Medio | [plan](plans/Fase%20D/FIX-010c-calendar-entries.md) |
 | **FIX-010d** | ✅ | Editar marcas inline + barTag | Medio | [plan](plans/Fase%20D/FIX-010d-edit-time-tags.md) |
 | **FIX-010h** | ✅ | Borrador calendario en sesión + diálogos unsaved | Bajo | [plan](plans/Fase%20D/FIX-010h-calendar-draft-persist.md) |
-| **OBS-003** | 📋 | **Registro de acciones** (intent journal) + menú debug unificado | Alto | [**plan**](plans/Fase%20D/OBS-003-action-audit-log.md) · **siguiente en D** · antes 010i |
+| **OBS-003** | ✅ | **Registro de acciones** (intent journal) + menú debug unificado | Alto | [**plan**](plans/Fase%20D/OBS-003-action-audit-log.md) · Fases 0–3 cerradas · **siguiente: FIX-010i** |
 | **FIX-010i** | 📋 | Diff estructural pre-guardado | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) · QA vía OBS-003 |
 | **FIX-010e** | 📋 | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · v2 |
 | **VER-001** | ⬜ | Reparar historial Git (snapshots + diff) | Alto | Era IV · complementa 010e |
@@ -264,6 +264,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | FIX-010c ✅ — QA calendario sesión `2156` (año 15, marcas obsoletas en panel + grid) |
 | 2026-06-11 | FIX-010d ✅ · FIX-010h ✅ cerrado · docs alineados |
 | 2026-06-11 | **OBS-003** planificado: registro acciones usuario (session + verbose), menú «eliminar todo» / «sesión única» unificados · [`plans/Fase D/OBS-003-action-audit-log.md`](plans/Fase%20D/OBS-003-action-audit-log.md) · prioridad antes FIX-010i |
+| 2026-06-11 | **OBS-003 ✅ cerrado:** Fases 0–3 (código + docs §13 plantilla QA); siguiente FIX-010i |
 
 ---
 

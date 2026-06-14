@@ -46,6 +46,7 @@ import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 import { normalizeCalendarConfig } from "@/lib/calendar/normalizeCalendarConfig";
 import { clampHighlightOpacity } from "@/lib/calendar/seasonHighlight";
 import { createEmptySeason } from "@/stores/useCalendarStore";
+import { trackAction } from "@/lib/action-audit/trackAction";
 
 interface CalendarEditPanelProps {
   draft: CalendarConfig;
@@ -138,6 +139,7 @@ export function CalendarEditPanel({ draft, onChange }: CalendarEditPanelProps) {
   const moveSeason = (from: number, to: number) => {
     const seasons = draft.seasons ?? [];
     if (to < 0 || to >= seasons.length || from === to) return;
+    trackAction("calendar", "month.reorder", { from, to, scope: "season" });
     const next = [...seasons];
     const [moved] = next.splice(from, 1);
     if (!moved) return;
@@ -206,9 +208,24 @@ export function CalendarEditPanel({ draft, onChange }: CalendarEditPanelProps) {
         <PanelSectionHeader
           title={t("edit.months")}
           expanded={monthsExpanded}
-          onToggleExpand={() => setMonthsExpanded((prev) => !prev)}
+          onToggleExpand={() =>
+            setMonthsExpanded((prev) => {
+              const next = !prev;
+              trackAction("calendar", "section.toggle", {
+                section: "months",
+                expanded: next,
+              });
+              return next;
+            })
+          }
           editEnabled={monthsEditEnabled}
-          onToggleEdit={() => setMonthsEditEnabled((prev) => !prev)}
+          onToggleEdit={() =>
+            setMonthsEditEnabled((prev) => {
+              const next = !prev;
+              trackAction("calendar", "months.editMode", { enabled: next });
+              return next;
+            })
+          }
           editAriaLabel={editAriaLabel}
           confirmEditAriaLabel={confirmEditAriaLabel}
         />
@@ -246,9 +263,24 @@ export function CalendarEditPanel({ draft, onChange }: CalendarEditPanelProps) {
         <PanelSectionHeader
           title={t("edit.seasons")}
           expanded={seasonsExpanded}
-          onToggleExpand={() => setSeasonsExpanded((prev) => !prev)}
+          onToggleExpand={() =>
+            setSeasonsExpanded((prev) => {
+              const next = !prev;
+              trackAction("calendar", "section.toggle", {
+                section: "seasons",
+                expanded: next,
+              });
+              return next;
+            })
+          }
           editEnabled={seasonsEditEnabled}
-          onToggleEdit={() => setSeasonsEditEnabled((prev) => !prev)}
+          onToggleEdit={() =>
+            setSeasonsEditEnabled((prev) => {
+              const next = !prev;
+              trackAction("calendar", "season.editMode", { enabled: next });
+              return next;
+            })
+          }
           editAriaLabel={editAriaLabel}
           confirmEditAriaLabel={confirmEditAriaLabel}
         />
@@ -520,13 +552,21 @@ export function CalendarEditPanel({ draft, onChange }: CalendarEditPanelProps) {
         <PanelSectionHeader
           title={t("edit.specialYears")}
           expanded={specialYearsExpanded}
-          onToggleExpand={() => setSpecialYearsExpanded((prev) => !prev)}
+          onToggleExpand={() =>
+            setSpecialYearsExpanded((prev) => {
+              const next = !prev;
+              trackAction("calendar", "section.toggle", {
+                section: "specialYears",
+                expanded: next,
+              });
+              return next;
+            })
+          }
           editEnabled={specialYearsEditEnabled}
           onToggleEdit={() =>
             setSpecialYearsEditEnabled((prev) => {
               const next = !prev;
-              // Si se apaga la edición global, debemos colapsar cualquier editor
-              // abierto dentro de la lista (bug: quedaban aún editables).
+              trackAction("calendar", "specialYear.editMode", { enabled: next });
               if (!next) closeCycleEditor();
               return next;
             })

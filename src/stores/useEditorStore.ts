@@ -30,6 +30,7 @@ import {
 import { manuscriptToParsedDocument } from "@/lib/editor/manuscriptBlocks";
 import { reconciledKeysFromManuscript } from "@/lib/calendar/timeTagReconcile";
 import { audit } from "@/lib/audit";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { normalizeProjectPath, projectPathsEqual } from "@/lib/pathUtils";
 import type { EntityDocument, EntityTabState } from "@/lib/types/entity";
@@ -726,6 +727,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...activateTabView(tab, state.reconciledTimeTagKeys),
       });
       audit.info("editor", "obs.editor.tab.switch", { from: fromPath, to: filePath });
+      trackAction("editor", "tabSwitch", { from: fromPath, to: filePath });
       return;
     }
     await get().openDocument(filePath);
@@ -734,6 +736,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   confirmDiscardUnsaved: async () => {
     const { unsavedAction, pendingFilePath, activeFilePath, tabs, tabOrder, isDirty } =
       get();
+    trackAction("editor", "unsavedDialog", {
+      action: unsavedAction,
+      path: pendingFilePath ?? activeFilePath,
+      choice: "discard",
+    });
     set({ showUnsavedDialog: false });
 
     if (unsavedAction === "open" && pendingFilePath) {
@@ -826,8 +833,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   },
 
-  cancelPendingUnsaved: () =>
-    set({ showUnsavedDialog: false, pendingFilePath: null, unsavedAction: "open" }),
+  cancelPendingUnsaved: () => {
+    const { unsavedAction, pendingFilePath, activeFilePath } = get();
+    trackAction("editor", "unsavedDialog", {
+      action: unsavedAction,
+      path: pendingFilePath ?? activeFilePath,
+      choice: "cancel",
+    });
+    set({ showUnsavedDialog: false, pendingFilePath: null, unsavedAction: "open" });
+  },
 
   openDocument: async (filePath) => {
     if (!filePath.toLowerCase().endsWith(".md")) {
@@ -851,6 +865,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...activateTabView(tab, get().reconciledTimeTagKeys),
       });
       audit.info("editor", "obs.editor.tab.open", {
+        path: filePath,
+        kind: tab.kind,
+        existing: true,
+      });
+      trackAction("editor", "tabOpen", {
         path: filePath,
         kind: tab.kind,
         existing: true,
@@ -898,6 +917,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           kind: "entity",
           existing: false,
         });
+        trackAction("editor", "tabOpen", {
+          path: filePath,
+          kind: "entity",
+          existing: false,
+        });
         return true;
       }
 
@@ -928,6 +952,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...activateTabView(tab, state.reconciledTimeTagKeys),
       }));
       audit.info("editor", "obs.editor.tab.open", {
+        path: filePath,
+        kind: "manuscript",
+        existing: false,
+      });
+      trackAction("editor", "tabOpen", {
         path: filePath,
         kind: "manuscript",
         existing: false,
@@ -1118,6 +1147,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ok,
       });
       audit.endCorrelation();
+      trackAction("editor", "save", {
+        path: activeFilePath,
+        kind: "entity",
+        ok,
+        scope: "file",
+      });
       return ok;
     }
     if (!activeFilePath || !manuscript || !isDirty) {
@@ -1150,6 +1185,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ok,
     });
     audit.endCorrelation();
+    trackAction("editor", "save", {
+      path: activeFilePath,
+      kind: "manuscript",
+      ok,
+      scope: "file",
+    });
     return ok;
   },
 
@@ -1206,15 +1247,31 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     audit.info("editor", "obs.editor.reload.dialog", {
       path: get().activeFilePath,
     });
+    trackAction("editor", "externalReload", {
+      phase: "show",
+      path: get().activeFilePath,
+    });
     set({ showExternalReloadDialog: true });
   },
 
   confirmExternalReload: async () => {
+    trackAction("editor", "externalReload", {
+      phase: "confirm",
+      choice: "reload",
+      path: get().activeFilePath,
+    });
     set({ showExternalReloadDialog: false, isDirty: false });
     await get().reloadDocumentFromDisk();
   },
 
-  dismissExternalReload: () => set({ showExternalReloadDialog: false }),
+  dismissExternalReload: () => {
+    trackAction("editor", "externalReload", {
+      phase: "dismiss",
+      choice: "cancel",
+      path: get().activeFilePath,
+    });
+    set({ showExternalReloadDialog: false });
+  },
 
   reorderTabs: (fromIndex, toIndex) => {
     set((state) => {
@@ -1535,6 +1592,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleDirtyDiffHighlight: () => {
     const state = get();
     if (state.dirtyDiffVisible) {
+      trackAction("editor", "dirtyDiffToggle", {
+        path: state.activeFilePath,
+        visible: false,
+      });
       set({ dirtyDiffVisible: false, dirtyDiffSavedBaseline: null });
       return;
     }
@@ -1545,6 +1606,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     ) {
       return;
     }
+    trackAction("editor", "dirtyDiffToggle", {
+      path: state.activeFilePath,
+      visible: true,
+    });
     set({ dirtyDiffVisible: true });
   },
 
@@ -1572,6 +1637,11 @@ export function requestCloseEditorTab(filePath: string): void {
     audit.info("editor", "obs.editor.unsaved.dialog", {
       action: "close",
       path: filePath,
+    });
+    trackAction("editor", "unsavedDialog", {
+      action: "close",
+      path: filePath,
+      result: "blocked",
     });
     useEditorStore.setState({
       showUnsavedDialog: true,
@@ -1802,6 +1872,10 @@ export async function saveAllOpenTabs(): Promise<boolean> {
         cacheSaveCount: stats.cacheSaveCount,
         fallbackCount: stats.fallbackCount,
         switchCount: stats.switchCount,
+      });
+      trackAction("editor", "saveAll", {
+        ok: allSaved,
+        dirtyCount: dirtyPaths.length,
       });
     }
   });

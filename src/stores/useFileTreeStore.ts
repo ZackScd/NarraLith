@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { audit } from "@/lib/audit";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import {
   appendToParentOrderInMap,
   applyCustomOrder,
@@ -172,7 +173,9 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   ...initialState,
 
   setViewMode: (mode) => {
+    const from = get().viewMode;
     set({ viewMode: mode, cardPath: "", searchQuery: "", searchOpen: false });
+    trackAction("explorer", "viewMode", { from, to: mode });
     void get().loadTree();
   },
 
@@ -207,6 +210,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       expandedPaths: { ...state.expandedPaths, ...ancestorExpansions },
     });
     audit.info("explorer", "obs.explorer.inline_create.start", { kind, parentPath });
+    trackAction("explorer", "inlineCreate", { kind, parentPath, phase: "start" });
   },
 
   cancelInlineCreate: () => {
@@ -215,6 +219,11 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       audit.info("explorer", "obs.explorer.inline_create.cancel", {
         kind: inlineCreate.kind,
         parentPath: inlineCreate.parentPath,
+      });
+      trackAction("explorer", "inlineCancel", {
+        kind: inlineCreate.kind,
+        parentPath: inlineCreate.parentPath,
+        phase: "create",
       });
     }
     set({ inlineCreate: null });
@@ -243,6 +252,12 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       kind: inlineCreate.kind,
       parentPath: inlineCreate.parentPath,
       diskName,
+    });
+    trackAction("explorer", "inlineCommit", {
+      kind: inlineCreate.kind,
+      parentPath: inlineCreate.parentPath,
+      diskName,
+      phase: "create",
     });
 
     const ok =
@@ -278,6 +293,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       expandedPaths: { ...state.expandedPaths, ...ancestorExpansions },
     });
     audit.info("explorer", "obs.explorer.inline_rename.start", { path, isDir });
+    trackAction("explorer", "inlineCreate", { path, isDir, phase: "renameStart" });
   },
 
   cancelInlineRename: () => {
@@ -285,6 +301,10 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
     if (inlineRename) {
       audit.info("explorer", "obs.explorer.inline_rename.cancel", {
         path: inlineRename.path,
+      });
+      trackAction("explorer", "inlineCancel", {
+        path: inlineRename.path,
+        phase: "rename",
       });
     }
     set({ inlineRename: null });
@@ -305,6 +325,11 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
     audit.info("explorer", "obs.explorer.inline_rename.commit", {
       path: inlineRename.path,
       diskName,
+    });
+    trackAction("explorer", "inlineCommit", {
+      path: inlineRename.path,
+      diskName,
+      phase: "rename",
     });
 
     const ok = await get().renamePath(inlineRename.path, diskName);
@@ -378,13 +403,16 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
 
   selectNode: (path) => set({ selectedPath: path }),
 
-  toggleExpanded: (path) =>
+  toggleExpanded: (path) => {
+    const expanded = !get().expandedPaths[path];
+    trackAction("explorer", "expand", { path, expanded });
     set((s) => ({
       expandedPaths: {
         ...s.expandedPaths,
-        [path]: !s.expandedPaths[path],
+        [path]: expanded,
       },
-    })),
+    }));
+  },
 
   expandPath: (path) =>
     set((s) => ({
@@ -476,6 +504,12 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
     }));
     try {
       await persistExplorerOrder(nextOrder);
+      trackAction("explorer", "dnd", {
+        intent: position,
+        source: sourcePath,
+        target: targetPath,
+        parentPath,
+      });
     } catch (err) {
       set({ lastErrorKey: parseAppError(err)?.key ?? "error.unknown" });
     }
@@ -494,6 +528,11 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
     }));
     try {
       await persistExplorerOrder(nextOrder);
+      trackAction("explorer", "dnd", {
+        intent: "toEnd",
+        source: sourcePath,
+        parentPath,
+      });
     } catch (err) {
       set({ lastErrorKey: parseAppError(err)?.key ?? "error.unknown" });
     }

@@ -14,20 +14,25 @@ import {
 } from "@/components/ui/dialog";
 import { auditGetLogPath } from "@/lib/audit/ipc";
 import { cn } from "@/lib/utils";
-import { useAuditStore } from "@/stores/useAuditStore";
-
-import { AuditLogViewer } from "@/modules/debug/AuditLogViewer";
+import {
+  isAllSingleSessionNextBoot,
+  patchAllSingleSessionNextBoot,
+  useAuditStore,
+  type AuditViewerTab,
+} from "@/stores/useAuditStore";
 
 interface DebugNavMenuProps {
   navBtnClassName: string;
+  menuPlacement?: "nav" | "floating";
 }
 
-type ClearTarget = "system" | "render" | "renderVerbose" | null;
-
-export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
+export function DebugNavMenu({
+  navBtnClassName,
+  menuPlacement = "nav",
+}: DebugNavMenuProps) {
   const { t } = useTranslation("debug");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [clearTarget, setClearTarget] = useState<ClearTarget>(null);
+  const [clearAllOpen, setClearAllOpen] = useState(false);
 
   const bootstrapped = useAuditStore((s) => s.bootstrapped);
   const bootstrapping = useAuditStore((s) => s.bootstrapping);
@@ -35,62 +40,59 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
   const enabled = settings?.enabled ?? false;
   const renderLogEnabled = settings?.renderLogEnabled ?? false;
   const renderVerboseEnabled = settings?.renderVerboseEnabled ?? false;
-  const singleSessionNextBoot = settings?.clearLogsOnNextBoot ?? false;
-  const renderSingleSessionNextBoot = settings?.renderClearLogsOnNextBoot ?? false;
-  const renderVerboseSingleSessionNextBoot =
-    settings?.renderVerboseClearLogsOnNextBoot ?? false;
+  const actionLogEnabled = settings?.actionLogEnabled ?? false;
+  const actionVerboseEnabled = settings?.actionVerboseEnabled ?? false;
+  const singleSessionNextBoot = isAllSingleSessionNextBoot(settings);
 
   const setEnabled = useAuditStore((s) => s.setEnabled);
   const setRenderLogEnabled = useAuditStore((s) => s.setRenderLogEnabled);
   const setRenderVerboseEnabled = useAuditStore((s) => s.setRenderVerboseEnabled);
+  const setActionLogEnabled = useAuditStore((s) => s.setActionLogEnabled);
+  const setActionVerboseEnabled = useAuditStore((s) => s.setActionVerboseEnabled);
   const patchSettings = useAuditStore((s) => s.patchSettings);
-  const clearLogs = useAuditStore((s) => s.clearLogs);
-  const clearRenderLogs = useAuditStore((s) => s.clearRenderLogs);
+  const clearAllLogs = useAuditStore((s) => s.clearAllLogs);
   const setViewerOpen = useAuditStore((s) => s.setViewerOpen);
   const setViewerTab = useAuditStore((s) => s.setViewerTab);
 
   const ready = bootstrapped && !bootstrapping;
-  const anyLogging = enabled || renderLogEnabled || renderVerboseEnabled;
+  const anyLogging =
+    enabled ||
+    renderLogEnabled ||
+    renderVerboseEnabled ||
+    actionLogEnabled ||
+    actionVerboseEnabled;
 
-  const handleOpenFolder = async (kind: "logs" | "render") => {
+  const handleOpenDebugRoot = async () => {
     setMenuOpen(false);
     try {
-      const { logsDir, renderLogsDir } = await auditGetLogPath();
-      await openPath(kind === "logs" ? logsDir : renderLogsDir);
+      const { repoDebugRoot } = await auditGetLogPath();
+      await openPath(repoDebugRoot);
     } catch (error) {
       console.debug("[audit] open folder failed", error);
       window.alert(t("openFolderFailed"));
     }
   };
 
-  const handleConfirmClear = () => {
-    const target = clearTarget;
-    setClearTarget(null);
+  const handleConfirmClearAll = () => {
+    setClearAllOpen(false);
     setMenuOpen(false);
-    if (target === "system") {
-      void clearLogs();
-    } else if (target === "render") {
-      void clearRenderLogs("standard");
-    } else if (target === "renderVerbose") {
-      void clearRenderLogs("verbose");
-    }
+    void clearAllLogs();
   };
 
-  const clearDialogCopy =
-    clearTarget === "system"
-      ? { title: t("clearLogsConfirmTitle"), body: t("clearLogsConfirm") }
-      : clearTarget === "render"
-        ? { title: t("clearRenderLogsConfirmTitle"), body: t("clearRenderLogsConfirm") }
-        : clearTarget === "renderVerbose"
-          ? {
-              title: t("clearRenderVerboseLogsConfirmTitle"),
-              body: t("clearRenderVerboseLogsConfirm"),
-            }
-          : null;
+  const openViewer = (tab: AuditViewerTab) => {
+    setMenuOpen(false);
+    setViewerTab(tab);
+    setViewerOpen(true);
+  };
+
+  const menuPositionClass =
+    menuPlacement === "floating"
+      ? "fixed bottom-14 left-4 z-50 w-80"
+      : "absolute bottom-0 left-full z-50 ml-2 w-80";
 
   return (
     <>
-      <div className="relative">
+      <div className={menuPlacement === "floating" ? "fixed bottom-4 left-4 z-50" : "relative"}>
         <button
           type="button"
           title={t("menuTitle")}
@@ -107,10 +109,12 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
           onClick={() => setMenuOpen((open) => !open)}
         >
           <Bug className="size-4" />
-          <span className="absolute right-0.5 top-0.5 flex gap-0.5" aria-hidden>
+          <span className="absolute right-0.5 top-0.5 flex max-w-[14px] flex-wrap gap-0.5" aria-hidden>
             {enabled ? <span className="size-1.5 rounded-full bg-emerald-500" /> : null}
             {renderLogEnabled ? <span className="size-1.5 rounded-full bg-sky-500" /> : null}
             {renderVerboseEnabled ? <span className="size-1.5 rounded-full bg-amber-500" /> : null}
+            {actionLogEnabled ? <span className="size-1.5 rounded-full bg-violet-500" /> : null}
+            {actionVerboseEnabled ? <span className="size-1.5 rounded-full bg-pink-500" /> : null}
             {!anyLogging ? (
               <span className="size-1.5 rounded-full bg-muted-foreground/40" />
             ) : null}
@@ -127,7 +131,10 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
             />
             <div
               role="menu"
-              className="absolute bottom-0 left-full z-50 ml-2 max-h-[min(32rem,calc(100vh-4rem))] w-80 overflow-y-auto rounded-lg border border-border bg-card p-1 shadow-lg"
+              className={cn(
+                menuPositionClass,
+                "max-h-[min(32rem,calc(100vh-4rem))] overflow-y-auto rounded-lg border border-border bg-card p-1 shadow-lg",
+              )}
             >
               <ToggleRow
                 checked={enabled}
@@ -135,7 +142,6 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
                 subtitle={enabled ? t("loggingEnabled") : t("loggingDisabled")}
                 onClick={() => void setEnabled(!enabled)}
               />
-
               <ToggleRow
                 checked={renderLogEnabled}
                 title={t("toggleRenderLogging")}
@@ -144,7 +150,6 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
                 }
                 onClick={() => void setRenderLogEnabled(!renderLogEnabled)}
               />
-
               <ToggleRow
                 checked={renderVerboseEnabled}
                 title={t("toggleRenderVerboseLogging")}
@@ -156,31 +161,34 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
                 hint={t("renderVerboseHint")}
                 onClick={() => void setRenderVerboseEnabled(!renderVerboseEnabled)}
               />
+              <ToggleRow
+                checked={actionLogEnabled}
+                title={t("toggleActionLogging")}
+                subtitle={
+                  actionLogEnabled ? t("actionLoggingEnabled") : t("actionLoggingDisabled")
+                }
+                onClick={() => void setActionLogEnabled(!actionLogEnabled)}
+              />
+              <ToggleRow
+                checked={actionVerboseEnabled}
+                title={t("toggleActionVerboseLogging")}
+                subtitle={
+                  actionVerboseEnabled
+                    ? t("actionVerboseLoggingEnabled")
+                    : t("actionVerboseLoggingDisabled")
+                }
+                hint={t("actionVerboseHint")}
+                onClick={() => void setActionVerboseEnabled(!actionVerboseEnabled)}
+              />
 
               <div className="my-1 border-t border-border" role="separator" />
 
               <MenuAction
                 icon={Trash2}
-                label={t("clearLogs")}
+                label={t("clearAllLogs")}
                 onClick={() => {
                   setMenuOpen(false);
-                  setClearTarget("system");
-                }}
-              />
-              <MenuAction
-                icon={Trash2}
-                label={t("clearRenderLogs")}
-                onClick={() => {
-                  setMenuOpen(false);
-                  setClearTarget("render");
-                }}
-              />
-              <MenuAction
-                icon={Trash2}
-                label={t("clearRenderVerboseLogs")}
-                onClick={() => {
-                  setMenuOpen(false);
-                  setClearTarget("renderVerbose");
+                  setClearAllOpen(true);
                 }}
               />
 
@@ -189,27 +197,7 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
                 title={t("singleSessionNextBoot")}
                 subtitle={t("singleSessionHint")}
                 onClick={() =>
-                  void patchSettings({ clearLogsOnNextBoot: !singleSessionNextBoot })
-                }
-              />
-              <ToggleRow
-                checked={renderSingleSessionNextBoot}
-                title={t("renderSingleSessionNextBoot")}
-                subtitle={t("renderSingleSessionHint")}
-                onClick={() =>
-                  void patchSettings({
-                    renderClearLogsOnNextBoot: !renderSingleSessionNextBoot,
-                  })
-                }
-              />
-              <ToggleRow
-                checked={renderVerboseSingleSessionNextBoot}
-                title={t("renderVerboseSingleSessionNextBoot")}
-                subtitle={t("renderVerboseSingleSessionHint")}
-                onClick={() =>
-                  void patchSettings({
-                    renderVerboseClearLogsOnNextBoot: !renderVerboseSingleSessionNextBoot,
-                  })
+                  void patchSettings(patchAllSingleSessionNextBoot(!singleSessionNextBoot))
                 }
               />
 
@@ -219,39 +207,33 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
                 icon={ScrollText}
                 label={t("viewLog")}
                 hint={t("viewerShortcutHint")}
-                onClick={() => {
-                  setMenuOpen(false);
-                  setViewerOpen(true);
-                }}
+                onClick={() => openViewer("system")}
               />
               <MenuAction
                 icon={ScrollText}
                 label={t("viewerTabUi")}
-                onClick={() => {
-                  setMenuOpen(false);
-                  setViewerTab("ui");
-                  setViewerOpen(true);
-                }}
+                onClick={() => openViewer("ui")}
               />
               <MenuAction
                 icon={ScrollText}
                 label={t("viewerTabUiVerbose")}
-                onClick={() => {
-                  setMenuOpen(false);
-                  setViewerTab("uiVerbose");
-                  setViewerOpen(true);
-                }}
+                onClick={() => openViewer("uiVerbose")}
+              />
+              <MenuAction
+                icon={ScrollText}
+                label={t("viewerTabAction")}
+                onClick={() => openViewer("action")}
+              />
+              <MenuAction
+                icon={ScrollText}
+                label={t("viewerTabActionVerbose")}
+                onClick={() => openViewer("actionVerbose")}
               />
 
               <MenuAction
                 icon={FolderOpen}
-                label={t("openFolder")}
-                onClick={() => void handleOpenFolder("logs")}
-              />
-              <MenuAction
-                icon={FolderOpen}
-                label={t("openRenderFolder")}
-                onClick={() => void handleOpenFolder("render")}
+                label={t("openDebugRootFolder")}
+                onClick={() => void handleOpenDebugRoot()}
               />
             </div>
           </>
@@ -262,24 +244,22 @@ export function DebugNavMenu({ navBtnClassName }: DebugNavMenuProps) {
         ) : null}
       </div>
 
-      <Dialog open={clearTarget !== null} onOpenChange={(open) => !open && setClearTarget(null)}>
+      <Dialog open={clearAllOpen} onOpenChange={setClearAllOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{clearDialogCopy?.title}</DialogTitle>
-            <DialogDescription>{clearDialogCopy?.body}</DialogDescription>
+            <DialogTitle>{t("clearAllLogsConfirmTitle")}</DialogTitle>
+            <DialogDescription>{t("clearAllLogsConfirm")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setClearTarget(null)}>
+            <Button type="button" variant="ghost" onClick={() => setClearAllOpen(false)}>
               {t("cancel")}
             </Button>
-            <Button type="button" variant="destructive" onClick={handleConfirmClear}>
+            <Button type="button" variant="destructive" onClick={handleConfirmClearAll}>
               {t("clearLogsConfirmAction")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AuditLogViewer />
     </>
   );
 }

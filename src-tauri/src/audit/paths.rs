@@ -19,9 +19,14 @@ pub fn render_logs_dir(root: &Path) -> PathBuf {
     root.join("render-logs")
 }
 
+pub fn action_logs_dir(root: &Path) -> PathBuf {
+    root.join("action-logs")
+}
+
 pub fn ensure_debug_dirs(root: &Path) -> Result<(), AppError> {
     std::fs::create_dir_all(logs_dir(root)).map_err(|e| AppError::database(e.to_string()))?;
-    std::fs::create_dir_all(render_logs_dir(root)).map_err(|e| AppError::database(e.to_string()))
+    std::fs::create_dir_all(render_logs_dir(root)).map_err(|e| AppError::database(e.to_string()))?;
+    std::fs::create_dir_all(action_logs_dir(root)).map_err(|e| AppError::database(e.to_string()))
 }
 
 pub fn normalize_for_ipc(path: &Path) -> String {

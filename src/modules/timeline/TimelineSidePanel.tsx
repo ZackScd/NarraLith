@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useTimelineStore } from "@/stores/useTimelineStore";
 
 import { TIMELINE_CALENDAR_ROW_H } from "@/modules/timeline/TimelineView";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { useCalendarViewStore } from "@/stores/useCalendarViewStore";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
@@ -65,6 +66,7 @@ export function TimelineSidePanel() {
   );
 
   const openCalendar = () => {
+    trackAction("timeline", "openCalendar", {});
     setReturnView("timeline");
     setMainView("calendar");
   };

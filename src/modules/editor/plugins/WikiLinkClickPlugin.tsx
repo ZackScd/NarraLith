@@ -1,6 +1,7 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "react";
 
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { useEditorStore } from "@/stores/useEditorStore";
 
 export function WikiLinkClickPlugin() {
@@ -27,6 +28,12 @@ export function WikiLinkClickPlugin() {
           return;
         }
         event.preventDefault();
+        trackAction(
+          "editor",
+          "wikiLink.open",
+          { path },
+          { channel: "verbose", level: "debug" },
+        );
         void navigateToDocument(path);
       };
 

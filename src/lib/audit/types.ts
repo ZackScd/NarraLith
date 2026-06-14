@@ -10,7 +10,8 @@ export type AuditDomain =
   | "watcher"
   | "entity"
   | "system"
-  | "ui";
+  | "ui"
+  | "action";
 
 export interface AuditEntry {
   id: string;
@@ -40,6 +41,14 @@ export interface AuditDebugSettings {
   renderVerboseClearLogsOnNextBoot: boolean;
   renderVerboseMaxBufferSize: number;
   renderVerboseLevel: AuditLevel;
+  actionLogEnabled: boolean;
+  actionClearLogsOnNextBoot: boolean;
+  actionMaxBufferSize: number;
+  actionLevel: AuditLevel;
+  actionVerboseEnabled: boolean;
+  actionVerboseClearLogsOnNextBoot: boolean;
+  actionVerboseMaxBufferSize: number;
+  actionVerboseLevel: AuditLevel;
 }
 
 export interface AuditApi {

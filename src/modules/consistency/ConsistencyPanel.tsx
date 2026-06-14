@@ -2,6 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { useConsistencyIssues } from "@/hooks/useConsistencyIssues";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
@@ -55,6 +56,11 @@ export function ConsistencyPanel() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        trackAction("consistency", "issueNavigate", {
+                          issueId: issue.id,
+                          path: ref.path,
+                          blockIndex: ref.blockIndex,
+                        });
                         void requestOpenDocument(ref.path);
                         setMainView("editor");
                       }}

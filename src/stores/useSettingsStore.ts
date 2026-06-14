@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { trackAction } from "@/lib/action-audit/trackAction";
 import {
   applyTheme,
   loadStoredLocale,
@@ -95,18 +96,32 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   ...initial,
 
   setEditorSave: (patch) => {
-    const next = { ...get(), ...clampEditorSave({ ...get(), ...patch }) };
+    const prev = get();
+    const next = { ...prev, ...clampEditorSave({ ...prev, ...patch }) };
+    if (
+      patch.autosaveEnabled !== undefined &&
+      patch.autosaveEnabled !== prev.autosaveEnabled
+    ) {
+      trackAction("settings", "autosave", { enabled: patch.autosaveEnabled });
+    }
     persistSettings(next);
     set(next);
   },
 
   setAppearance: (patch) => {
+    const prev = get();
+    if (patch.theme !== undefined && patch.theme !== prev.theme) {
+      trackAction("settings", "theme", { theme: patch.theme });
+    }
+    if (patch.locale !== undefined && patch.locale !== prev.locale) {
+      trackAction("settings", "locale", { locale: patch.locale });
+    }
     const next = {
-      ...get(),
-      theme: patch.theme ?? get().theme,
-      locale: patch.locale ?? get().locale,
+      ...prev,
+      theme: patch.theme ?? prev.theme,
+      locale: patch.locale ?? prev.locale,
       panelDateDisplayFormat:
-        patch.panelDateDisplayFormat ?? get().panelDateDisplayFormat,
+        patch.panelDateDisplayFormat ?? prev.panelDateDisplayFormat,
     };
     applyTheme(next.theme);
     persistSettings(next);

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { audit } from "@/lib/audit";
 import { AUDIT_LEVEL_RANK } from "@/lib/audit/defaults";
 import type { AuditEntry, AuditLevel } from "@/lib/audit/types";
+import { actionAudit } from "@/lib/action-audit";
 import { renderAudit } from "@/lib/render-audit";
 import { cn } from "@/lib/utils";
 import { useAuditStore, type AuditViewerTab } from "@/stores/useAuditStore";
@@ -98,7 +99,13 @@ function useAuditEntries(tab: AuditViewerTab) {
       if (tab === "ui") {
         return renderAudit.subscribeStandard(listener);
       }
-      return renderAudit.subscribeVerbose(listener);
+      if (tab === "uiVerbose") {
+        return renderAudit.subscribeVerbose(listener);
+      }
+      if (tab === "action") {
+        return actionAudit.subscribeSession(listener);
+      }
+      return actionAudit.subscribeVerbose(listener);
     },
     () => {
       if (tab === "system") {
@@ -107,7 +114,13 @@ function useAuditEntries(tab: AuditViewerTab) {
       if (tab === "ui") {
         return renderAudit.getStandardSnapshot();
       }
-      return renderAudit.getVerboseSnapshot();
+      if (tab === "uiVerbose") {
+        return renderAudit.getVerboseSnapshot();
+      }
+      if (tab === "action") {
+        return actionAudit.getSessionSnapshot();
+      }
+      return actionAudit.getVerboseSnapshot();
     },
     () => {
       if (tab === "system") {
@@ -116,7 +129,13 @@ function useAuditEntries(tab: AuditViewerTab) {
       if (tab === "ui") {
         return renderAudit.getStandardSnapshot();
       }
-      return renderAudit.getVerboseSnapshot();
+      if (tab === "uiVerbose") {
+        return renderAudit.getVerboseSnapshot();
+      }
+      if (tab === "action") {
+        return actionAudit.getSessionSnapshot();
+      }
+      return actionAudit.getVerboseSnapshot();
     },
   );
 }
@@ -137,7 +156,11 @@ function AuditLogViewerPanel() {
       ? (settings?.enabled ?? false)
       : viewerTab === "ui"
         ? (settings?.renderLogEnabled ?? false)
-        : (settings?.renderVerboseEnabled ?? false);
+        : viewerTab === "uiVerbose"
+          ? (settings?.renderVerboseEnabled ?? false)
+          : viewerTab === "action"
+            ? (settings?.actionLogEnabled ?? false)
+            : (settings?.actionVerboseEnabled ?? false);
 
   const filteredEntries = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -159,6 +182,8 @@ function AuditLogViewerPanel() {
     { id: "system", label: t("viewerTabSystem") },
     { id: "ui", label: t("viewerTabUi") },
     { id: "uiVerbose", label: t("viewerTabUiVerbose") },
+    { id: "action", label: t("viewerTabAction") },
+    { id: "actionVerbose", label: t("viewerTabActionVerbose") },
   ];
 
   return (
@@ -246,7 +271,7 @@ function AuditLogViewerPanel() {
   );
 }
 
-/** Montado desde DebugNavMenu; no suscribe al store de audit hasta que está abierto. */
+/** Montado desde App; no suscribe al store de audit hasta que está abierto. */
 export function AuditLogViewer() {
   const open = useAuditStore((s) => s.viewerOpen);
   if (!open) {

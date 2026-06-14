@@ -30,6 +30,7 @@ import { WikiLinkNode } from "@/modules/editor/nodes/WikiLinkNode";
 
 import { ActiveEventContextPlugin } from "@/modules/editor/plugins/ActiveEventContextPlugin";
 import { ClickToFocusPlugin } from "@/modules/editor/plugins/ClickToFocusPlugin";
+import { EditorFocusAuditPlugin } from "@/modules/editor/plugins/EditorFocusAuditPlugin";
 
 import { DirtyDiffHighlightPlugin } from "@/modules/editor/plugins/DirtyDiffHighlightPlugin";
 import { EditorRenderAuditPlugin } from "@/modules/editor/plugins/EditorRenderAuditPlugin";
@@ -156,6 +157,8 @@ export function EditorShell({ manuscript, syncKey }: EditorShellProps) {
         <WikiLinkClickPlugin />
 
         <ClickToFocusPlugin />
+
+        <EditorFocusAuditPlugin />
       </div>
     </LexicalComposer>
   );

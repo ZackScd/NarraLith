@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { useGraphProject } from "@/hooks/useGraphProject";
 import { useGraphSimulation } from "@/hooks/useGraphSimulation";
 import { GraphFilterPanel } from "@/modules/graph/GraphFilterPanel";
@@ -44,6 +45,10 @@ export function GraphView() {
 
   const handleNodeClick = useCallback(
     (node: GraphSimNode) => {
+      trackAction("graph", "nodeOpen", {
+        path: node.path,
+        category: node.category,
+      });
       void requestOpenDocument(node.path);
       setMainView("editor");
     },

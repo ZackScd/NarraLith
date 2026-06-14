@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { audit } from "@/lib/audit";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useEntitySearchStore } from "@/stores/useEntitySearchStore";
@@ -102,6 +103,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       });
       set({ activeProject: meta });
       audit.info("project", "obs.project.open", { name: meta.name, created: true });
+      trackAction("project", "create", { name: meta.name });
+      trackAction("project", "open", { name: meta.name, created: true });
       await get().loadRecents();
       void useCalendarStore.getState().loadCalendar();
       return true;
@@ -121,6 +124,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const meta = await invokeCommand<ProjectMeta>("open_project", { path });
       set({ activeProject: meta });
       audit.info("project", "obs.project.open", { name: meta.name });
+      trackAction("project", "open", { name: meta.name });
       await get().loadRecents();
       void useCalendarStore.getState().loadCalendar();
       return true;
@@ -160,6 +164,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       useMapStore.getState().reset();
       set({ activeProject: null });
       audit.info("project", "obs.project.close", { name: projectName ?? null });
+      trackAction("project", "close", { name: projectName ?? null });
     } catch (err) {
       set({
         lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
@@ -171,6 +176,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   removeRecent: async (path) => {
     try {
+      trackAction("launcher", "recentRemove", { path });
       await invokeCommand("remove_recent_project", { path });
       await get().loadRecents();
     } catch (err) {

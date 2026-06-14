@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { trackAction } from "@/lib/action-audit/trackAction";
+
 export type WorkspaceMainView =
   | "editor"
   | "timeline"
@@ -14,8 +16,14 @@ interface WorkspaceState {
   reset: () => void;
 }
 
-export const useWorkspaceStore = create<WorkspaceState>((set) => ({
+export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   mainView: "editor",
-  setMainView: (view) => set({ mainView: view }),
+  setMainView: (view) => {
+    const from = get().mainView;
+    if (from !== view) {
+      trackAction("workspace", "viewChange", { from, to: view });
+    }
+    set({ mainView: view });
+  },
   reset: () => set({ mainView: "editor" }),
 }));

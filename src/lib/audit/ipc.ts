@@ -5,6 +5,8 @@ import type {
   AuditEntry,
   AuditLogPathResponse,
   AuditSettingsPatch,
+  ActionLogChannel,
+  ActionLogClearTarget,
   RenderLogChannel,
   RenderLogClearTarget,
 } from "@/lib/types/audit";
@@ -56,6 +58,31 @@ export function auditClearRenderLogs(
   target: RenderLogClearTarget,
 ): Promise<AuditConfigResponse> {
   return invoke<AuditConfigResponse>("audit_clear_render_logs", { target });
+}
+
+export function auditClearAllLogs(): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_clear_all_logs");
+}
+
+export function auditSetActionLogEnabled(enabled: boolean): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_set_action_log_enabled", { enabled });
+}
+
+export function auditSetActionVerboseEnabled(enabled: boolean): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_set_action_verbose_enabled", { enabled });
+}
+
+export function auditAppendActionEntry(
+  channel: ActionLogChannel,
+  entry: AuditEntry,
+): Promise<void> {
+  return invoke<void>("audit_append_action_entry", { channel, entry });
+}
+
+export function auditClearActionLogs(
+  target: ActionLogClearTarget,
+): Promise<AuditConfigResponse> {
+  return invoke<AuditConfigResponse>("audit_clear_action_logs", { target });
 }
 
 export function auditGetLogPath(): Promise<AuditLogPathResponse> {

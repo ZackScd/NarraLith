@@ -3,13 +3,20 @@ import { create } from "zustand";
 import { audit } from "@/lib/audit";
 import {
   auditBootstrap,
-  auditClearLogs,
-  auditClearRenderLogs,
+  auditClearAllLogs,
   auditPatchSettings,
+  auditSetActionLogEnabled,
+  auditSetActionVerboseEnabled,
   auditSetEnabled,
   auditSetRenderLogEnabled,
   auditSetRenderVerboseEnabled,
 } from "@/lib/audit/ipc";
+import {
+  applyActionAuditConfig,
+  ensureActionAuditPersistHandlers,
+  logActionAuditBootstrap,
+} from "@/lib/action-audit/bootstrap";
+import { actionAudit } from "@/lib/action-audit";
 import {
   applyRenderAuditConfig,
   ensureRenderAuditPersistHandlers,
@@ -17,9 +24,8 @@ import {
 } from "@/lib/render-audit/bootstrap";
 import { renderAudit } from "@/lib/render-audit";
 import type { AuditConfigResponse, AuditDebugSettings } from "@/lib/types/audit";
-import type { RenderLogClearTarget } from "@/lib/types/audit";
 
-export type AuditViewerTab = "system" | "ui" | "uiVerbose";
+export type AuditViewerTab = "system" | "ui" | "uiVerbose" | "action" | "actionVerbose";
 
 interface AuditStoreState {
   bootstrapped: boolean;
@@ -27,6 +33,8 @@ interface AuditStoreState {
   sessionLogPath: string | null;
   renderStandardLogPath: string | null;
   renderVerboseLogPath: string | null;
+  actionSessionLogPath: string | null;
+  actionVerboseLogPath: string | null;
   bootId: string | null;
   repoDebugRoot: string | null;
   settings: AuditDebugSettings | null;
@@ -34,9 +42,10 @@ interface AuditStoreState {
   setEnabled: (enabled: boolean) => Promise<void>;
   setRenderLogEnabled: (enabled: boolean) => Promise<void>;
   setRenderVerboseEnabled: (enabled: boolean) => Promise<void>;
+  setActionLogEnabled: (enabled: boolean) => Promise<void>;
+  setActionVerboseEnabled: (enabled: boolean) => Promise<void>;
   patchSettings: (patch: Partial<AuditDebugSettings>) => Promise<void>;
-  clearLogs: () => Promise<void>;
-  clearRenderLogs: (target: RenderLogClearTarget) => Promise<void>;
+  clearAllLogs: () => Promise<void>;
   viewerOpen: boolean;
   viewerTab: AuditViewerTab;
   setViewerOpen: (open: boolean) => void;
@@ -48,6 +57,7 @@ function applyConfig(config: AuditConfigResponse): void {
   audit.setEnabled(config.settings.enabled);
   audit.patchSettings(config.settings);
   applyRenderAuditConfig(config);
+  applyActionAuditConfig(config);
 }
 
 function applyConfigToStore(config: AuditConfigResponse) {
@@ -56,6 +66,8 @@ function applyConfigToStore(config: AuditConfigResponse) {
     sessionLogPath: config.sessionLogPath,
     renderStandardLogPath: config.renderStandardLogPath,
     renderVerboseLogPath: config.renderVerboseLogPath,
+    actionSessionLogPath: config.actionSessionLogPath,
+    actionVerboseLogPath: config.actionVerboseLogPath,
     bootId: config.bootId,
     repoDebugRoot: config.repoDebugRoot,
   };
@@ -67,6 +79,8 @@ export const useAuditStore = create<AuditStoreState>((set, get) => ({
   sessionLogPath: null,
   renderStandardLogPath: null,
   renderVerboseLogPath: null,
+  actionSessionLogPath: null,
+  actionVerboseLogPath: null,
   bootId: null,
   repoDebugRoot: null,
   settings: null,
@@ -85,6 +99,7 @@ export const useAuditStore = create<AuditStoreState>((set, get) => ({
 
     try {
       ensureRenderAuditPersistHandlers();
+      ensureActionAuditPersistHandlers();
       const config = await auditBootstrap();
       applyConfig(config);
       set({
@@ -93,12 +108,15 @@ export const useAuditStore = create<AuditStoreState>((set, get) => ({
         ...applyConfigToStore(config),
       });
       logRenderAuditBootstrap(config);
+      logActionAuditBootstrap(config);
       audit.info("system", "obs.system.audit.bootstrap", {
         sessionLogPath: config.sessionLogPath,
         enabled: config.settings.enabled,
         clearLogsOnNextBoot: config.settings.clearLogsOnNextBoot,
         renderStandardLogPath: config.renderStandardLogPath,
         renderVerboseLogPath: config.renderVerboseLogPath,
+        actionSessionLogPath: config.actionSessionLogPath,
+        actionVerboseLogPath: config.actionVerboseLogPath,
       });
     } catch (error) {
       set({ bootstrapping: false });
@@ -154,6 +172,40 @@ export const useAuditStore = create<AuditStoreState>((set, get) => ({
     }
   },
 
+  setActionLogEnabled: async (enabled: boolean) => {
+    if (!__AUDIT_ENABLED__) {
+      return;
+    }
+
+    try {
+      const config = await auditSetActionLogEnabled(enabled);
+      applyConfig(config);
+      set(applyConfigToStore(config));
+      if (enabled) {
+        logActionAuditBootstrap(config);
+      }
+    } catch (error) {
+      console.debug("[audit] setActionLogEnabled failed", error);
+    }
+  },
+
+  setActionVerboseEnabled: async (enabled: boolean) => {
+    if (!__AUDIT_ENABLED__) {
+      return;
+    }
+
+    try {
+      const config = await auditSetActionVerboseEnabled(enabled);
+      applyConfig(config);
+      set(applyConfigToStore(config));
+      if (enabled) {
+        logActionAuditBootstrap(config);
+      }
+    } catch (error) {
+      console.debug("[audit] setActionVerboseEnabled failed", error);
+    }
+  },
+
   patchSettings: async (patch: Partial<AuditDebugSettings>) => {
     if (!__AUDIT_ENABLED__) {
       return;
@@ -168,38 +220,22 @@ export const useAuditStore = create<AuditStoreState>((set, get) => ({
     }
   },
 
-  clearLogs: async () => {
+  clearAllLogs: async () => {
     if (!__AUDIT_ENABLED__) {
       return;
     }
 
     try {
       audit.clearBuffer();
-      const config = await auditClearLogs();
+      renderAudit.clearStandardBuffer();
+      renderAudit.clearVerboseBuffer();
+      actionAudit.clearSessionBuffer();
+      actionAudit.clearVerboseBuffer();
+      const config = await auditClearAllLogs();
       applyConfig(config);
       set(applyConfigToStore(config));
     } catch (error) {
-      console.debug("[audit] clearLogs failed", error);
-    }
-  },
-
-  clearRenderLogs: async (target: RenderLogClearTarget) => {
-    if (!__AUDIT_ENABLED__) {
-      return;
-    }
-
-    try {
-      if (target === "standard" || target === "all") {
-        renderAudit.clearStandardBuffer();
-      }
-      if (target === "verbose" || target === "all") {
-        renderAudit.clearVerboseBuffer();
-      }
-      const config = await auditClearRenderLogs(target);
-      applyConfig(config);
-      set(applyConfigToStore(config));
-    } catch (error) {
-      console.debug("[audit] clearRenderLogs failed", error);
+      console.debug("[audit] clearAllLogs failed", error);
     }
   },
 
@@ -224,3 +260,26 @@ export const useAuditStore = create<AuditStoreState>((set, get) => ({
     set((state) => ({ viewerOpen: !state.viewerOpen }));
   },
 }));
+
+export function isAllSingleSessionNextBoot(settings: AuditDebugSettings | null): boolean {
+  if (!settings) {
+    return false;
+  }
+  return (
+    settings.clearLogsOnNextBoot &&
+    settings.renderClearLogsOnNextBoot &&
+    settings.renderVerboseClearLogsOnNextBoot &&
+    settings.actionClearLogsOnNextBoot &&
+    settings.actionVerboseClearLogsOnNextBoot
+  );
+}
+
+export function patchAllSingleSessionNextBoot(enabled: boolean): Partial<AuditDebugSettings> {
+  return {
+    clearLogsOnNextBoot: enabled,
+    renderClearLogsOnNextBoot: enabled,
+    renderVerboseClearLogsOnNextBoot: enabled,
+    actionClearLogsOnNextBoot: enabled,
+    actionVerboseClearLogsOnNextBoot: enabled,
+  };
+}

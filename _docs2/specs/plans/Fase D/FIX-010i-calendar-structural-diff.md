@@ -223,39 +223,39 @@ Enlace «Ver JSON completo» → **fuera v1** (VER-001).
 
 ## 8. Cómo capturar logs para QA (autor → agente)
 
-> **Post-OBS-003:** activar toggle **«Registro de acciones»** (④) y adjuntar `action-session-{bootId}.ndjson` — la secencia UI queda en el log sin narrar pasos. Ver [OBS-003 §9](OBS-003-action-audit-log.md#9-qa-manual-plantilla-post-implementación).
+> **Post-OBS-003 ✅:** el flujo canónico usa el toggle **④ «Registro de acciones»** y adjunta **`action-session-{bootId}.ndjson`** — la secuencia UI queda en el log sin narrar pasos. Plantilla completa: [OBS-003 §13](OBS-003-action-audit-log.md#13-plantilla-qa-agente).
 
 Solo en **`npm run tauri dev`** (release no escribe `_debug/`).
 
-### Al iniciar la app (checklist)
+### Checklist mínimo (FIX-010i / §13 calendario)
 
 1. Arrancar con `npm run tauri dev` desde la raíz del repo.
-2. Confirmar `_debug/settings.json`:
-   - `"enabled": true` (registro del sistema)
-   - `"renderLogEnabled": true` (registro UI estándar)
-   - Opcional: `"renderVerboseEnabled": true` para hover timeline / árbol
-3. Menú **Debug** (barra global): activar «Registro del sistema» si aparece apagado.
-4. **Abrir el proyecto** de prueba (mismo que uses para calendario/marcas).
-5. Tras el arranque, anotar rutas del evento bootstrap (aparece al cargar workspace):
-   - `_debug/logs/session-{bootId}.ndjson`
-   - `_debug/render-logs/ui-session-{bootId}.ndjson`
-   - El `{bootId}` es el identificador de sesión (ej. `1781389023010-12556`).
-6. **Reproducir** el escenario 010i (editar calendario, abrir toggle diff cuando exista, guardar o descartar).
-7. Cerrar app con la X **o** usar Debug → «Abrir carpeta _debug/logs».
-8. Compartir en el chat:
-   - `@_debug/logs/session-{bootId}.ndjson`
-   - `@_debug/render-logs/ui-session-{bootId}.ndjson`
-   - Si verbose ON: `@_debug/render-logs/ui-verbose-{bootId}.ndjson`
-   - Breve nota de qué hiciste (ej. «quité abril, guardé, chip siguió normal»).
+2. Menú **Debug** (barra global): activar **④ Registro de acciones** (obligatorio).
+3. Opcional **② Registro de interfaz** — estado resultante del panel calendario / timeline.
+4. Opcional **① Registro del sistema** — solo si necesitas `reconcileBaseline`, duraciones IPC o `obs.ipc.save_manuscript` (post-implementación 010i: `obs.calendar.save.draft`).
+5. **Abrir el proyecto** de prueba (mismo que uses para calendario/marcas).
+6. Anotar `{bootId}` del bootstrap (evento al cargar workspace o nombre de archivo).
+7. **Reproducir** el escenario (editar calendario → quitar mes → guardar → editor, etc.).
+8. Cerrar app o Debug → «Abrir carpeta _debug».
+9. **Adjuntar en el chat** (mínimo obligatorio):
+   - `@_debug/action-logs/action-session-{bootId}.ndjson`
+10. **Opcional** según toggles activos:
+    - `@_debug/logs/session-{bootId}.ndjson` (① — profundidad técnica / `reconcileBaseline`)
+    - `@_debug/render-logs/ui-session-{bootId}.ndjson` (② — snapshots UI)
+    - `@_debug/render-logs/ui-verbose-{bootId}.ndjson` (③)
+    - `@_debug/action-logs/action-verbose-{bootId}.ndjson` (⑤ — focus, hover, resize)
+11. Breve nota de resultado esperado vs observado (ej. «quité abril, guardé, chip siguió normal»).
 
-### Qué buscar hoy (pre-010i) vs post-implementación
+### Qué buscar en NDJSON
 
-| Fase | En NDJSON |
-|------|-----------|
-| **Pre-010i** | `obs.ui.workspace.viewChange` → calendar; **no** hay `obs.calendar.*`; validar §13 vía UI + archivos `.narralith/calendar.json` |
-| **Post-010i** | `obs.calendar.structural_diff.open` · `obs.calendar.save.draft` con `reconcileBaseline: false` en I4 |
+| Fase | Canal ④ (`obs.action.*`) | Canal ① (opcional) |
+|------|---------------------------|---------------------|
+| **Hoy (OBS-003 ✅, pre-010i UI)** | `obs.action.calendar.panel.editToggle` → `month.remove` → `draft.save` con contexto; `viewChange` editor | Sin `obs.calendar.*` aún |
+| **Post-010i** | Igual + acciones diff toggle cuando exista UI | `obs.calendar.structural_diff.open` · `obs.calendar.save.draft` con `reconcileBaseline: false` en I4 |
 
-Nivel audit `"level": "info"` en settings es suficiente para eventos de guardado IPC (`obs.ipc.*` si se amplía logging).
+**Caso canónico §13:** secuencia legible en ④: expandir Editar calendario → Editar meses → eliminar Abril → Guardar → `viewChange` a editor. Ver [OBS-003 §8 criterio 6](OBS-003-action-audit-log.md#8-criterios-de-aceptación).
+
+Nivel audit `"level": "info"` en settings es suficiente para eventos de guardado IPC.
 
 ---
 
@@ -264,7 +264,8 @@ Nivel audit `"level": "info"` en settings es suficiente para eventos de guardado
 | Fecha | Nota |
 |-------|------|
 | 2026-06-11 | Plan inicial |
-| 2026-06-11 | **Auditoría:** `calendarStructuralDiff` inexistente; `saveDraft` siempre reconcilia; UI espejo FIX-013; §13 = motivación principal; instrucciones `_debug` §8 |
+| 2026-06-11 | **Auditoría:** `calendarStructuralDiff` inexistente; `saveDraft` siempre reconcilia; UI espejo FIX-013; §13 = motivación principal |
+| 2026-06-11 | **§8 alineado OBS-003 ✅:** QA mínimo con toggle ④ + `action-session-*`; ① opcional para `reconcileBaseline` post-010i |
 
 ---
 

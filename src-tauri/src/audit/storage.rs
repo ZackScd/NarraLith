@@ -3,8 +3,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::audit::paths::{ensure_debug_dirs, logs_dir, render_logs_dir, settings_path};
-use crate::audit::types::RenderLogClearTarget;
+use crate::audit::paths::{ensure_debug_dirs, action_logs_dir, logs_dir, render_logs_dir, settings_path};
+use crate::audit::types::{ActionLogClearTarget, RenderLogClearTarget};
 use crate::audit::types::{AuditDebugSettings, AuditEntry};
 use crate::error::AppError;
 
@@ -48,6 +48,8 @@ pub struct SessionLogPaths {
     pub system: PathBuf,
     pub render_standard: PathBuf,
     pub render_verbose: PathBuf,
+    pub action_session: PathBuf,
+    pub action_verbose: PathBuf,
 }
 
 pub fn new_session_log_paths(root: &Path) -> Result<SessionLogPaths, AppError> {
@@ -57,6 +59,8 @@ pub fn new_session_log_paths(root: &Path) -> Result<SessionLogPaths, AppError> {
         system: logs_dir(root).join(format!("session-{boot_id}.ndjson")),
         render_standard: render_logs_dir(root).join(format!("ui-session-{boot_id}.ndjson")),
         render_verbose: render_logs_dir(root).join(format!("ui-verbose-{boot_id}.ndjson")),
+        action_session: action_logs_dir(root).join(format!("action-session-{boot_id}.ndjson")),
+        action_verbose: action_logs_dir(root).join(format!("action-verbose-{boot_id}.ndjson")),
         boot_id,
     })
 }
@@ -96,6 +100,44 @@ pub fn clear_render_log_files(root: &Path, target: RenderLogClearTarget) -> Resu
     Ok(())
 }
 
+pub fn clear_action_log_files(root: &Path, target: ActionLogClearTarget) -> Result<(), AppError> {
+    let clear_session = matches!(target, ActionLogClearTarget::Session | ActionLogClearTarget::All);
+    let clear_verbose = matches!(target, ActionLogClearTarget::Verbose | ActionLogClearTarget::All);
+    let dir = action_logs_dir(root);
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(&dir).map_err(|e| AppError::database(e.to_string()))? {
+        let entry = entry.map_err(|e| AppError::database(e.to_string()))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        let remove = if name.starts_with("action-session-") {
+            clear_session
+        } else if name.starts_with("action-verbose-") {
+            clear_verbose
+        } else {
+            false
+        };
+        if remove {
+            fs::remove_file(&path).map_err(|e| AppError::database(e.to_string()))?;
+        }
+    }
+    Ok(())
+}
+
+pub fn clear_all_log_files(root: &Path) -> Result<(), AppError> {
+    clear_log_files(root)?;
+    clear_render_log_files(root, RenderLogClearTarget::All)?;
+    clear_action_log_files(root, ActionLogClearTarget::All)?;
+    Ok(())
+}
+
 pub fn append_entry(log_path: &Path, entry: &AuditEntry) -> Result<(), AppError> {
     let line = serde_json::to_string(entry).map_err(|e| AppError::database(e.to_string()))?;
     let mut file = OpenOptions::new()
@@ -117,7 +159,7 @@ fn unix_ms_now() -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::audit::types::RenderLogClearTarget;
+    use crate::audit::types::{ActionLogClearTarget, RenderLogClearTarget};
     use tempfile::TempDir;
 
     #[test]
@@ -180,5 +222,39 @@ mod tests {
         assert!(paths.system.is_file());
         assert!(!paths.render_standard.is_file());
         assert!(paths.render_verbose.is_file());
+    }
+
+    #[test]
+    fn clear_all_log_files_removes_system_render_and_action() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        ensure_debug_dirs(root).unwrap();
+        let paths = new_session_log_paths(root).unwrap();
+        fs::write(&paths.system, b"{}\n").unwrap();
+        fs::write(&paths.render_standard, b"{}\n").unwrap();
+        fs::write(&paths.render_verbose, b"{}\n").unwrap();
+        fs::write(&paths.action_session, b"{}\n").unwrap();
+        fs::write(&paths.action_verbose, b"{}\n").unwrap();
+
+        clear_all_log_files(root).unwrap();
+        assert_eq!(fs::read_dir(logs_dir(root)).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(render_logs_dir(root)).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(action_logs_dir(root)).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn clear_action_logs_only_targets_action_files() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        ensure_debug_dirs(root).unwrap();
+        let paths = new_session_log_paths(root).unwrap();
+        fs::write(&paths.system, b"{}\n").unwrap();
+        fs::write(&paths.action_session, b"{}\n").unwrap();
+        fs::write(&paths.action_verbose, b"{}\n").unwrap();
+
+        clear_action_log_files(root, ActionLogClearTarget::All).unwrap();
+        assert!(paths.system.is_file());
+        assert!(!paths.action_session.is_file());
+        assert!(!paths.action_verbose.is_file());
     }
 }

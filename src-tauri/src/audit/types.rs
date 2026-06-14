@@ -48,6 +48,22 @@ pub struct AuditDebugSettings {
     pub render_verbose_max_buffer_size: u32,
     #[serde(default = "default_render_verbose_level")]
     pub render_verbose_level: AuditLevel,
+    #[serde(default)]
+    pub action_log_enabled: bool,
+    #[serde(default)]
+    pub action_clear_logs_on_next_boot: bool,
+    #[serde(default = "default_action_max_buffer_size")]
+    pub action_max_buffer_size: u32,
+    #[serde(default)]
+    pub action_level: AuditLevel,
+    #[serde(default)]
+    pub action_verbose_enabled: bool,
+    #[serde(default)]
+    pub action_verbose_clear_logs_on_next_boot: bool,
+    #[serde(default = "default_action_verbose_max_buffer_size")]
+    pub action_verbose_max_buffer_size: u32,
+    #[serde(default = "default_action_verbose_level")]
+    pub action_verbose_level: AuditLevel,
 }
 
 fn default_enabled() -> bool {
@@ -70,6 +86,18 @@ fn default_render_verbose_level() -> AuditLevel {
     AuditLevel::Debug
 }
 
+fn default_action_max_buffer_size() -> u32 {
+    600
+}
+
+fn default_action_verbose_max_buffer_size() -> u32 {
+    300
+}
+
+fn default_action_verbose_level() -> AuditLevel {
+    AuditLevel::Debug
+}
+
 impl Default for AuditDebugSettings {
     fn default() -> Self {
         Self {
@@ -87,6 +115,14 @@ impl Default for AuditDebugSettings {
             render_verbose_clear_logs_on_next_boot: false,
             render_verbose_max_buffer_size: default_render_verbose_max_buffer_size(),
             render_verbose_level: default_render_verbose_level(),
+            action_log_enabled: false,
+            action_clear_logs_on_next_boot: false,
+            action_max_buffer_size: default_action_max_buffer_size(),
+            action_level: AuditLevel::Info,
+            action_verbose_enabled: false,
+            action_verbose_clear_logs_on_next_boot: false,
+            action_verbose_max_buffer_size: default_action_verbose_max_buffer_size(),
+            action_verbose_level: default_action_verbose_level(),
         }
     }
 }
@@ -117,6 +153,8 @@ pub struct AuditConfigResponse {
     pub session_log_path: Option<String>,
     pub render_standard_log_path: Option<String>,
     pub render_verbose_log_path: Option<String>,
+    pub action_session_log_path: Option<String>,
+    pub action_verbose_log_path: Option<String>,
     pub boot_id: String,
     pub repo_debug_root: String,
 }
@@ -127,8 +165,12 @@ pub struct AuditLogPathResponse {
     pub session_log_path: Option<String>,
     pub render_standard_log_path: Option<String>,
     pub render_verbose_log_path: Option<String>,
+    pub action_session_log_path: Option<String>,
+    pub action_verbose_log_path: Option<String>,
     pub logs_dir: String,
     pub render_logs_dir: String,
+    pub action_logs_dir: String,
+    pub repo_debug_root: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -142,6 +184,21 @@ pub enum RenderLogChannel {
 #[serde(rename_all = "lowercase")]
 pub enum RenderLogClearTarget {
     Standard,
+    Verbose,
+    All,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ActionLogChannel {
+    Session,
+    Verbose,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ActionLogClearTarget {
+    Session,
     Verbose,
     All,
 }

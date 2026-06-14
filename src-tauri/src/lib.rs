@@ -113,6 +113,8 @@ pub fn run() {
             #[cfg(debug_assertions)]
             audit::commands::audit_clear_logs,
             #[cfg(debug_assertions)]
+            audit::commands::audit_clear_all_logs,
+            #[cfg(debug_assertions)]
             audit::commands::audit_append_entry,
             #[cfg(debug_assertions)]
             audit::commands::audit_get_log_path,
@@ -124,6 +126,14 @@ pub fn run() {
             audit::commands::audit_clear_render_logs,
             #[cfg(debug_assertions)]
             audit::commands::audit_append_render_entry,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_set_action_log_enabled,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_set_action_verbose_enabled,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_append_action_entry,
+            #[cfg(debug_assertions)]
+            audit::commands::audit_clear_action_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

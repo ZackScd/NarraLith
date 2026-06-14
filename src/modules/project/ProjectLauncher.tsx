@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { CreateProjectDialog } from "@/modules/project/CreateProjectDialog";
 import { useProjectStore } from "@/stores/useProjectStore";
 
@@ -43,7 +44,10 @@ export function ProjectLauncher({ variant = "welcome" }: ProjectLauncherProps) {
 
   const actionButtons = (
     <>
-      <Button onClick={() => setCreateOpen(true)} disabled={isLoading}>
+      <Button onClick={() => {
+        trackAction("launcher", "createOpen", {});
+        setCreateOpen(true);
+      }} disabled={isLoading}>
         <Plus className="size-4" />
         {t("launcher.create")}
       </Button>

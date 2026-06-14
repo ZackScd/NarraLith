@@ -57,7 +57,7 @@ flowchart LR
 | **010c** | [FIX-010c-calendar-entries.md](FIX-010c-calendar-entries.md) | Vista calendario + mini-timeline · recarga post-reset | v1 · ✅ |
 | **010d** | [FIX-010d-edit-time-tags.md](FIX-010d-edit-time-tags.md) | Clic chip → `TimeTagDialog` edit · §12 reset baseline | v1 · ✅ |
 | **010h** | [FIX-010h-calendar-draft-persist.md](FIX-010h-calendar-draft-persist.md) | Borrador en sesión + diálogos unsaved | v1 · ✅ cerrado |
-| **OBS-003** | [OBS-003-action-audit-log.md](OBS-003-action-audit-log.md) | Registro acciones UI (QA sin narrar pasos) | v1 · 📋 **antes 010i** |
+| **OBS-003** | [OBS-003-action-audit-log.md](OBS-003-action-audit-log.md) | Registro acciones UI (QA sin narrar pasos) | ✅ v1 · **010i desbloqueado** |
 | **010i** | [FIX-010i-calendar-structural-diff.md](FIX-010i-calendar-structural-diff.md) | Diff estructural borrador vs disco | v1 |
 | **010e** | [FIX-010e-migration-wizard.md](FIX-010e-migration-wizard.md) | Asistente migración modos A/B/C + vista previa | v2 |
 | **010f** | *(incluido en 010e)* | Panel consistencia fechas · re-ejecutar migración | v2 |

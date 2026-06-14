@@ -12,6 +12,7 @@ import {
   MonthListDnDProvider,
 } from "@/modules/calendar/monthListDnD";
 import { createEmptyMonth } from "@/stores/useCalendarStore";
+import { trackAction } from "@/lib/action-audit/trackAction";
 
 interface CalendarMonthRowsProps {
   months: CalendarMonth[];
@@ -39,11 +40,20 @@ export function CalendarMonthRows({
   const { t } = useTranslation("calendarView");
 
   const updateMonth = (index: number, patch: Partial<CalendarMonth>) => {
+    if (patch.days != null) {
+      trackAction("calendar", "month.daysChange", {
+        index,
+        from: months[index]?.days,
+        to: patch.days,
+        variant,
+      });
+    }
     onMonthsChange(months.map((m, i) => (i === index ? { ...m, ...patch } : m)));
   };
 
   const moveMonth = (from: number, to: number) => {
     if (to < 0 || to >= months.length || from === to) return;
+    trackAction("calendar", "month.reorder", { from, to, scope: "baseMonth", variant });
     const next = [...months];
     const [moved] = next.splice(from, 1);
     if (!moved) return;
@@ -200,6 +210,10 @@ export function CalendarMonthRows({
           disabled={months.length <= 1}
           onClick={() => {
             onMonthsChange(months.filter((_, i) => i !== index));
+            trackAction("calendar", "month.remove", {
+              index,
+              variant: "compact",
+            });
             onDeletePendingChange(null);
             onExpandedMonthChange?.(null);
           }}
@@ -242,7 +256,13 @@ export function CalendarMonthRows({
             variant="outline"
             size="icon"
             className="size-8 rounded-full"
-            onClick={() => onMonthsChange([...months, createEmptyMonth()])}
+            onClick={() => {
+              trackAction("calendar", "month.add", {
+                monthCountBefore: months.length,
+                variant: "compact",
+              });
+              onMonthsChange([...months, createEmptyMonth()]);
+            }}
           >
             <Plus className="size-4" />
           </Button>
@@ -306,6 +326,16 @@ export function CalendarMonthRows({
                   disabled={months.length <= 1}
                   onClick={() => {
                     if (deletePendingIndex === index) {
+                      trackAction("calendar", "monthDelete.dialog", {
+                        index,
+                        choice: "confirm",
+                        name: months[index]?.name,
+                      });
+                      trackAction("calendar", "month.remove", {
+                        index,
+                        name: months[index]?.name,
+                        variant: "base",
+                      });
                       onMonthsChange(months.filter((_, i) => i !== index));
                       onDeletePendingChange(null);
                     } else {
@@ -328,8 +358,13 @@ export function CalendarMonthRows({
             variant="outline"
             size="icon"
             className="size-8 rounded-full"
-            onClick={() => onMonthsChange([...months, createEmptyMonth()])}
-            aria-label={t("edit.addMonth")}
+            onClick={() => {
+              trackAction("calendar", "month.add", {
+                monthCountBefore: months.length,
+                variant: "base",
+              });
+              onMonthsChange([...months, createEmptyMonth()]);
+            }}
           >
             <Plus className="size-4" />
           </Button>

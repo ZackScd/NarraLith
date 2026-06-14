@@ -26,4 +26,12 @@ export const DEFAULT_AUDIT_SETTINGS: AuditDebugSettings = {
   renderVerboseClearLogsOnNextBoot: false,
   renderVerboseMaxBufferSize: 400,
   renderVerboseLevel: "debug",
+  actionLogEnabled: false,
+  actionClearLogsOnNextBoot: false,
+  actionMaxBufferSize: 600,
+  actionLevel: "info",
+  actionVerboseEnabled: false,
+  actionVerboseClearLogsOnNextBoot: false,
+  actionVerboseMaxBufferSize: 300,
+  actionVerboseLevel: "debug",
 };

@@ -10,6 +10,7 @@ import {
 } from "@/lib/calendar";
 import { useProjectTimeline } from "@/hooks/useProjectTimeline";
 import { useTimelineRenderAudit } from "@/lib/render-audit/hooks/useTimelineRenderAudit";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { resolveInitialCalendarYear } from "@/lib/calendar/lastProjectTime";
 import { timelineMarkerId } from "@/lib/calendar/timeMarks";
 import { formatTimelineRangeLabel } from "@/lib/timeline/formatRangeLabel";
@@ -991,6 +992,7 @@ export function TimelineHorizontal({ onRangeLabelChange }: TimelineHorizontalPro
   const openItem = useCallback(
     (item: TimelineDisplayItem) => {
       if (item.kind !== "file" || !item.path) return;
+      trackAction("timeline", "chipClick", { path: item.path, kind: item.kind });
       void requestOpenDocument(item.path);
       setMainView("editor");
     },

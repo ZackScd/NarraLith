@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { resolveContextMenuParentPath } from "@/lib/explorer/explorerParentPath";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import type { ExplorerDialogState } from "@/modules/explorer/ExplorerDialogs";
 import type { FileTreeNode } from "@/lib/types/fs";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
@@ -11,6 +12,15 @@ interface ExplorerContextMenuProps {
   position: { x: number; y: number } | null;
   onClose: () => void;
   onOpenDialog: (dialog: ExplorerDialogState) => void;
+}
+
+function trackContextMenu(action: string, extra?: Record<string, unknown>): void {
+  trackAction(
+    "explorer",
+    "contextMenu",
+    { action, ...extra },
+    { channel: "verbose", level: "debug" },
+  );
 }
 
 export function ExplorerContextMenu({
@@ -65,6 +75,7 @@ export function ExplorerContextMenu({
       <MenuButton
         label={t("context.newFile")}
         onClick={() => {
+          trackContextMenu("newFile", { parentPath });
           startInlineCreate("file", parentPath);
           onClose();
         }}
@@ -73,6 +84,7 @@ export function ExplorerContextMenu({
         <MenuButton
           label={tWb("create.menuLabel")}
           onClick={() => {
+            trackContextMenu("createEntity", { parentPath });
             onOpenDialog({ type: "createEntity", parentPath });
             onClose();
           }}
@@ -81,6 +93,7 @@ export function ExplorerContextMenu({
       <MenuButton
         label={t("context.newFolder")}
         onClick={() => {
+          trackContextMenu("newFolder", { parentPath });
           startInlineCreate("folder", parentPath);
           onClose();
         }}
@@ -89,6 +102,9 @@ export function ExplorerContextMenu({
         <MenuButton
           label={tWb("folderEdit.menuLabel")}
           onClick={() => {
+            trackContextMenu("folderDescription", {
+              dirPath: node?.isDir ? node.path : cardPath,
+            });
             onOpenDialog({
               type: "folderDescription",
               dirPath: node?.isDir ? node.path : cardPath,
@@ -103,6 +119,7 @@ export function ExplorerContextMenu({
           <MenuButton
             label={t("context.rename")}
             onClick={() => {
+              trackContextMenu("rename", { path: targetPath });
               startInlineRename(targetPath, isDir, targetName);
               onClose();
             }}
@@ -111,6 +128,7 @@ export function ExplorerContextMenu({
             label={t("context.delete")}
             className="text-destructive"
             onClick={() => {
+              trackContextMenu("delete", { path: targetPath, isDir });
               onOpenDialog({
                 type: "delete",
                 path: targetPath,

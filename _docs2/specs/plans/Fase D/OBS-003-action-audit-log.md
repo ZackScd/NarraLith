@@ -1,7 +1,7 @@
 # OBS-003 — Registro de acciones de usuario (action audit)
 
-> **Estado:** 📋 Planificado (auditoría jun 2026) · **Esfuerzo:** Alto · **Riesgo:** Bajo–Medio  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase D · **Siguiente tarea D** antes de [FIX-010i](FIX-010i-calendar-structural-diff.md)  
+> **Estado:** ✅ Implementado (Fases 0–3, jun 2026) · **Esfuerzo:** Alto · **Riesgo:** Bajo–Medio  
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase D · **Siguiente tarea D:** [FIX-010i](FIX-010i-calendar-structural-diff.md)  
 > **Depende de:** [OBS-001](../Fase%20B/OBS-001-system-audit-log.md) ✅ · [OBS-002](../Fase%20C/OBS-002-ui-render-audit-log.md) ✅  
 > **Motivación:** QA manual sin narrar pasos; reproducir bugs (010i, §13, freeze calendario) desde NDJSON.
 
@@ -9,14 +9,15 @@
 
 ## 0. Auditoría del estado actual (jun 2026)
 
-### 0.1 Tres capas hoy — y el hueco
+### 0.1 Cuatro capas — estado post-implementación
 
-| Capa | ID | Qué registra | Archivo | Gap |
-|------|-----|--------------|---------|-----|
-| Sistema | OBS-001 | IPC, FS, editor store, watcher, proyecto | `_debug/logs/session-{bootId}.ndjson` | No sabe «abrí acordeón Meses» |
-| Estado UI | OBS-002 std | Snapshots render: layout, árbol, gutter, timeline colocado | `_debug/render-logs/ui-session-*.ndjson` | Estado **resultante**, no **intención** |
-| Estado UI verbose | OBS-002 verbose | Dumps grandes (vecinos escritura, árbol 500 paths) | `_debug/render-logs/ui-verbose-*.ndjson` | Idem |
-| **Acciones** | **—** | **No existe** | — | **Bloqueante QA** |
+| Capa | ID | Qué registra | Archivo | Estado |
+|------|-----|--------------|---------|--------|
+| Sistema | OBS-001 | IPC, FS, editor store, watcher, proyecto | `_debug/logs/session-{bootId}.ndjson` | ✅ |
+| Estado UI | OBS-002 std | Snapshots render: layout, árbol, gutter, timeline colocado | `_debug/render-logs/ui-session-*.ndjson` | ✅ |
+| Estado UI verbose | OBS-002 verbose | Dumps grandes (vecinos escritura, árbol 500 paths) | `_debug/render-logs/ui-verbose-*.ndjson` | ✅ |
+| **Acciones** | **OBS-003** | Clicks, toggles, guardar, navegación (intención) | `_debug/action-logs/action-session-*.ndjson` | ✅ |
+| Acciones verbose | OBS-003 verbose | Focus, hover, resize, context menu | `_debug/action-logs/action-verbose-*.ndjson` | ✅ |
 
 **Ejemplo real (sesión usuario jun 2026):** logs muestran `viewChange → calendar` y `calendarPanel.week` corrupto, pero **no** «expandí Editar calendario → Meses → Editar meses → eliminé Abril → Guardar».
 
@@ -519,15 +520,15 @@ Duplicar en **both** solo eventos críticos opcionales (p. ej. `draft.save` sess
 
 ### Fase 0 — Esqueleto + menú unificado (Medio)
 
-- [ ] Módulo `action-audit/` + stub release + tests Vitest
-- [ ] Rust: `action_logs_dir`, ampliar `SessionLogPaths`, settings ④⑤, `append_action_entry`, **`clear_all_logs`**
-- [ ] TS: `lib/types/audit.ts`, `audit/ipc.ts`, `useAuditStore`, `action-audit/bootstrap.ts`
-- [ ] **Mover** `useAuditBootstrap` (+ menú debug accesible) a `App.tsx`
-- [ ] Menú: **5 toggles**, **1 borrar todo**, **1 sesión única**, **1 abrir `_debug`**
-- [ ] Visor **5 pestañas** + tipos `AuditViewerTab`
-- [ ] i18n ES/EN completo
-- [ ] Tests Rust: clear all borra tres carpetas; settings migración; append action NDJSON
-- [ ] Corregir inconsistencia actual `audit_clear_logs` (regenera paths render sin vaciar disco) dentro de `clear_all_logs`
+- [x] Módulo `action-audit/` + stub release + tests Vitest
+- [x] Rust: `action_logs_dir`, ampliar `SessionLogPaths`, settings ④⑤, `append_action_entry`, **`clear_all_logs`**
+- [x] TS: `lib/types/audit.ts`, `audit/ipc.ts`, `useAuditStore`, `action-audit/bootstrap.ts`
+- [x] **Mover** `useAuditBootstrap` (+ menú debug accesible) a `App.tsx`
+- [x] Menú: **5 toggles**, **1 borrar todo**, **1 sesión única**, **1 abrir `_debug`**
+- [x] Visor **5 pestañas** + tipos `AuditViewerTab`
+- [x] i18n ES/EN completo
+- [x] Tests Rust: clear all borra tres carpetas; settings migración; append action NDJSON
+- [x] Corregir inconsistencia actual `audit_clear_logs` (regenera paths render sin vaciar disco) dentro de `clear_all_logs`
 
 ### Fase 1 — Acciones session núcleo (Medio–Alto)
 
@@ -540,19 +541,21 @@ Prioridad QA (orden):
 5. **Editor** — tabs, save, dirtyDiff toggle, unsaved dialogs
 6. **Timeline** — filters, openCalendar, chipClick
 
+> **Residual v1.1:** `editTimeTag`, `eventFrameToggle`, algunos toggles calendario secundarios del catálogo §4 — no bloquean FIX-010i.
+
 ### Fase 2 — Verbose + resto módulos (Medio)
 
-- [ ] Canal verbose §5 + §4.10
-- [ ] Map/graph/consistency/entity stubs
-- [ ] Settings + launcher §4.9
-- [ ] Layout resize verbose
+- [x] Canal verbose §5 + §4.10
+- [x] Map/graph/consistency/entity stubs
+- [x] Settings + launcher §4.9
+- [x] Layout resize verbose
 
 ### Fase 3 — Integración planes D (Bajo)
 
-- [ ] FIX-010i: QA §8 solo con ④; opcional ① para `reconcileBaseline` en system log
-- [ ] `06-ARCHITECTURE.md` matriz 4 capas observabilidad
-- [ ] Actualizar OBS-002 §8 menú (referencia menú unificado)
-- [ ] Plantilla QA agente: adjuntar `action-session-{bootId}.ndjson` obligatorio
+- [x] FIX-010i: QA §8 solo con ④; opcional ① para `reconcileBaseline` en system log
+- [x] `06-ARCHITECTURE.md` matriz 4 capas observabilidad
+- [x] Actualizar OBS-002 §8 menú (referencia menú unificado)
+- [x] Plantilla QA agente: adjuntar `action-session-{bootId}.ndjson` obligatorio (§13)
 
 ---
 
@@ -569,12 +572,58 @@ Prioridad QA (orden):
 
 ## 9. QA manual (plantilla post-implementación)
 
-1. Activar ①②④ → abrir novel 1 → calendario → editar → quitar mes → guardar → editor.
-2. Adjuntar `session-*.ndjson`, `ui-session-*.ndjson`, `action-session-*.ndjson`.
-3. Verificar orden temporal y `action` names §4.6.
-4. Activar ⑤ → repetir → `action-verbose-*.ndjson` contiene hovers/focus extra.
-5. «Eliminar todo» → archivos vacíos o eliminados.
+1. Activar **④** (y opcionalmente ①②) → abrir novel 1 → calendario → editar → quitar mes → guardar → editor.
+2. Adjuntar **`action-session-{bootId}.ndjson`** (obligatorio) + opcionales según toggles.
+3. Verificar orden temporal y eventos `obs.action.*` §4.6.
+4. Activar **⑤** → repetir → `action-verbose-*.ndjson` contiene hovers/focus/resize extra.
+5. «Eliminar todo» → archivos vacíos o eliminados en `logs/`, `render-logs/`, `action-logs/`.
 6. «Sesión única» → reiniciar app → logs limpios una vez.
+
+Ver **§13** para instrucciones dirigidas a agentes Cursor.
+
+---
+
+## 13. Plantilla QA agente
+
+Copiar/pegar al iniciar un hilo de depuración manual. El agente **debe** pedir o recibir el action log antes de inferir pasos del usuario.
+
+### Entrada obligatoria
+
+```markdown
+## Sesión QA NarraLith
+
+- **Modo:** `npm run tauri dev` (no release)
+- **bootId:** `{bootId}` (del nombre de archivo o evento bootstrap)
+- **Toggles activos:** ④ obligatorio · ①②③⑤ opcional según necesidad
+
+### Archivos adjuntos
+
+- [ ] `@_debug/action-logs/action-session-{bootId}.ndjson` **← obligatorio**
+- [ ] `@_debug/logs/session-{bootId}.ndjson` (① — IPC, reconcileBaseline, duraciones)
+- [ ] `@_debug/render-logs/ui-session-{bootId}.ndjson` (② — estado UI)
+- [ ] `@_debug/render-logs/ui-verbose-{bootId}.ndjson` (③)
+- [ ] `@_debug/action-logs/action-verbose-{bootId}.ndjson` (⑤ — focus/hover/resize)
+
+### Resultado observado
+
+(1–3 frases: qué falló vs qué esperabas)
+
+### Escenario (solo si ④ no basta)
+
+(Pasos extra no capturados en action log)
+```
+
+### Reglas para el agente
+
+1. **No reconstruir** la secuencia de clics desde OBS-002 si existe OBS-003 ④ — priorizar `obs.action.*`.
+2. Correlacionar por `ts` y mismo `bootId` entre archivos.
+3. Calendario §13 / FIX-010i: buscar cadena `panel.editToggle` → `months.editMode` → `month.remove` → `draft.save` → `viewChange`.
+4. Si el usuario solo adjunta `ui-session-*` sin `action-session-*`, pedir re-ejecutar con toggle ④ ON.
+5. `reconcileBaseline` y profundidad IPC → canal ① (`obs.calendar.*` post-010i); no confundir con `obs.action.calendar.draft.save`.
+
+### Ejemplo mínimo válido
+
+Un solo archivo `@_debug/action-logs/action-session-1781394483671-9472.ndjson` + nota «eliminé Abril, guardé, chips no pasaron a rojo» es suficiente para triage calendario pre-010i.
 
 ---
 
@@ -605,7 +654,8 @@ Prioridad QA (orden):
 |-------|------|
 | 2026-06-11 | Plan inicial + menú unificado |
 | 2026-06-11 | **Auditoría código v2:** §0.6–0.9; bootstrap en App; clear_all; bypass setMainView; duplicación OBS-001; catálogo §4.9–4.10; inventario archivos completo |
+| 2026-06-11 | **Fases 0–3 ✅:** implementación + docs; FIX-010i desbloqueado; §13 plantilla QA agente |
 
 ---
 
-**Última actualización:** 2026-06-11
+**Última actualización:** 2026-06-11 (implementación completa)

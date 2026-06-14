@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { calendarErrorI18nKey } from "@/stores/useCalendarStore";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import {
   createEmptyMonth,
   useCalendarStore,
@@ -48,6 +49,11 @@ function CalendarSettingsForm({ initialConfig }: { initialConfig: CalendarConfig
     setValidationKey(null);
     const ok = await saveCalendar(draft);
     if (ok) {
+      trackAction("settings", "calendar", {
+        monthCount: draft.months.length,
+        daysPerWeek: draft.daysPerWeek,
+        leapEnabled: draft.leapRules.enabled,
+      });
       setSavedFlash(true);
       window.setTimeout(() => setSavedFlash(false), 2000);
     }

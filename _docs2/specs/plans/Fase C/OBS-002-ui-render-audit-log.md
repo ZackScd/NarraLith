@@ -303,17 +303,25 @@ Checklist cierre:
 
 ## 8. Menú debug (UX) — i18n sugerido
 
+> **Actualización OBS-003 (jun 2026):** el menú debug pasó a **cinco toggles** unificados (①–⑤), **un** botón «Eliminar todo el registro» y **un** toggle «Sesión única al reiniciar». Ver [`OBS-003 §2`](../../Fase%20D/OBS-003-action-audit-log.md#2-modelo-de-cinco-toggles--dos-acciones-unificadas). Esta sección documenta los toggles **②③** de OBS-002; el catálogo i18n completo vive en `src/i18n/*/debug.json`.
+
 | Control | Key ES |
 |---------|--------|
-| Toggle ① | «Registro del sistema» (existente) |
+| Toggle ① | «Registro del sistema» (OBS-001) |
 | Toggle ② | «Registro de interfaz» |
 | Toggle ③ | «Registro de interfaz (detallado)» |
-| Borrar ② | «Borrar registro de interfaz» |
-| Borrar ③ | «Borrar registro detallado» |
+| Toggle ④ | «Registro de acciones» (OBS-003 session) |
+| Toggle ⑤ | «Registro de acciones (detallado)» (OBS-003 verbose) |
+| Borrar todo | «Eliminar todo el registro» (único — vacía logs/, render-logs/, action-logs/) |
+| Sesión única | «Sesión única al reiniciar» (marca los cinco clear-on-boot) |
 | Visor tab ② | «Interfaz» |
 | Visor tab ③ | «Interfaz (detallado)» |
+| Visor tab ④ | «Acciones» |
+| Visor tab ⑤ | «Acciones (detallado)» |
 
-Subtítulo toggle ③: «Snapshots completos; puede generar archivos grandes».
+Subtítulo toggle ③ / ⑤: «Snapshots completos; puede generar archivos grandes».
+
+**Histórico (pre-OBS-003):** tres botones «Borrar registro…» independientes — reemplazados por acción unificada.
 
 ---
 
@@ -392,6 +400,7 @@ Cada hook emite solo eventos **std** de §3.
 ## 13. Referencias
 
 - OBS-001: [`OBS-001-system-audit-log.md`](../Fase%20B/OBS-001-system-audit-log.md)
+- OBS-003 (menú unificado + acciones): [`OBS-003-action-audit-log.md`](../Fase%20D/OBS-003-action-audit-log.md)
 - FIX-009d: [`FIX-009d-audit-writing-order-path-index.md`](FIX-009d-audit-writing-order-path-index.md)
 - Workspace: `WorkspaceShell`, `useWorkspaceStore`, `GlobalNav`
 - Stores: `useFileTreeStore`, `useEditorStore`, `useTimelineStore`

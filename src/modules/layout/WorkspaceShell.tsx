@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { useAutoSnapshotIndicator } from "@/hooks/useAutoSnapshotIndicator";
+import { useUiActionAudit } from "@/lib/action-audit/hooks";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { useUiRenderAudit } from "@/lib/render-audit/hooks/useUiRenderAudit";
-import { useAuditBootstrap } from "@/hooks/useAuditBootstrap";
-import { useAuditLogShortcut } from "@/hooks/useAuditLogShortcut";
 import { useEditorAutoSave } from "@/hooks/useEditorAutoSave";
 import { useEditorFsSync } from "@/hooks/useEditorFsSync";
 import { usePersistManuscriptTabs } from "@/hooks/usePersistManuscriptTabs";
@@ -59,9 +59,8 @@ export function WorkspaceShell() {
   const rightPanelCollapsed = useLayoutStore((s) => s.rightPanelCollapsed);
 
   useEntityIndexBootstrap();
-  useAuditBootstrap();
   useUiRenderAudit();
-  useAuditLogShortcut();
+  useUiActionAudit();
   useSaveShortcut();
   useFsWatcher();
   useEditorFsSync();
@@ -88,8 +87,15 @@ export function WorkspaceShell() {
             onEditorViewMode={(mode) => setViewMode(mode)}
             mainView={mainView}
             onMainViewChange={handleMainViewChange}
-            onOpenHistory={() => setVersionsOpen(true)}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenHistory={() => {
+              trackAction("workspace", "versionsOpen", {});
+              setVersionsOpen(true);
+            }}
+            onOpenSettings={() => {
+              trackAction("workspace", "settingsOpen", {});
+              trackAction("settings", "open", {});
+              setSettingsOpen(true);
+            }}
           />
 
           {explorerOpen && mainView === "editor" ? (
@@ -145,8 +151,14 @@ export function WorkspaceShell() {
       <ExternalReloadDialog />
       <SettingsDialog
         open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={(open) => {
+          if (!open && settingsOpen) {
+            trackAction("settings", "close", {});
+          }
+          setSettingsOpen(open);
+        }}
         onCloseProject={async () => {
+          trackAction("settings", "closeProject", {});
           await closeProject();
           setSettingsOpen(false);
         }}

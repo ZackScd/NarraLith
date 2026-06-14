@@ -48,7 +48,9 @@ export function CalendarTopBar({ config, events }: CalendarTopBarProps) {
   );
 
   const shiftYear = (delta: number) => {
-    setViewYear(viewYear + delta);
+    setViewYear(viewYear + delta, {
+      source: delta < 0 ? "chevronPrev" : "chevronNext",
+    });
   };
 
   const specialYearInfo = specialYearBarLabel(viewYear, config);
@@ -74,7 +76,9 @@ export function CalendarTopBar({ config, events }: CalendarTopBarProps) {
                 className="h-8 w-24 shrink-0 text-center text-sm"
                 value={viewYear}
                 fallback={referenceYear}
-                onValueChange={(n) => setViewYear(n ?? referenceYear)}
+                onValueChange={(n) =>
+                  setViewYear(n ?? referenceYear, { source: "input" })
+                }
                 title={t("yearReferenceHint", { year: referenceYear })}
               />
               <Button
@@ -92,7 +96,7 @@ export function CalendarTopBar({ config, events }: CalendarTopBarProps) {
                 variant="outline"
                 size="icon"
                 className="size-8 shrink-0"
-                onClick={() => setViewYear(referenceYear)}
+                onClick={() => setViewYear(referenceYear, { source: "lastProjectTime" })}
                 aria-label={t("yearGoToLast")}
                 title={t("yearGoToLast")}
               >
@@ -104,7 +108,7 @@ export function CalendarTopBar({ config, events }: CalendarTopBarProps) {
             <YearJumpStrip
               years={yearsWithEntries}
               activeYear={viewYear}
-              onSelectYear={setViewYear}
+              onSelectYear={(year) => setViewYear(year, { source: "yearStrip" })}
               getYearAriaLabel={(year) => t("jumpToYear", { year })}
               scrollBackAriaLabel={t("scrollYearsBack")}
               scrollForwardAriaLabel={t("scrollYearsForward")}

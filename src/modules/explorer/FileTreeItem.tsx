@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { EXPLORER_DND } from "@/lib/explorer/explorerDnD";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { displayName, projectPathsEqual } from "@/lib/pathUtils";
 import { isEntityPath } from "@/lib/worldbuilding/entityPath";
 import type { ExplorerDropIntent } from "@/lib/explorer/explorerDropIntent";
@@ -154,6 +155,9 @@ export function FileTreeItem({
         if (node.isDir) {
           toggleExpanded(node.path);
         } else if (node.path.toLowerCase().endsWith(".md")) {
+          if (isEntityPath(node.path)) {
+            trackAction("entity", "open", { path: node.path, source: "tree" });
+          }
           void requestOpenDocument(node.path);
         }
       }}

@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { breadcrumbSegments, listChildrenAt } from "@/lib/explorer/treeNav";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { displayName } from "@/lib/pathUtils";
 import { FolderCard } from "@/modules/explorer/FolderCard";
 import type { FileTreeNode } from "@/lib/types/fs";
@@ -97,7 +98,13 @@ export function CardView({ onContextMenu }: CardViewProps) {
                 <button
                   type="button"
                   className="flex w-full items-center rounded-md px-2 py-1 text-left text-sm hover:bg-muted/80"
-                  onClick={() => void requestOpenDocument(file.path)}
+                  onClick={() => {
+                    trackAction("entity", "open", {
+                      path: file.path,
+                      source: "cardView",
+                    });
+                    void requestOpenDocument(file.path);
+                  }}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     onContextMenu(file, e);

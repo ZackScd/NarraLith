@@ -14,6 +14,7 @@ import {
   commitManuscriptLabel,
   runLabelCommitAsync,
 } from "@/lib/editor/commitManuscriptLabel";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import { normalizeEditorErrorKey } from "@/lib/editor/editorErrors";
 import { ensureEventEntityPath } from "@/lib/editor/ensureEventEntity";
 import { openTimeTagForBlock } from "@/lib/editor/openTimeTagForBlock";
@@ -159,6 +160,10 @@ export function EditorSidePanel() {
     if (activeTabKind !== "manuscript" || !activeFilePath || !calendar) {
       return;
     }
+    trackAction("editor", "insertTimeTag", {
+      path: activeFilePath,
+      blockIndex: activeBlockIndex,
+    });
     const block = document?.blocks[activeBlockIndex];
     openTimeTagForBlock({
       filePath: activeFilePath,
@@ -178,6 +183,12 @@ export function EditorSidePanel() {
     rightPanelCollapsed,
   ]);
 
+  const handleToggleInlineMetadata = useCallback(() => {
+    const next = !inlineMetadataVisible;
+    trackAction("editor", "sidePanelTab", { tab: "inlineTags", visible: next });
+    toggleInlineMetadata();
+  }, [inlineMetadataVisible, toggleInlineMetadata]);
+
   const manuscriptActionButtons = (compact: boolean) =>
     showManuscriptTools ? (
       <>
@@ -193,7 +204,7 @@ export function EditorSidePanel() {
           aria-pressed={inlineMetadataVisible}
           title={tagsTitle}
           aria-label={tagsTitle}
-          onClick={toggleInlineMetadata}
+          onClick={handleToggleInlineMetadata}
         >
           <Tags className={compact ? "size-4" : "size-3.5"} />
         </Button>

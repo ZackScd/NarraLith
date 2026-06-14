@@ -11,7 +11,7 @@ Mapa del repositorio al **jun 2026**. Actualizar al añadir módulos estructural
 
 ```
 NarraLith/
-├── _debug/             # Solo tauri dev — logs auditoría OBS-001 (gitignore)
+├── _debug/             # Solo tauri dev — logs OBS-001/002/003 (gitignore)
 ├── _docs/              # Archivo histórico (ver _docs/README.md)
 ├── _docs2/             # Planificación vigente
 ├── src/                # Frontend React + TypeScript
@@ -21,6 +21,8 @@ NarraLith/
 │   ├── i18n/
 │   ├── lib/
 │   │   ├── audit/              # OBS-001 — bus dev-only (stub en release)
+│   │   ├── render-audit/       # OBS-002 — snapshots UI (stub en release)
+│   │   ├── action-audit/       # OBS-003 — diario acciones usuario (stub en release)
 │   │   ├── ipc.ts
 │   │   ├── types/              # Contratos IPC (editor.ts, manuscript.ts, audit.ts, …)
 │   │   ├── editor/             # documentSync, commitManuscriptLabel, calendar helpers
@@ -275,9 +277,30 @@ Config: `src/i18n/config.ts`.
 
 ---
 
-## Observabilidad (OBS-001 + OBS-002)
+## Observabilidad (OBS-001 + OBS-002 + OBS-003)
 
 Módulo de auditoría **solo en `tauri dev`**. Triple compuerta: `import.meta.env.DEV` + `__AUDIT_ENABLED__` (Vite) + `#[cfg(debug_assertions)]` (Rust). En release, stubs y sin comandos `audit_*`.
+
+### Matriz de cuatro capas
+
+| # | Capa | ID | Qué registra | Archivo | API |
+|---|------|-----|--------------|---------|-----|
+| ① | Sistema | OBS-001 | IPC, FS, watcher, correlación save | `_debug/logs/session-{bootId}.ndjson` | `audit.info(…)` |
+| ② | Estado UI | OBS-002 std | Snapshots render: layout, chips, árbol | `_debug/render-logs/ui-session-{bootId}.ndjson` | `renderAudit.ui(…)` |
+| ③ | Estado UI verbose | OBS-002 verbose | Dumps grandes, pre-debounce | `_debug/render-logs/ui-verbose-{bootId}.ndjson` | `renderAudit.ui(…, { channel: "verbose" })` |
+| ④ | Acciones usuario | OBS-003 session | Intención: clicks, toggles, guardar, navegación | `_debug/action-logs/action-session-{bootId}.ndjson` | `trackAction(…)` / `actionAudit.track` |
+| ⑤ | Acciones verbose | OBS-003 verbose | Focus, hover, resize, context menu | `_debug/action-logs/action-verbose-{bootId}.ndjson` | `trackAction(…, { channel: "verbose" })` |
+
+Mismo `bootId` en los cinco archivos. Menú debug unificado: **5 toggles**, **1** «Eliminar todo», **1** «Sesión única» ([`OBS-003`](specs/plans/Fase%20D/OBS-003-action-audit-log.md)). Bootstrap global en `App.tsx`.
+
+| Pregunta QA | Capa |
+|-------------|------|
+| «¿Cuánto tardó `save_manuscript`?» | ① |
+| «¿Qué semana dibujó el panel calendario?» | ② |
+| «¿El usuario abrió Editar calendario → Meses?» | ④ |
+| «¿Hubo hover en chip timeline?» | ⑤ |
+
+**Reglas:** async/FS → ①; layout/chips/viewport → ②; click/intent → ④; nunca mezclar dominios (`audit.info("ui")` prohibido; acciones no van a `renderAudit`).
 
 ### OBS-001 — Registro del sistema
 
@@ -285,8 +308,8 @@ Módulo de auditoría **solo en `tauri dev`**. Triple compuerta: `import.meta.en
 |-------|------|
 | API frontend | `src/lib/audit/` — ring buffer RAM, `audit.info/warn/error`, correlación |
 | Wrapper IPC | `src/lib/audit/auditInvoke.ts` → `src/lib/ipc.ts` |
-| Bootstrap | `src/hooks/useAuditBootstrap.ts` — one-shot, listeners Tauri, persist TS→Rust |
-| UI | `src/modules/debug/` — menú 🐛 encima de Historial; visor `Ctrl+Shift+L` |
+| Bootstrap | `src/hooks/useAuditBootstrap.ts` — one-shot en `App.tsx`; listeners Tauri, persist TS→Rust |
+| UI | `src/modules/debug/` — menú 🐛 (5 toggles); visor `Ctrl+Shift+L` (5 pestañas) |
 | Backend | `src-tauri/src/audit/` — `settings.json`, `session-*.ndjson`, `bridge.rs` |
 | Persistencia | `{repo_root}/_debug/logs/` — gitignore; **no** AppData ni carpeta de novela |
 
@@ -296,7 +319,7 @@ Módulo de auditoría **solo en `tauri dev`**. Triple compuerta: `import.meta.en
 
 ### OBS-002 — Registro de interfaz (UI render audit)
 
-Complemento visual de OBS-001. **Tres toggles independientes** en menú debug (sistema / interfaz / interfaz detallada). Misma compuerta release.
+Complemento visual de OBS-001. Canales **②** y **③** del menú unificado (ver matriz arriba). Misma compuerta release.
 
 | Pieza | Ruta |
 |-------|------|
@@ -304,13 +327,30 @@ Complemento visual de OBS-001. **Tres toggles independientes** en menú debug (s
 | Bridge editor | `src/lib/render-audit/editorRenderAuditBridge.ts` + `EditorRenderAuditPlugin` |
 | Hooks | `src/lib/render-audit/hooks/` — `useUiRenderAudit()` en `WorkspaceShell`; timeline vía `useTimelineRenderAudit` |
 | Bootstrap | `src/lib/render-audit/bootstrap.ts` — correlación `systemSessionPath` + `bootId` compartido |
-| UI | `AuditLogViewer` — pestañas Sistema · Interfaz · Detallado |
+| UI | `AuditLogViewer` — pestañas Sistema · Interfaz · Detallado · Acciones · Acciones (det.) |
 | Backend | `src-tauri/src/audit/` — `audit_append_render_entry`, paths `render-logs/ui-session-*` y `ui-verbose-*` |
 | Persistencia | `{repo_root}/_debug/render-logs/` |
 
 **Eventos:** prefijo `obs.ui.*` (catálogo en [`specs/plans/Fase C/OBS-002-ui-render-audit-log.md`](specs/plans/Fase%20C/OBS-002-ui-render-audit-log.md) §3). **Nunca** usar `audit.info("ui", …)` — siempre `renderAudit.ui()`.
 
-**Regla:** nuevos flujos async/FS → OBS-001; layout, chips, paneles, viewport → OBS-002.
+### OBS-003 — Registro de acciones de usuario
+
+Tercera capa complementaria: **intención** del usuario (no estado resultante ni profundidad IPC).
+
+| Pieza | Ruta |
+|-------|------|
+| API frontend | `src/lib/action-audit/` — dual channel `trackAction()` / `actionAudit.track()` |
+| Hooks | `src/lib/action-audit/hooks/` — `useUiActionAudit()` en `WorkspaceShell` |
+| Bootstrap | `src/lib/action-audit/bootstrap.ts` — mismo `bootId` que OBS-001/002 |
+| Instrumentación | Stores (`useCalendarViewStore`, `useEditorStore`, …) + handlers locales (`CalendarEditPanel`, …) |
+| Backend | `src-tauri/src/audit/` — `audit_append_action_entry`, paths `action-logs/action-session-*` y `action-verbose-*` |
+| Persistencia | `{repo_root}/_debug/action-logs/` |
+
+**Eventos:** prefijo `obs.action.*` (catálogo en [`specs/plans/Fase D/OBS-003-action-audit-log.md`](specs/plans/Fase%20D/OBS-003-action-audit-log.md) §4). **Nunca** usar `audit.info` ni `renderAudit.ui` para acciones.
+
+**Consumidor inmediato:** QA FIX-010i / §13 calendario con `action-session-*.ndjson` (sin narrar pasos manualmente).
+
+**Regla:** nuevos flujos async/FS → OBS-001; layout, chips, paneles, viewport → OBS-002; clicks, toggles, guardar, navegación → OBS-003.
 
 ---
 
