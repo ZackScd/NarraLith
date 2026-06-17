@@ -20,7 +20,7 @@ Documento de trabajo para cerrar decisiones de producto antes de refactorizar m�
 | Guardado disco | Manual (Ctrl+S / Guardar todo); borrador sucio persistente al cerrar (FIX-007 ✅); diff opcional FIX-013 ⬜ |
 | `[-]` / `[+]` | Un solo botón contextual |
 | Toggle etiquetas | Persistente en `localStorage` |
-| `ParsedDocument` adaptador | Mantener hasta II.5; migrar en II.4.1 después |
+| `ParsedDocument` adaptador | ✅ Eliminado del flujo activo (II.4.1 / M7, 2026-06-11); afinado dead code → roadmap § Afinado |
 | Escenas paralelas (carpeta especial) | No implementado; **descartado** salvo que se reabra explícitamente |
 | Rangos CRDT intra-párrafo | Descartado → tokens inline |
 | Migración formato `+++` legacy | No hay proyectos en circulación |

@@ -785,11 +785,13 @@ Ver FIX-010 (planificado): clasificador `classifyTimeTag`, baseline en disco (01
 | [`ConsistencyPanel`](../../src/modules/consistency/ConsistencyPanel.tsx) | Existe vista consistencia (plothole); **sin** regla evento huérfano documentada |
 | Explorador WB Eventos | Lista fichas como entidades normales, sin badge huérfano |
 
-#### Dirección de implementación (futura, no cerrada)
+#### Plan de implementación
 
-1. **Detector** (Rust o TS al cargar índice): fichas bajo `Worldbuilding/Eventos/` cuyo `entity` no aparece en ningún segmento `+++event` del proyecto (scan manuscritos o tabla `blocks` con `metadata.event` + `entity`).
-2. **UI:** badge en árbol WB, banner en `EntityWorkspace` si `orphan: true`, entrada en [`ConsistencyPanel`](../../src/modules/consistency/ConsistencyPanel.tsx).
-3. **Metadata:** asegurar que `sourcePath` / vínculo manuscrito quede en YAML de evento al sync (verificar campo en `sync_event_entity_content`).
+**Plan detallado:** [`plans/Fase D/FIX-011/FIX-011-orphan-event-entity.md`](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) · **Estado:** ⏸️ pospuesto (jun 2026) — **gate:** mapas → WB v2 → FIX-011 · **QA baseline:** sesión OBS `1781730322955-14924`.
+
+1. **Detector** (Rust, tabla `blocks`): fichas `Worldbuilding/Eventos/` sin `metadata.entity` en manuscritos.
+2. **UI v1:** issue en [`ConsistencyPanel`](../../src/modules/consistency/ConsistencyPanel.tsx) + banner `EntityWorkspace`; badge explorador → v2.
+3. **`sourcePath`:** ya escrito en sync (`sync_event_entity_content`) ✅.
 
 *Pendiente de ampliar con más tipos de huérfanos (ubicación, personaje, mapa, etc.).*
 
@@ -820,7 +822,7 @@ Cada escenario documentado en 6.A, 6.B, … tiene: detector, indicador UI, prueb
 
 ### Estado de esta tarea
 
-**Solo planificación y principio** — sin implementación hasta priorización explícita. Este apartado se **actualiza** cuando el usuario aporte nuevos casos o cuando otras features (calendario, WB, consistencia) estén listas para engancharse.
+**6.A (FIX-010) v1 ✅ cerrada** · **6.B (FIX-011) ⏸️ pospuesto** — plan + QA listos; código tras rediseño WB (post-mapas).
 
 ---
 

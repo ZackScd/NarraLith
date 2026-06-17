@@ -67,7 +67,7 @@ README de `_docs2/` enlaza toda la cadena; no hay dos roadmaps “vivos”.
 
 El store mantiene `ParsedManuscript` + `ParsedDocument` adaptado. Paneles y backlinks usan índices legacy. Esto apila bugs de integración aunque Rust compile.
 
-**Decisión jun 2026:** mantener el adaptador hasta cerrar II.5 (guardado con eventos, QA manual). Eliminarlo antes rompe paneles sin ganancia inmediata; la migración sigue en II.4.1 cuando el manuscrito sea fiable.
+**Decisión jun 2026:** mantener el adaptador hasta cerrar II.5 (guardado con eventos, QA manual). **II.4.1 cerrado 2026-06-11** — adaptador eliminado del flujo activo; afinado residual pospuesto (roadmap § Afinado final).
 
 #### Impacto
 
@@ -78,15 +78,17 @@ El store mantiene `ParsedManuscript` + `ParsedDocument` adaptado. Paneles y back
 
 #### Checklist
 
-- [ ] Store manuscrito: solo `ParsedManuscript` en RAM
-- [ ] Paneles evento/tiempo leen segmentos, no `document.blocks`
-- [ ] Eliminar registro/hidratación `BlockSeparatorNode`, `BlockMetadataNode`
-- [ ] `npm run build` + `npm test` verdes
-- [ ] Smoke manual: abrir escena → crear evento → tiempo inline → guardar → reabrir
+- [x] Store manuscrito: solo `ParsedManuscript` en RAM
+- [x] Paneles evento/tiempo leen segmentos, no `document.blocks`
+- [x] Eliminar registro/hidratación `BlockSeparatorNode`, `BlockMetadataNode`
+- [x] `npm run build` + `npm test` verdes
+- [x] Smoke manual: abrir escena → crear evento → tiempo inline → guardar → reabrir (QA `17440`+`24412`)
 
 #### Criterio de salida
 
-Ninguna importación activa de `ParsedDocument` en flujo manuscrito (salvo tests si aplica).
+Ninguna importación activa de `ParsedDocument` en flujo manuscrito (salvo tests si aplica). **Cumplido** (2026-06-11).
+
+> **Afinado residual** (borrado de archivos muertos, tests unitarios nuevos, ítems OBS/§7 no críticos): pospuesto hasta tener módulos principales operativos — ver [`specs/manuscript-roadmap.md`](specs/manuscript-roadmap.md) § Afinado final.
 
 ---
 
@@ -136,6 +138,6 @@ Todos los ítems marcados; bugs encontrados → fix antes de II.6.
 | Tarea | Estado | Notas |
 |-------|--------|-------|
 | II.0.1 Cadena `_docs2/` | ✅ | 2026-06-06 |
-| II.4.1 Un solo modelo | ⬜ | Siguiente código |
-| II.5.1 QA manual | ⬜ | Tras II.4 |
+| II.4.1 Un solo modelo | ✅ | 2026-06-11 · QA `17440`+`24412` |
+| II.5.1 QA manual | ⬜ | Tras módulos; smoke M7 OK · § Afinado en roadmap |
 | II.6 Changelog v0.10.0 | ⬜ | Cierre Era II |

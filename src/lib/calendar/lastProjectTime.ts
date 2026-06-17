@@ -1,9 +1,9 @@
 import { fromAbsoluteDay, isRenderableAbsoluteDay, resolveTimeSortKey, toAbsoluteDay } from "@/lib/calendar";
 import { yearsWithFileEntries } from "@/lib/calendar/calendarMarkers";
-import { findLastAddedTimeInDocument, parseTimeTag } from "@/lib/calendar/dateTags";
+import { findLastAddedTimeInManuscript, parseTimeTag } from "@/lib/calendar/dateTags";
 import { timelineMarkerId } from "@/lib/calendar/timeMarks";
 import type { CalendarConfig } from "@/lib/types/calendar";
-import type { ParsedDocument } from "@/lib/types/editor";
+import type { ParsedManuscript } from "@/lib/types/manuscript";
 import type { LastAddedTimeMarker, TimelineEvent } from "@/lib/types/timeline";
 
 type RankedMarker = {
@@ -67,26 +67,26 @@ export function resolveGlobalLastAddedTime(
 
 /** Prioriza el manuscrito activo; si no, la heurística de proyecto. */
 export function resolveReferenceCalendarDate(
-  document: ParsedDocument | null,
+  manuscript: ParsedManuscript | null,
   events: TimelineEvent[],
   fallback: { day: number; month: number; year: number },
   lastAdded?: LastAddedTimeMarker | null,
 ): { day: number; month: number; year: number } {
-  const fromDocument = findLastAddedTimeInDocument(document);
-  if (fromDocument) {
-    return fromDocument;
+  const fromManuscript = findLastAddedTimeInManuscript(manuscript);
+  if (fromManuscript) {
+    return fromManuscript;
   }
   return resolveGlobalLastAddedTime(lastAdded ?? null, events) ?? fallback;
 }
 
 export function resolveReferenceYear(
-  document: ParsedDocument | null,
+  manuscript: ParsedManuscript | null,
   events: TimelineEvent[],
   fallbackYear: number,
   lastAdded?: LastAddedTimeMarker | null,
 ): number {
   return resolveReferenceCalendarDate(
-    document,
+    manuscript,
     events,
     {
       day: 1,

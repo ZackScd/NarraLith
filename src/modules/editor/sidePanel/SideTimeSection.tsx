@@ -3,11 +3,14 @@ import { useTranslation } from "react-i18next";
 
 import {
   clampToCalendar,
-  findLastAddedTimeInDocument,
+  findLastAddedTimeInManuscript,
   parseTimeTag,
 } from "@/lib/calendar/dateTags";
 import { parseInlineTagsInText } from "@/lib/editor/inlineTagSyntax";
-import { timeTagFromBlockMetadata } from "@/lib/editor/manuscriptBlocks";
+import {
+  timeTagFromEventSegment,
+} from "@/lib/editor/manuscriptBlocks";
+import { legacyBlockIndexFromContext } from "@/lib/editor/documentSync";
 import { fromAbsoluteDay, toAbsoluteDay } from "@/lib/calendar/engine";
 import { calendarDatesEqual } from "@/lib/calendar/formatCalendarDisplayDate";
 import { resolveGlobalLastAddedTime } from "@/lib/calendar/lastProjectTime";
@@ -33,10 +36,10 @@ export function SideTimeSection() {
   const calendar = useCalendarStore((s) => s.config);
   const loadCalendar = useCalendarStore((s) => s.loadCalendar);
 
-  const document = useEditorStore((s) => s.document);
+  const manuscript = useEditorStore((s) => s.manuscript);
   const activeFilePath = useEditorStore((s) => s.activeFilePath);
   const activeTabKind = useEditorStore((s) => s.activeTabKind);
-  const activeBlockIndex = useEditorStore((s) => s.activeBlockIndex);
+  const activeEventContext = useEditorStore((s) => s.activeEventContext);
 
   const panelDateDisplayFormat = useSettingsStore((s) => s.panelDateDisplayFormat);
 
@@ -59,7 +62,7 @@ export function SideTimeSection() {
     }
   }, [calendar, loadCalendar]);
 
-  const documentLast = useMemo(() => findLastAddedTimeInDocument(document), [document]);
+  const documentLast = useMemo(() => findLastAddedTimeInManuscript(manuscript), [manuscript]);
 
   const globalLast = useMemo(
     () => resolveGlobalLastAddedTime(lastAdded, events),
@@ -69,12 +72,18 @@ export function SideTimeSection() {
   const showDocumentRow =
     documentLast !== null && !calendarDatesEqual(documentLast, globalLast);
 
-  const activeBlock =
-    activeTabKind === "manuscript" ? document?.blocks[activeBlockIndex] : null;
-  const activeBlockTime = useMemo(
-    () => parseTimeTag(timeTagFromBlockMetadata(activeBlock?.metadata)),
-    [activeBlock],
-  );
+  const activeBlockIndex = legacyBlockIndexFromContext(activeEventContext);
+
+  const activeEventSegment =
+    activeTabKind === "manuscript" && activeEventContext.inEvent && activeEventContext.segmentIndex !== null
+      ? manuscript?.segments[activeEventContext.segmentIndex]
+      : null;
+  const activeBlockTime = useMemo(() => {
+    if (!activeEventSegment || activeEventSegment.kind !== "event") {
+      return null;
+    }
+    return parseTimeTag(timeTagFromEventSegment(activeEventSegment));
+  }, [activeEventSegment]);
 
   const fallbackDate = useMemo(
     () => documentLast ?? globalLast ?? { day: 1, month: 1, year: 0 },
@@ -115,13 +124,24 @@ export function SideTimeSection() {
 
   const storyDayKeys = useMemo(() => {
     const set = new Set<string>();
-    if (!document) return set;
-    for (const b of document.blocks) {
-      const parts = parseTimeTag(timeTagFromBlockMetadata(b.metadata));
-      if (parts) {
-        set.add(`${parts.month}:${parts.day}:${parts.year}`);
+    if (!manuscript) return set;
+    for (const tag of parseInlineTagsInText(manuscript.fileHeader.body)) {
+      if (tag.type !== "time") {
+        continue;
       }
-      for (const tag of parseInlineTagsInText(b.body)) {
+      const inline = parseTimeTag(tag.value);
+      if (inline) {
+        set.add(`${inline.month}:${inline.day}:${inline.year}`);
+      }
+    }
+    for (const segment of manuscript.segments) {
+      if (segment.kind === "event") {
+        const parts = parseTimeTag(timeTagFromEventSegment(segment));
+        if (parts) {
+          set.add(`${parts.month}:${parts.day}:${parts.year}`);
+        }
+      }
+      for (const tag of parseInlineTagsInText(segment.body)) {
         if (tag.type !== "time") {
           continue;
         }
@@ -132,7 +152,7 @@ export function SideTimeSection() {
       }
     }
     return set;
-  }, [document]);
+  }, [manuscript]);
 
   const annualByKey = useMemo(() => {
     const map = new Map<string, CalendarAnnualEvent[]>();

@@ -12,14 +12,14 @@ import {
 import {
   clampToCalendar,
   daysInMonth,
-  findLastAddedTimeInDocument,
+  findLastAddedTimeInManuscript,
   formatTimeTag,
 } from "@/lib/calendar/dateTags";
 import type { CalendarDateParts } from "@/lib/calendar/formatCalendarDisplayDate";
 import { shiftCalendarMonth } from "@/lib/calendar/monthGrid";
 import { resolveGlobalLastAddedTime } from "@/lib/calendar/lastProjectTime";
 import type { CalendarConfig } from "@/lib/types/calendar";
-import type { ParsedDocument } from "@/lib/types/editor";
+import type { ParsedManuscript } from "@/lib/types/manuscript";
 import type { LastAddedTimeMarker, TimelineEvent } from "@/lib/types/timeline";
 import { cn } from "@/lib/utils";
 import { useProjectTimeline } from "@/hooks/useProjectTimeline";
@@ -27,6 +27,7 @@ import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useEditorStore } from "@/stores/useEditorStore";
 import { useManuscriptLabelDraftStore } from "@/stores/useManuscriptLabelDraftStore";
 import { useTimeTagDialogStore, type TimeDraft } from "@/stores/useTimeTagDialogStore";
+import { legacyBlockIndexIsValid } from "@/lib/editor/manuscriptBlocks";
 import {
   commitManuscriptLabel,
   runLabelCommit,
@@ -76,7 +77,7 @@ export function TimeTagDialog() {
   const timelinePreviewOpen = useTimeTagDialogStore((s) => s.timelinePreviewOpen);
 
   const calendar = useCalendarStore((s) => s.config);
-  const parsedDocument = useEditorStore((s) => s.document);
+  const manuscript = useEditorStore((s) => s.manuscript);
   const activeFilePath = useEditorStore((s) => s.activeFilePath);
   const activeEventContext = useEditorStore((s) => s.activeEventContext);
   const insertInlineTagAtCursor = useEditorStore((s) => s.insertInlineTagAtCursor);
@@ -175,8 +176,7 @@ export function TimeTagDialog() {
       return;
     }
 
-    const block = parsedDocument?.blocks[blockIndex];
-    if (!block) return;
+    if (!legacyBlockIndexIsValid(manuscript, blockIndex)) return;
 
     if (commitOnSave) {
       const ok = runLabelCommit(() =>
@@ -231,7 +231,7 @@ export function TimeTagDialog() {
           safeMonth={safeMonth}
           monthLength={monthLength}
           position={position}
-          parsedDocument={parsedDocument}
+          parsedManuscript={manuscript}
           events={events}
           lastAdded={lastAdded}
           onApplyQuickDate={applyQuickDate}
@@ -262,7 +262,7 @@ interface DialogBodyProps {
   safeMonth: number;
   monthLength: number;
   position: { x: number; y: number };
-  parsedDocument: ParsedDocument | null;
+  parsedManuscript: ParsedManuscript | null;
   events: TimelineEvent[];
   lastAdded: LastAddedTimeMarker | null;
   onApplyQuickDate: (parts: CalendarDateParts) => void;
@@ -287,7 +287,7 @@ function DialogBody({
   safeMonth,
   monthLength,
   position,
-  parsedDocument,
+  parsedManuscript,
   events,
   lastAdded,
   onApplyQuickDate,
@@ -336,8 +336,8 @@ function DialogBody({
   );
 
   const documentLast = useMemo(
-    () => findLastAddedTimeInDocument(parsedDocument),
-    [parsedDocument],
+    () => findLastAddedTimeInManuscript(parsedManuscript),
+    [parsedManuscript],
   );
 
   const globalLast = useMemo(

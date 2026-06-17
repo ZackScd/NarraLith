@@ -147,7 +147,7 @@ sequenceDiagram
 | Store | `stores/useEditorStore.ts` | Pestañas, IPC, callbacks Lexical |
 | Panel | `EditorSidePanel` → `SideEventSection`, `SideTimeSection` (sin panel Referencias; FIX-002) |
 | Nodos activos | `EventTagBarNode`, `EventFrameBottomNode`, `InlineTimeTagNode`, `WikiLinkNode` |
-| Deuda | `manuscriptBlocks.ts` adaptador `ParsedDocument`; nodos legacy registrados | Ver `04-TASK` II.4 |
+| Segmentos / tiempo | `manuscriptBlocks.ts` — helpers sobre `ParsedManuscript` (M7 ✅) | Afinado: [`manuscript-roadmap.md` § Afinado](specs/manuscript-roadmap.md) |
 
 ### IPC manuscrito (activo en UI)
 

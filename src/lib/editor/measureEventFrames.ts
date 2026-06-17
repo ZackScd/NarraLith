@@ -1,6 +1,5 @@
 import { $getRoot, $isParagraphNode, type LexicalEditor, type LexicalNode } from "lexical";
 
-import { $isBlockSeparatorNode } from "@/modules/editor/nodes/BlockSeparatorNode";
 import {
   $isEventFrameBottomNode,
 } from "@/modules/editor/nodes/EventFrameBottomNode";
@@ -37,11 +36,7 @@ function unionRects(rects: DOMRect[]): DOMRect | null {
 }
 
 function isEventChromeNode(node: LexicalNode): boolean {
-  return (
-    $isEventTagBarNode(node) ||
-    $isEventFrameBottomNode(node) ||
-    $isBlockSeparatorNode(node)
-  );
+  return $isEventTagBarNode(node) || $isEventFrameBottomNode(node);
 }
 
 function isEventBodyNode(node: LexicalNode): boolean {

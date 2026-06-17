@@ -95,7 +95,7 @@ Marco completo en [`fix-backlog.md` §6](fix-backlog.md). Se implementa **por es
 | **FIX-010i** | ✅ | Motor diff + `reconcileBaseline` en save (UI diff cancelada) | Medio | [plan](plans/Fase%20D/FIX-010i-calendar-structural-diff.md) |
 | **FIX-010e** | ⏸️ | Migración A/B/C + panel consistencia (010f) | Alto | [plan](plans/Fase%20D/FIX-010e-migration-wizard.md) · **pospuesto v2** |
 | **VER-001** | ⬜ | Reparar historial Git (snapshots + diff) | Alto | Era IV · complementa 010e |
-| **FIX-011** | ⬜ | **6.B** — Evento WB huérfano si se borra `+++event` del manuscrito | Alto (acotado) | [`fix-backlog.md` §6.B](fix-backlog.md) |
+| **FIX-011** | ⏸️ | **6.B** — Evento WB huérfano (plan listo; **post WB v2** tras mapas) | Medio (acotado) | [**plan**](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) · QA `14924` |
 
 > Escenarios **6.C, 6.D…** se añaden a esta fase cuando el usuario los defina — no bloquean Era II ni MAP.
 
@@ -107,7 +107,7 @@ Orden acordado en [`03-ROADMAP.md`](../03-ROADMAP.md) y [`manuscript-roadmap.md`
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **ERAII-001** | ⬜ | **M7** — Un solo modelo en memoria (`ParsedManuscript`; quitar adaptador legacy) | Alto | [`manuscript-roadmap.md` M7](manuscript-roadmap.md) · [`04-TASK.md` § II.4.1](../04-TASK.md) |
+| **ERAII-001** | ✅ | **M7** — Un solo modelo en memoria (`ParsedManuscript`; quitar adaptador legacy) | Alto | [`manuscript-roadmap.md` M7](manuscript-roadmap.md) · [`04-TASK.md` § II.4.1](../04-TASK.md) · QA `17440`+`24412` |
 | **ERAII-002** | ⬜ | **M8** — QA manual checklist §7 | Medio | [`manuscript-design.md`](manuscript-design.md) §7 · [`04-TASK.md` § II.5.1](../04-TASK.md) |
 | **ERAII-003** | ⬜ | **II.6** — Changelog v0.10.0 + marcar Era II cerrada en roadmap | Bajo | [`03-ROADMAP.md`](../03-ROADMAP.md) · [`05-CHANGELOG.md`](../05-CHANGELOG.md) |
 
@@ -160,6 +160,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | **WB-002** | ⏸ | Edición bidireccional mapa ↔ manuscrito ↔ fichas WB | [`maps-design.md` §4bis.4](maps-design.md) |
 | **WB-003** | ⏸ | Trayectorias de eventos, zonas de peligro, «¿dónde está X?» | [`maps-design.md` §4bis.3–4](maps-design.md) |
 | **WB-004** | ⏸ | Worldbuilding v2 (módulo completo) | [`module-replan.md`](module-replan.md) · [`03-ROADMAP.md`](../03-ROADMAP.md) Era IV |
+| **FIX-011** | ⏸ | **6.B** — Ficha evento huérfana (detector + UI) | [**plan**](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) · **después de WB-004** |
 
 ---
 
@@ -193,8 +194,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 13h | FIX-010h | Borrador calendario sesión + diálogos unsaved ✅ |
 | 13i | FIX-010i | Motor diff + reconcileBaseline en save ✅ (UI diff cancelada) |
 | 13e | FIX-010e | Migración + consistencia (v2) ⏸️ pospuesto |
-| 14 | FIX-011 | Épica 6.B evento WB huérfano |
-| 15 | ERAII-001 | M7 un solo modelo manuscrito |
+| 14 | FIX-011 | Épica 6.B evento WB huérfano ⏸️ post WB v2 [plan](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) |
+| 15 | ERAII-001 | M7 un solo modelo manuscrito ✅ |
 | 16 | ERAII-002 | M8 QA manual §7 |
 | 17 | ERAII-003 | Cierre v0.10.0 Era II |
 | 18 | MAP-000 | Inventario purga mapas |
@@ -220,7 +221,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 |------|-------|--------|
 | Grafo, versiones Git, exportación | [`03-ROADMAP.md`](../03-ROADMAP.md) Eras IV–V | Tras WB |
 | Plothole | [`module-replan.md`](module-replan.md) | Era IV+ |
-| Backlinks WB en nuevo panel | Tras ERAII-001 | Era II–IV |
+| Backlinks WB en nuevo panel | Tras ERAII-001 ✅ | Era II–IV |
+| Afinado editor manuscrito (dead code, tests, OBS residual) | [`manuscript-roadmap.md` § Afinado](manuscript-roadmap.md) | Tras MAP/WB — pre II.6 |
 | Diff borrador vs disco | [`plans/Fase B/FIX-013-dirty-diff-viewer.md`](plans/Fase%20B/FIX-013-dirty-diff-viewer.md) | ✅ FIX-013 |
 
 ---
@@ -267,6 +269,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **OBS-003 ✅ cerrado:** Fases 0–3 (código + docs §13 plantilla QA); siguiente FIX-010i |
 | 2026-06-11 | **FIX-010i ✅** motor diff + save · UI diff cancelada · QA `9020` |
 | 2026-06-11 | **FIX-010 v1 ✅ cerrada** · 010e pospuesto v2 |
+| 2026-06-11 | **FIX-011 📋 planificado:** [`plans/Fase D/FIX-011/FIX-011-orphan-event-entity.md`](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) · QA sesión `14924` |
+| 2026-06-11 | **FIX-011 ⏸️ pospuesto** — implementar tras rediseño WB (post-mapas); plan + QA conservados |
+| 2026-06-11 | **ERAII-001 ✅ M7 cerrado** — store solo `ParsedManuscript`; paneles por segmentos; nodos legacy fuera de Lexical; QA post-M7 `17440`+`24412`; afinado residual → [`manuscript-roadmap.md` § Afinado](manuscript-roadmap.md) |
 
 ---
 

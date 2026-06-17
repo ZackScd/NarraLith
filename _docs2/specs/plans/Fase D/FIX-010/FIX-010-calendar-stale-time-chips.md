@@ -154,4 +154,4 @@ Checklists QA por sub-plan; plantilla común:
 
 ---
 
-**Última actualización:** 2026-06-11 · **Épica v1 cerrada.** **v2 (opcional):** [010e](FIX-010e-migration-wizard.md) migración A/B/C · **Siguiente Fase D:** [FIX-011](FIX-011-*) o backlog §6.C
+**Última actualización:** 2026-06-11 · **Épica v1 cerrada.** **v2 (opcional):** [010e](FIX-010e-migration-wizard.md) · **6.B:** [FIX-011](../FIX-011/FIX-011-orphan-event-entity.md) ⏸️ post WB v2

@@ -145,7 +145,7 @@ export function EditInlineTimeTagPlugin() {
         const calendar = useCalendarStore.getState().config;
         if (!filePath || !calendar) return;
 
-        let blockIndex = useEditorStore.getState().activeBlockIndex;
+        let blockIndex = 0;
         editor.getEditorState().read(() => {
           const node = $getNodeByKey(nodeKey);
           if (!$isInlineTimeTagNode(node)) return;

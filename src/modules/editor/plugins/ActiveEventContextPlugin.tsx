@@ -4,7 +4,6 @@ import { useEffect } from "react";
 
 import {
   getEventContextAtTopLevel,
-  legacyBlockIndexFromContext,
 } from "@/lib/editor/documentSync";
 import { useEditorStore } from "@/stores/useEditorStore";
 
@@ -25,7 +24,7 @@ export function ActiveEventContextPlugin() {
           return;
         }
         const ctx = getEventContextAtTopLevel(top.getKey());
-        setActiveEventContext(ctx, legacyBlockIndexFromContext(ctx));
+        setActiveEventContext(ctx);
       });
     };
 

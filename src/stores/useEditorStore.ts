@@ -27,7 +27,6 @@ import {
   shouldIgnoreFsReload,
   tabPathsToCloseOnRemove,
 } from "@/lib/editor/fsSync";
-import { manuscriptToParsedDocument } from "@/lib/editor/manuscriptBlocks";
 import { reconciledKeysFromManuscript } from "@/lib/calendar/timeTagReconcile";
 import { audit } from "@/lib/audit";
 import { trackAction } from "@/lib/action-audit/trackAction";
@@ -35,7 +34,6 @@ import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { normalizeProjectPath, projectPathsEqual } from "@/lib/pathUtils";
 import type { EntityDocument, EntityTabState } from "@/lib/types/entity";
 import type { EntityTemplate } from "@/lib/types/entityTemplate";
-import type { ParsedDocument } from "@/lib/types/editor";
 import type { BarTag, ParsedManuscript } from "@/lib/types/manuscript";
 import { entityFingerprint } from "@/lib/worldbuilding/entityFingerprint";
 import { isEntityPath } from "@/lib/worldbuilding/entityPath";
@@ -59,13 +57,10 @@ export interface EditorTab {
   filePath: string;
   kind: TabKind;
   manuscript?: ParsedManuscript;
-  /** Adaptador legacy para paneles no migrados (§4.2). */
-  document?: ParsedDocument;
   entity?: EntityTabState;
   savedBodyFingerprint: string;
   isDirty: boolean;
   saveStatus: SaveStatus;
-  activeBlockIndex: number;
   activeEventContext: ActiveEventContext;
   documentSyncKey: number;
   metadataSaveStatus: MetadataSaveStatus;
@@ -109,10 +104,8 @@ interface EditorState {
   activeFilePath: string | null;
   activeTabKind: TabKind | null;
   manuscript: ParsedManuscript | null;
-  document: ParsedDocument | null;
   entity: EntityTabState | null;
   documentSyncKey: number;
-  activeBlockIndex: number;
   activeEventContext: ActiveEventContext;
   savedBodyFingerprint: string | null;
   isLoading: boolean;
@@ -146,11 +139,7 @@ interface EditorState {
   setRemoveEventEndFn: (fn: RemoveEventEndFn | null) => void;
   /** Sincroniza `manuscript` desde Lexical sin escribir a disco. */
   reconcileManuscriptFromEditor: () => boolean;
-  setActiveEventContext: (
-    context: ActiveEventContext,
-    legacyBlockIndex: number,
-  ) => void;
-  setActiveBlockIndex: (index: number) => void;
+  setActiveEventContext: (context: ActiveEventContext) => void;
   insertInlineTagAtCursor: (tagType: string, value: string) => boolean;
   closeEventAtCursor: () => boolean;
   expandEventAtCursor: () => boolean;
@@ -245,7 +234,6 @@ let removeEventEndFn: RemoveEventEndFn | null = null;
 function manuscriptTabFields(manuscript: ParsedManuscript) {
   return {
     manuscript,
-    document: manuscriptToParsedDocument(manuscript),
     savedBodyFingerprint: bodyFingerprintFromManuscript(manuscript),
   };
 }
@@ -272,10 +260,8 @@ const emptyEditorView = {
   activeFilePath: null as string | null,
   activeTabKind: null as TabKind | null,
   manuscript: null as ParsedManuscript | null,
-  document: null as ParsedDocument | null,
   entity: null as EntityTabState | null,
   documentSyncKey: 0,
-  activeBlockIndex: 0,
   activeEventContext: emptyEventContext,
   savedBodyFingerprint: null as string | null,
   isDirty: false,
@@ -318,7 +304,6 @@ function syncTabInMap(
 function flushActiveTabToCache(state: EditorState): {
   tabs: Record<string, EditorTab>;
   manuscript: ParsedManuscript | null;
-  document: ParsedDocument | null;
   entity: EntityTabState | null;
 } {
   const path = state.activeFilePath;
@@ -326,7 +311,6 @@ function flushActiveTabToCache(state: EditorState): {
     return {
       tabs: state.tabs,
       manuscript: state.manuscript,
-      document: state.document,
       entity: state.entity,
     };
   }
@@ -341,7 +325,6 @@ function flushActiveTabToCache(state: EditorState): {
     return {
       tabs,
       manuscript: state.manuscript,
-      document: state.document,
       entity: state.entity,
     };
   }
@@ -350,7 +333,6 @@ function flushActiveTabToCache(state: EditorState): {
     return {
       tabs: state.tabs,
       manuscript: state.manuscript,
-      document: state.document,
       entity: state.entity,
     };
   }
@@ -360,36 +342,27 @@ function flushActiveTabToCache(state: EditorState): {
   if (extracted) {
     manuscript = applyExtractedManuscript(state.manuscript, extracted);
   }
-  const document = manuscriptToParsedDocument(manuscript);
 
   const tabs = syncTabInMap(state.tabs, path, {
     manuscript,
-    document,
     isDirty: state.isDirty,
     saveStatus: state.saveStatus,
-    activeBlockIndex: state.activeBlockIndex,
     activeEventContext: state.activeEventContext,
     documentSyncKey: state.documentSyncKey,
     metadataSaveStatus: state.metadataSaveStatus,
   });
 
-  return { tabs, manuscript, document, entity: state.entity };
+  return { tabs, manuscript, entity: state.entity };
 }
 
 function activeViewFromTab(tab: EditorTab) {
   const manuscript = tab.kind === "manuscript" ? (tab.manuscript ?? null) : null;
-  const document =
-    manuscript != null
-      ? manuscriptToParsedDocument(manuscript)
-      : (tab.document ?? null);
   return {
     activeFilePath: tab.filePath,
     activeTabKind: tab.kind,
     manuscript,
-    document,
     entity: tab.kind === "entity" ? (tab.entity ?? null) : null,
     documentSyncKey: tab.documentSyncKey,
-    activeBlockIndex: tab.activeBlockIndex,
     activeEventContext: tab.activeEventContext ?? emptyEventContext,
     savedBodyFingerprint: tab.savedBodyFingerprint,
     isDirty: tab.isDirty,
@@ -541,10 +514,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
 
     const updated = applyExtractedManuscript(manuscript, extracted);
-    const document = manuscriptToParsedDocument(updated);
     set((state) => ({
       manuscript: updated,
-      document,
       isDirty: true,
       saveStatus: "idle",
       reconciledTimeTagKeys: mergeReconciledKeysFromManuscript(
@@ -553,7 +524,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ),
       tabs: syncTabInMap(state.tabs, activeFilePath, {
         manuscript: updated,
-        document,
         isDirty: true,
         saveStatus: "idle",
       }),
@@ -561,15 +531,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return true;
   },
 
-  setActiveEventContext: (context, legacyBlockIndex) => {
+  setActiveEventContext: (context) => {
     const path = get().activeFilePath;
     set((state) => ({
       activeEventContext: context,
-      activeBlockIndex: legacyBlockIndex,
       tabs: path
         ? syncTabInMap(state.tabs, path, {
             activeEventContext: context,
-            activeBlockIndex: legacyBlockIndex,
           })
         : state.tabs,
     }));
@@ -612,16 +580,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   removeEventFromEditor: (segmentId) => removeEventFn?.(segmentId) ?? false,
 
   removeEventEndFromEditor: (segmentId) => removeEventEndFn?.(segmentId) ?? false,
-
-  setActiveBlockIndex: (index) => {
-    const path = get().activeFilePath;
-    set((state) => ({
-      activeBlockIndex: index,
-      tabs: path
-        ? syncTabInMap(state.tabs, path, { activeBlockIndex: index })
-        : state.tabs,
-    }));
-  },
 
   beginLabelCommit: () => {
     const depth = get().labelCommitDepth + 1;
@@ -895,7 +853,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           savedBodyFingerprint: entityState.savedFingerprint,
           isDirty: false,
           saveStatus: "saved",
-          activeBlockIndex: 0,
           activeEventContext: emptyEventContext,
           documentSyncKey: 0,
           metadataSaveStatus: "idle",
@@ -935,7 +892,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...fields,
         isDirty: false,
         saveStatus: "saved",
-        activeBlockIndex: 0,
         activeEventContext: emptyEventContext,
         documentSyncKey: 0,
         metadataSaveStatus: "idle",
@@ -1104,7 +1060,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ...patchSavedBaseline(state, filePath, fingerprint, options),
           tabs: nextTabs,
           manuscript: saved,
-          document: fields.document,
           dirtyDiffSavedBaseline: state.dirtyDiffVisible ? saved : state.dirtyDiffSavedBaseline,
           reconciledTimeTagKeys: mergeReconciledKeysFromManuscript(
             state.reconciledTimeTagKeys,
@@ -1217,7 +1172,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         );
         return {
           manuscript,
-          document: fields.document,
           isLoading: false,
           metadataSaveStatus: "idle",
           showExternalReloadDialog: false,
@@ -1445,7 +1399,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         return {
           tabs: nextTabs,
           manuscript,
-          document: fields.document,
           isLoading: false,
           metadataSaveStatus: "idle",
           showExternalReloadDialog: false,
@@ -1524,8 +1477,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...draft.manuscript,
       filePath: path,
     };
-    const document = manuscriptToParsedDocument(manuscript);
-
     set((state) => {
       const tab = state.tabs[path];
       if (!tab || tab.kind !== "manuscript") {
@@ -1534,7 +1485,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
       const tabs = syncTabInMap(state.tabs, path, {
         manuscript,
-        document,
         savedBodyFingerprint: draft.savedBodyFingerprint,
         isDirty: true,
         saveStatus: "idle",
@@ -1582,7 +1532,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return {
         tabs: flushed.tabs,
         manuscript: flushed.manuscript,
-        document: flushed.document,
       };
     });
 
@@ -1843,7 +1792,6 @@ export async function saveAllOpenTabs(): Promise<boolean> {
       ) {
         if (state.activeTabKind === "manuscript") {
           flushPatch.manuscript = flushed.manuscript;
-          flushPatch.document = flushed.document;
         } else if (state.activeTabKind === "entity") {
           flushPatch.entity = flushed.entity;
         }

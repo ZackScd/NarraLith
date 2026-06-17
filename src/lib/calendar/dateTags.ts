@@ -4,8 +4,10 @@ import {
 } from "@/lib/calendar/effectiveCalendar";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import { parseInlineTagsInText } from "@/lib/editor/inlineTagSyntax";
-import { timeTagFromBlockMetadata } from "@/lib/editor/manuscriptBlocks";
-import type { ParsedDocument } from "@/lib/types/editor";
+import {
+  timeTagFromEventSegment,
+} from "@/lib/editor/manuscriptBlocks";
+import type { ParsedManuscript } from "@/lib/types/manuscript";
 
 const DATE_PATTERN = /^(\d+)\.(\d+)\.(-?\d+)$/;
 
@@ -78,31 +80,42 @@ export function clampToCalendar(
   return { day, month, year };
 }
 
-/**
- * Última fecha añadida al manuscrito en orden de aparición en el documento
- * (no en orden cronológico). Recorre los bloques desde el final hacia el inicio
- * y devuelve la primera etiqueta `time` parseable.
- */
-export function findLastAddedTimeInDocument(
-  document: ParsedDocument | null,
+function scanTextForLastTime(
+  text: string,
+  last: { day: number; month: number; year: number } | null,
 ): { day: number; month: number; year: number } | null {
-  if (!document) return null;
+  let result = last;
+  for (const tag of parseInlineTagsInText(text)) {
+    if (tag.type !== "time") {
+      continue;
+    }
+    const parsed = parseTimeTag(tag.value);
+    if (parsed) {
+      result = parsed;
+    }
+  }
+  return result;
+}
 
-  let last: { day: number; month: number; year: number } | null = null;
-  for (const block of document.blocks) {
-    const fromMeta = parseTimeTag(timeTagFromBlockMetadata(block.metadata));
-    if (fromMeta) {
-      last = fromMeta;
-    }
-    for (const tag of parseInlineTagsInText(block.body)) {
-      if (tag.type !== "time") {
-        continue;
+/**
+ * Última fecha añadida al manuscrito en orden de aparición
+ * (cabecera → segmentos; no orden cronológico).
+ */
+export function findLastAddedTimeInManuscript(
+  manuscript: ParsedManuscript | null,
+): { day: number; month: number; year: number } | null {
+  if (!manuscript) return null;
+
+  let last = scanTextForLastTime(manuscript.fileHeader.body, null);
+
+  for (const segment of manuscript.segments) {
+    if (segment.kind === "event") {
+      const fromBar = parseTimeTag(timeTagFromEventSegment(segment));
+      if (fromBar) {
+        last = fromBar;
       }
-      const parsed = parseTimeTag(tag.value);
-      if (parsed) {
-        last = parsed;
-      }
     }
+    last = scanTextForLastTime(segment.body, last);
   }
   return last;
 }

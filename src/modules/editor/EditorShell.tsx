@@ -16,10 +16,6 @@ import { cn } from "@/lib/utils";
 
 import { editorTheme } from "@/modules/editor/editorTheme";
 
-import { BlockMetadataNode } from "@/modules/editor/nodes/BlockMetadataNode";
-
-import { BlockSeparatorNode } from "@/modules/editor/nodes/BlockSeparatorNode";
-
 import { EventFrameBottomNode } from "@/modules/editor/nodes/EventFrameBottomNode";
 
 import { EventTagBarNode } from "@/modules/editor/nodes/EventTagBarNode";
@@ -72,10 +68,6 @@ const editorConfig = {
     HeadingNode,
 
     QuoteNode,
-
-    BlockSeparatorNode,
-
-    BlockMetadataNode,
 
     EventTagBarNode,
 

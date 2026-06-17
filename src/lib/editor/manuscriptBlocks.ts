@@ -1,4 +1,8 @@
-import type { ParsedBlock, ParsedDocument } from "@/lib/types/editor";
+/**
+ * Helpers manuscrito §1.9 (segmentos, tiempos, índice legacy timeline).
+ * M7 ✅ — sin adaptador `ParsedDocument` en flujo activo.
+ * Afinado residual (dead code, tests): ver `_docs2/specs/manuscript-roadmap.md` § Afinado final.
+ */
 import type {
   BarTag,
   EventSegment,
@@ -40,83 +44,66 @@ export function timeTagFromBlockMetadata(
   return null;
 }
 
-/** Adaptador temporal: manuscrito §1.9 → bloques legacy (paneles hasta Fase 5). */
-export function manuscriptToParsedDocument(
-  manuscript: ParsedManuscript,
-): ParsedDocument {
-  const blocks: ParsedBlock[] = [];
-  let index = 0;
-
-  const headerMeta: Record<string, unknown> = {};
-  if (manuscript.fileHeader.title.trim()) {
-    headerMeta.title = manuscript.fileHeader.title;
+export function timeTagFromEventSegment(segment: EventSegment): string | null {
+  if (!segment.barTags?.length) {
+    return null;
   }
-  blocks.push({
-    id: stableBlockId(manuscript.filePath, index),
-    index,
-    body: manuscript.fileHeader.body,
-    metadata: headerMeta,
-  });
-  index += 1;
-
-  for (const segment of manuscript.segments) {
-    blocks.push(segmentToBlock(manuscript.filePath, index, segment));
-    index += 1;
-  }
-
-  return {
-    filePath: manuscript.filePath,
-    blocks,
-  };
+  return timeTagFromBlockMetadata({ barTags: segment.barTags });
 }
 
-function segmentToBlock(
-  filePath: string,
-  index: number,
-  segment: ManuscriptSegment,
-): ParsedBlock {
-  if (segment.kind === "freeText") {
-    return {
-      id: stableBlockId(filePath, index),
-      index,
-      body: segment.body,
-      metadata: {},
-    };
+/** Índice legacy de timeline: cabecera = 0; segmento N = N + 1. */
+export function legacyBlockIndexFromSegmentIndex(segmentIndex: number | null): number {
+  if (segmentIndex === null) {
+    return 0;
   }
+  return segmentIndex + 1;
+}
 
+export function eventSegmentAtLegacyBlockIndex(
+  manuscript: ParsedManuscript | null,
+  blockIndex: number,
+): EventSegment | null {
+  if (!manuscript || blockIndex < 1) {
+    return null;
+  }
+  const segment = manuscript.segments[blockIndex - 1];
+  return segment?.kind === "event" ? segment : null;
+}
+
+export function legacyBlockIndexIsValid(
+  manuscript: ParsedManuscript | null,
+  blockIndex: number,
+): boolean {
+  if (!manuscript) {
+    return false;
+  }
+  if (blockIndex === 0) {
+    return true;
+  }
+  return blockIndex - 1 < manuscript.segments.length;
+}
+
+export function metadataForLegacyBlockIndex(
+  manuscript: ParsedManuscript | null,
+  blockIndex: number,
+): Record<string, unknown> | undefined {
+  const event = eventSegmentAtLegacyBlockIndex(manuscript, blockIndex);
+  if (!event) {
+    return undefined;
+  }
   const meta: Record<string, unknown> = {
-    event: segment.name,
-    description: segment.description,
-    entity: segment.entityPath,
+    event: event.name,
+    description: event.description,
+    entity: event.entityPath,
   };
-  if (segment.barTags?.length) {
-    meta.barTags = segment.barTags;
-    const barTime = timeTagFromBlockMetadata(meta);
+  if (event.barTags?.length) {
+    meta.barTags = event.barTags;
+    const barTime = timeTagFromEventSegment(event);
     if (barTime) {
       meta.time = barTime;
     }
   }
-
-  return {
-    id: stableBlockId(filePath, index),
-    index,
-    body: segment.body,
-    metadata: meta,
-  };
-}
-
-function stableBlockId(filePath: string, blockIndex: number): string {
-  return `${filePath}::${blockIndex}`;
-}
-
-/** Bloque 0 del adaptador legacy (= cabecera de archivo §1.4). */
-export function isFileTitleBlock(block: ParsedBlock): boolean {
-  return block.index === 0;
-}
-
-/** @deprecated Usar `isFileTitleBlock` / cabecera de manuscrito. */
-export function inlineBlockDisplayIndex(block: ParsedBlock): number {
-  return block.index;
+  return meta;
 }
 
 export function stableSegmentId(filePath: string, segmentIndex: number): string {
@@ -143,4 +130,8 @@ export function eventSegmentFromBar(
     body,
     closed,
   };
+}
+
+export function isEventSegment(segment: ManuscriptSegment): segment is EventSegment & { kind: "event" } {
+  return segment.kind === "event";
 }

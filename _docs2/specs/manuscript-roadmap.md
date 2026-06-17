@@ -17,10 +17,10 @@
 | M4 | Lexical + panel | 🟡 hecho con deuda |
 | M5 | WB + timeline downstream | ✅ |
 | M6 | FS + referencias | ✅ |
-| M7 | Estabilización editor (II.4) | ⬜ |
+| M7 | Estabilización editor (II.4) | ✅ |
 | M8 | QA manual (II.5) | ⬜ |
 
-M1–M6 corresponden al refactor ya implementado en código (antes documentado en `_docs/plan_roadmap.md` Fases 0–6). **M7–M8** es el trabajo que queda para cerrar v0.10.0.
+M1–M6 corresponden al refactor ya implementado en código (antes documentado en `_docs/plan_roadmap.md` Fases 0–6). **M8** + afinado final cierran v0.10.0.
 
 ---
 
@@ -60,15 +60,15 @@ Tipos: `src/lib/types/manuscript.ts`, `editor.ts`
 
 ---
 
-## M4 — Lexical + panel 🟡
+## M4 — Lexical + panel ✅
 
-| Hecho | Deuda |
+| Hecho | Notas |
 |-------|-------|
-| `EventTagBarNode`, `InlineTimeTagNode`, plugins | Adaptador `ParsedDocument` en store |
-| `commitManuscriptLabel` | Nodos legacy aún registrados |
-| Panel evento/tiempo | Backlinks con `blockIndex` legacy |
+| `EventTagBarNode`, `InlineTimeTagNode`, plugins | Store unificado en M7 |
+| `commitManuscriptLabel` | Nodos legacy desregistrados (M7) |
+| Panel evento/tiempo | Lee `ParsedManuscript.segments` (M7) |
 
-**Siguiente:** M7
+**Siguiente:** M8 (+ § Afinado final antes de II.6)
 
 ---
 
@@ -93,17 +93,31 @@ Tipos: `src/lib/types/manuscript.ts`, `editor.ts`
 
 ---
 
-## M7 — Estabilización editor ⬜
+## M7 — Estabilización editor ✅
 
-> Tarea detallada: `../04-TASK.md` § II.4.1
+> Tarea detallada: `../04-TASK.md` § II.4.1 · Cerrado 2026-06-11
 
-1. Eliminar `manuscriptToParsedDocument` del flujo activo
-2. Paneles leen `ParsedManuscript.segments`
-3. Quitar nodos legacy del registro Lexical
-4. Build + tests frontend verdes
-5. Smoke manual mínimo
+1. ~~Eliminar `manuscriptToParsedDocument` del flujo activo~~
+2. ~~Paneles leen `ParsedManuscript.segments`~~
+3. ~~Quitar nodos legacy del registro Lexical~~
+4. ~~Build + tests frontend verdes~~
+5. ~~Smoke manual mínimo~~ — QA post-M7: `session-1781734162916-17440` + `session-1781734289595-24412`
 
-**Criterio de salida:** un solo modelo en memoria; sin imports activos de `ParsedDocument` en editor manuscrito.
+**Criterio de salida:** un solo modelo en memoria; sin imports activos de `ParsedDocument` en editor manuscrito. **Cumplido.**
+
+---
+
+## Afinado final (post-módulos)
+
+> **Política (jun 2026):** no bloquea M7 ni el avance MAP/WB. Ejecutar cuando el producto esté operativo de punta a punta, antes de II.6 / v0.10.0.
+
+| Ítem | Notas |
+|------|--------|
+| Borrar dead code | `BlockSeparatorNode`, `BlockMetadataNode`, `BlockMetadataChips`, `resolveBlockTime.ts` |
+| Tests unitarios | `findLastAddedTimeInManuscript`, helpers `metadataForLegacyBlockIndex` |
+| OBS residual | `sidePanelTab`, `insertTimeTag` en action log; smoke toggle etiquetas OFF/ON |
+| QA §7 residual | Diff FIX-013 en recorrido manual; ítems no cubiertos por OBS `17440`/`24412` |
+| Deuda menor | `legacyBlockIndexFromSegmentIndex` sin uso; alinear log `segmentCount` FE/Rust en expand |
 
 ---
 

@@ -17,6 +17,8 @@ import {
 import { trackAction } from "@/lib/action-audit/trackAction";
 import { normalizeEditorErrorKey } from "@/lib/editor/editorErrors";
 import { ensureEventEntityPath } from "@/lib/editor/ensureEventEntity";
+import { legacyBlockIndexFromContext } from "@/lib/editor/documentSync";
+import { metadataForLegacyBlockIndex } from "@/lib/editor/manuscriptBlocks";
 import { openTimeTagForBlock } from "@/lib/editor/openTimeTagForBlock";
 import { cn } from "@/lib/utils";
 import { useCallback, useState } from "react";
@@ -51,10 +53,9 @@ export function EditorSidePanel() {
 
   const tabOrder = useEditorStore((s) => s.tabOrder);
   const tabs = useEditorStore((s) => s.tabs);
-  const document = useEditorStore((s) => s.document);
+  const manuscript = useEditorStore((s) => s.manuscript);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const activeFilePath = useEditorStore((s) => s.activeFilePath);
-  const activeBlockIndex = useEditorStore((s) => s.activeBlockIndex);
   const activeEventContext = useEditorStore((s) => s.activeEventContext);
   const activeTabKind = useEditorStore((s) => s.activeTabKind);
   const isDirty = useEditorStore((s) => s.isDirty);
@@ -160,15 +161,15 @@ export function EditorSidePanel() {
     if (activeTabKind !== "manuscript" || !activeFilePath || !calendar) {
       return;
     }
+    const blockIndex = legacyBlockIndexFromContext(activeEventContext);
     trackAction("editor", "insertTimeTag", {
       path: activeFilePath,
-      blockIndex: activeBlockIndex,
+      blockIndex,
     });
-    const block = document?.blocks[activeBlockIndex];
     openTimeTagForBlock({
       filePath: activeFilePath,
-      blockIndex: activeBlockIndex,
-      metadata: block?.metadata as Record<string, unknown> | undefined,
+      blockIndex,
+      metadata: metadataForLegacyBlockIndex(manuscript, blockIndex),
       rightPanelCollapsed,
       calendar,
       openTimeDialog,
@@ -177,8 +178,8 @@ export function EditorSidePanel() {
     activeTabKind,
     activeFilePath,
     calendar,
-    document,
-    activeBlockIndex,
+    manuscript,
+    activeEventContext,
     openTimeDialog,
     rightPanelCollapsed,
   ]);
