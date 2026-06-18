@@ -1,12 +1,12 @@
 # Spec — Módulo de mapas
 
-> **Documento en elaboración** (jun 2026). Define el **qué** del módulo de mapas antes de purgar o reimplementar código.  
-> **No implementar ni borrar código** hasta cerrar diseño + inventario conservar/purgar.  
-> Ejecución futura: [`maps-roadmap.md`](maps-roadmap.md) *(pendiente de crear)*.
+> Define el **qué** del módulo de mapas (Era III).  
+> **Inventario y decisiones MAP-000:** [`plans/Fase F/MAP-000-inventory-purge.md`](plans/Fase%20F/MAP-000-inventory-purge.md) ✅  
+> **Ejecución:** [`maps-roadmap.md`](maps-roadmap.md) · Purga física legacy → inicio **MAP-001**.
 
 | Campo | Valor |
 |-------|--------|
-| **Estado** | 🔄 En elaboración |
+| **Estado** | 🔄 En elaboración (decisiones MAP-000 cerradas jun 2026) |
 | **Ámbito** | Módulo Mapas + integración con manuscrito y tiempo |
 | **Era objetivo** | III (`03-ROADMAP.md` § Era III — Mapas y espacio) |
 | **Precede a** | Worldbuilding v2, ubicación inline en manuscrito |
@@ -75,7 +75,7 @@ Capturas de la UI existente (jun 2026):
 | Rust | `commands/maps.rs`, `fs/maps_store.rs` (~14 IPC) |
 | Stack actual | Leaflet `CRS.Simple`, overlays de imagen, estudio dibujo tipo Excalidraw |
 
-**Decisión preliminar del usuario:** purgar casi todo lo actual; conservar solo lo que este spec marque explícitamente como «conservar» al cerrar el diseño.
+**Decisión MAP-000 (2026-06-11):** **tierra quemada** — purgar casi todo; tabla explícita en [`MAP-000-inventory-purge.md`](plans/Fase%20F/MAP-000-inventory-purge.md). Purga física al iniciar **MAP-001**; barrido final **MAP-012**.
 
 ---
 
@@ -231,7 +231,7 @@ Elementos de referencia para el rediseño del estudio — **no todos obligatorio
 - Lista cerrada de pinceles v1.
 - Cuentagotas, relleno, texto en el mapa.
 - Inclinación del lápiz (tilt) en tableta.
-- Integración estudio ↔ capas internas (¿un archivo de trazos por capa interna?).
+- ~~Integración estudio ↔ capas internas~~ → **✅ cerrado MAP-000:** un archivo JSON **por dibujo**; capas internas como `layers[]` **dentro** del mismo archivo (no un archivo por capa).
 - Motor de render: evolucionar canvas 2D actual vs biblioteca con presión nativa.
 
 ---
@@ -619,8 +619,8 @@ Era III (ahora)                    WB v2 (después)
 
 - Más **categorías** además de principal / secundario.
 - Orden de composición (z-order), opacidad, bloqueo, agrupación por capa.
-- Serialización en disco (transparencia en secundarios, metadatos de parche).
-- Sintaxis exacta de etiquetas tiempo/ubicación en metadatos.
+- ~~Serialización en disco~~ → **✅ cerrado MAP-000:** ver **§9** (JSON por dibujo; secundarios transparentes fuera del parche).
+- Sintaxis exacta de etiquetas tiempo/ubicación en metadatos (detalle en MAP-007/008).
 
 ---
 
@@ -741,6 +741,99 @@ Un solo **motor de composición** alimenta la vista interactiva; el modo edició
 
 ---
 
+## 9. Persistencia en disco (decisiones Era III)
+
+> Cerrado en MAP-000 (jun 2026). Implementación: **MAP-001** (esquema + IPC) · **MAP-005** (autosave estudio).
+
+### 9.1 Principio: documento de trabajo, no imagen
+
+El dibujo del mapa **no** se guarda como TIFF/PNG/PSD (formatos de **export** o fondos raster). Se guarda como **documento estructurado**: capas, trazos vectoriales, metadatos. La app **renderiza** a píxeles al visualizar; TIFF/PNG para compartir fuera de NarraLith queda **fuera de Era III**.
+
+| Tipo | Formato | Rol |
+|------|---------|-----|
+| Dibujos editables | **JSON** | Fuente de verdad (trazos, capas, hotspots…) |
+| Imágenes importadas | PNG / WebP / JPEG | Fondos, texturas, scans |
+| Caché opcional | PNG | Acelerar render; regenerable |
+| Índice proyecto mapas | JSON | `index.json`, `map.json` por mapa |
+| SQLite | — | **No** para trazos en v1 |
+
+### 9.2 Layout en disco (v2)
+
+```text
+.narralith/maps/
+  index.json                         # lista mapas, defaultOnOpen, prefs apertura
+  {mapId}/
+    map.json                         # nombre, dimensiones lienzo, «Desde», refs
+    drawings/
+      principal.json                 # dibujo principal (layers[] + strokes)
+      secondary/{id}.json            # parches temporales
+      nav/{id}.json                  # dibujos hijo (navegación)
+    hotspots.json                    # zonas → drawingId (o embebido en padre)
+    assets/                          # PNG/WebP importados, cachés opcionales
+```
+
+**Un archivo JSON por dibujo** (principal, secundario, hijo). Las **capas internas** viven en `layers[]` **dentro** de ese archivo — no un archivo por capa (escala y guardado más simple a largo plazo).
+
+### 9.3 Esquema `drawing.json` (v2, orientativo)
+
+```json
+{
+  "version": 2,
+  "width": 4000,
+  "height": 3000,
+  "layers": [
+    {
+      "id": "layer-relieve",
+      "name": "Relieve",
+      "visible": true,
+      "opacity": 1,
+      "locked": false,
+      "strokes": [
+        {
+          "id": "stroke-001",
+          "tool": "brush",
+          "brush": "pencil",
+          "color": "#2d5016",
+          "baseSize": 4,
+          "baseOpacity": 0.8,
+          "points": [
+            { "x": 1200, "y": 800, "pressure": 0.15 },
+            { "x": 1210, "y": 825, "pressure": 0.91 }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- **`pressure` 0.0–1.0** por punto (tableta); omitido o `1.0` con ratón — ver §3bis.2.1.
+- **`version`**: incrementar al añadir campos; migradores en Rust/TS.
+- Secundarios: mismo esquema; píxeles fuera del parche = transparentes al componer.
+
+### 9.4 Borrador sucio (no perder trabajo al cerrar)
+
+Objetivo UX: igual sensación que manuscrito (trabajo no perdido al cerrar la app). **Mecanismo distinto** al FIX-007:
+
+| Aspecto | Manuscrito (FIX-007) | Mapas (MAP-001/005) |
+|---------|----------------------|---------------------|
+| Unidad | Pestaña `.md` sucia | `drawing.json` activo en estudio |
+| Persistencia al cerrar | `localStorage` | **Autosave debounced a disco** + flush en `pagehide` |
+| Motivo | Texto pequeño (KB) | Trazos pueden ser MB; sin reconciliación global |
+| Calendario (contraste) | Dirty solo en sesión; reconciliación cruzada con MS | Mapas **auto-contenido** — guardar trazo no invalida marcas del proyecto |
+
+Opcional v1: hermano `*.autosave.json` para recuperación ante crash mid-write. **Sin** baseline/reconcile tipo FIX-010i.
+
+### 9.5 Migración legacy
+
+**Ninguna.** Solo entorno dev; borrar proyecto de prueba si hace falta. Esquema `.narralith/maps/` actual (`manifest.json`, `layers.json`, Excalidraw…) queda obsoleto.
+
+### 9.6 Stack descartado (MAP-000)
+
+Leaflet, Excalidraw, `layers.json` vectorial legacy, overlays imagen por época como modelo principal — reemplazados por compositor canvas 2D + dibujos JSON. Ver inventario: [`MAP-000-inventory-purge.md`](plans/Fase%20F/MAP-000-inventory-purge.md).
+
+---
+
 ## 6. Secciones pendientes
 
 El usuario irá añadiendo bloques. Lista de trabajo:
@@ -761,11 +854,12 @@ El usuario irá añadiendo bloques. Lista de trabajo:
 - [ ] **Timeline del mapa** — UX scrubber; trayectorias de eventos (post-WB)
 - [ ] **«¿Dónde está X en T?»** — Consulta por personaje + filtros — post-WB v2
 - [x] **§3bis** — Color custom, varios pinceles, presión tableta; inspiración Sketchbook
-- [ ] **§3bis** — Lista pinceles v1, estudio ↔ capas internas
+- [ ] **§3bis** — Lista pinceles v1
+- [x] **§3bis** — Estudio ↔ capas internas: un JSON/dibujo, `layers[]` dentro (MAP-000)
 - [x] **§8** — Interactivo por defecto; edición solo con ✏️; scrubber en interactivo
-- [ ] **Persistencia** — Formato en disco, SQLite, versionado
-- [ ] **Conservar vs purgar** — Tabla explícita contra código actual
-- [ ] **Fuera de alcance v1**
+- [x] **Persistencia** — §9: JSON + assets; autosave disco; sin SQLite v1 (MAP-000)
+- [x] **Conservar vs purgar** — [`MAP-000-inventory-purge.md`](plans/Fase%20F/MAP-000-inventory-purge.md)
+- [ ] **Fuera de alcance v1** — export TIFF; diff visual borrador vs disco (tipo FIX-013)
 
 ---
 
@@ -799,7 +893,15 @@ El usuario irá añadiendo bloques. Lista de trabajo:
 | 2026-06-06 | Era III: etiquetas ubicación desde MS + marcas **X** en T; UX rica y WB → refactor post-WB v2 |
 | 2026-06-06 | Varios secundarios activos en mismo T; apilar (A) vs cierre `tiempo_fin` (B) en misma zona |
 | 2026-06-06 | No tocar código hasta cerrar spec y lista conservar/purgar |
+| 2026-06-11 | **MAP-000:** tierra quemada; purga física al inicio MAP-001; barrido MAP-012 |
+| 2026-06-11 | **MAP-000:** sin Leaflet/Excalidraw; compositor + estudio canvas 2D propio |
+| 2026-06-11 | **MAP-000:** persistencia JSON (un archivo/dibujo, `layers[]` dentro); no TIFF/PSD como formato de trabajo |
+| 2026-06-11 | **MAP-000:** trazos vectoriales + `pressure` 0–1; versión en esquema |
+| 2026-06-11 | **MAP-000:** borrador sucio = autosave a disco + flush al cerrar; no localStorage (FIX-007) |
+| 2026-06-11 | **MAP-000:** sin migración legacy; solo entorno dev |
+| 2026-06-11 | **MAP-000:** Fase F entrega módulo completo MAP-001…012 en tareas incrementales |
+| 2026-06-11 | Inventario conservar/purgar → [`MAP-000-inventory-purge.md`](plans/Fase%20F/MAP-000-inventory-purge.md); roadmap → [`maps-roadmap.md`](maps-roadmap.md) |
 
 ---
 
-**Última actualización:** 2026-06-06 (§8 modos vista; §3ter multi-mundo)
+**Última actualización:** 2026-06-11 (§9 persistencia; MAP-000 decisiones)

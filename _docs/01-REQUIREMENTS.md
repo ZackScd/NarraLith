@@ -208,7 +208,7 @@ El plan original detalla fichas extensas (bestiario, cosmología, economía, …
 
 Requisitos originales: Leaflet + capas vectoriales + Excalidraw + evolución temporal.
 
-**Estado:** 🟡 mucho código en `modules/maps/` y Rust `maps_store`; **⏸ congelado** hasta manuscrito estable. No planificar integración mapa ↔ ubicación inline aún.
+**Estado:** 🔄 **Era III en curso** — refactor completo; decisiones MAP-000 en [`specs/maps-design.md`](specs/maps-design.md) §9 y [`specs/plans/Fase F/MAP-000-inventory-purge.md`](specs/plans/Fase%20F/MAP-000-inventory-purge.md). Código legacy pendiente de purga (MAP-001).
 
 ---
 
