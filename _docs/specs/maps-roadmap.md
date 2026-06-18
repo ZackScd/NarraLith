@@ -49,7 +49,7 @@ MAP-001 persistencia v2 + purga física legacy
 | ID | Entregable | Spec | Depende de |
 |----|------------|------|------------|
 | **MAP-000** | Inventario + decisiones stack/persistencia/purga | §2 · §9 · [plan](plans/Fase%20F/MAP-000-inventory-purge.md) | — |
-| **MAP-001** | Modelo datos + JSON en disco + IPC v2; **commit purga legacy** | §9 | MAP-000 |
+| **MAP-001** | Persistencia v2 + purga legacy + IPC + UI placeholder | §9 · [plan](plans/Fase%20F/MAP-001-persistence-v2.md) | MAP-000 |
 | **MAP-002** | N mapas/proyecto; fijado / último visto / modificado | §3ter | MAP-001 |
 | **MAP-003** | Crear mapa: tamaño libre, aspect ratio, expandir/recortar | §3 | MAP-002 |
 | **MAP-004** | Interactivo por defecto; edición solo ✏️ | §8 | MAP-001 |
