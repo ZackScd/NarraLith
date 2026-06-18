@@ -126,7 +126,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-000** | ✅ | Inventario **conservar vs purgar** + decisiones stack/persistencia — [plan](plans/Fase%20F/MAP-000-inventory-purge.md) | Bajo | [`maps-design.md`](maps-design.md) §9 · §2 |
 | **MAP-001** | ✅ | Persistencia v2 + purga legacy — [plan](plans/Fase%20F/MAP-001-persistence-v2.md) | Alto | [`maps-design.md`](maps-design.md) §9 |
 | **MAP-002** | ✅ | Multi-mundo: selector + apertura fijado/último visto/modificado — [plan](plans/Fase%20F/MAP-002-multi-world.md) · QA cerrado | Medio | [`maps-design.md`](maps-design.md) §3ter |
-| **MAP-003** | ⬜ | Crear mapa: lienzo tamaño libre, relación de aspecto, expandir/recortar | Medio | [`maps-design.md` §3](maps-design.md) |
+| **MAP-003** | 📋 | Crear mapa: diálogo, tamaño libre, aspect ratio, import, expandir/recortar — [plan](plans/Fase%20F/MAP-003-create-canvas.md) | Medio–alto | [`maps-design.md` §3](maps-design.md) |
 | **MAP-004** | ⬜ | Modos vista: **interactivo por defecto** + edición solo con ✏️ | Medio | [`maps-design.md` §8](maps-design.md) |
 | **MAP-005** | ⬜ | Estudio dibujo: colores custom, pinceles, presión tableta (`pressure` 0–1) | Alto | [`maps-design.md` §3bis](maps-design.md) |
 | **MAP-006** | ⬜ | Capas internas por archivo de dibujo | Medio | [`maps-design.md` §4.1](maps-design.md) |
@@ -202,7 +202,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 18 | MAP-000 | Inventario purga mapas ✅ |
 | 19 | MAP-001 | Persistencia mapas v2 + purga ✅ |
 | 20 | MAP-002 | Multi-mundo + selector ✅ |
-| 21 | MAP-003 | Lienzo crear/expandir/recortar |
+| 21 | MAP-003 | Lienzo crear/import/expandir/recortar 📋 plan |
 | 22 | MAP-004 | Modos interactivo / edición |
 | 23 | MAP-005 | Estudio Sketchbook |
 | 24 | MAP-006 | Capas internas |
@@ -276,6 +276,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **ERAII-002 ✅ M8 cerrado** — smoke QA `5608`/`22856`; §7 residual → Afinado · [`ERAII-002-qa-manual-section7.md`](plans/_archive/Fase%20E/ERAII-002-qa-manual-section7.md) |
 | 2026-06-11 | **MAP-001 📋** plan persistencia v2 + purga — [`plans/Fase F/MAP-001-persistence-v2.md`](plans/Fase%20F/MAP-001-persistence-v2.md) |
 | 2026-06-11 | **MAP-002 ✅ cerrado** multi-mundo + selector — QA `1781754152083-26128` |
+| 2026-06-11 | **MAP-003 📋** crear lienzo + import + expand/crop — [`plans/Fase F/MAP-003-create-canvas.md`](plans/Fase%20F/MAP-003-create-canvas.md) |
 
 ---
 
