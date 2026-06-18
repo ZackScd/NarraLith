@@ -19,15 +19,15 @@ Otros scripts: `npm run build`, `npm run lint`, `npm run format`.
 
 ## Documentación (`_docs/`)
 
-| Archivo | Contenido |
+Ver [`_docs/README.md`](_docs/README.md).
+
+| Recurso | Contenido |
 |---------|-----------|
-| `01-REQUIREMENTS.md` | Qué construir |
-| `02-TECH_STACK.md` | Stack tecnológico |
-| `03-ROADMAP.md` | Fases y entregables |
-| `04-TASK.md` | Tareas activas |
-| `05-CHANGELOG.md` | Historial de cambios |
-| `06-ARCHITECTURE.md` | Mapa del repositorio |
-| `07-GUIDELINES-LLMs.md` | Reglas de desarrollo |
+| `01-REQUIREMENTS.md` | Producto y filosofía |
+| `02-TECH_STACK.md` | Stack real + reglas |
+| `03-ROADMAP.md` | Eras macro |
+| `specs/implementation-plan.md` | Lista maestra · qué sigue |
+| `specs/plans/` | Planes por tarea (`_archive/` = fases cerradas) |
 
 ## IDE recomendado
 

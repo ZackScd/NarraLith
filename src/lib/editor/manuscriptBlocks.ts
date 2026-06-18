@@ -1,7 +1,7 @@
 /**
  * Helpers manuscrito §1.9 (segmentos, tiempos, índice legacy timeline).
  * M7 ✅ — sin adaptador `ParsedDocument` en flujo activo.
- * Afinado residual (dead code, tests): ver `_docs2/specs/manuscript-roadmap.md` § Afinado final.
+ * Afinado residual (dead code, tests): ver `_docs/specs/manuscript-roadmap.md` § Afinado final.
  */
 import type {
   BarTag,

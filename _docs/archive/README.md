@@ -1,10 +1,8 @@
-# Archivo histórico (`_docs/archive/`)
+# Archivo documental
 
-Documentos conservados por referencia. **No usar para implementación nueva.**
+| Carpeta | Qué |
+|---------|-----|
+| [`legacy-docs-v1/`](legacy-docs-v1/) | Documentación original `_docs/` (pre jun 2026) |
+| [`retired-cadence/`](retired-cadence/) | Cadena 03→04→05→06→07 sustituida por `implementation-plan` + planes |
 
-| Carpeta / archivo | Contenido | Reemplazo vigente |
-|-------------------|-----------|-------------------|
-| `manuscript-refactor/plan.md` | Diseño + auditoría completa del refactor (jun 2026) | `_docs2/specs/manuscript-design.md` + archivo para §11 |
-| `manuscript-refactor/plan_roadmap.md` | Fases 0–8 del refactor con estado al 2026-06-05 | `_docs2/specs/manuscript-roadmap.md` |
-
-Los stubs `_docs/plan.md` y `_docs/plan_roadmap.md` en la raíz de `_docs/` solo redirigen aquí y a `_docs2/`.
+Filosofía de producto y licencias: consolidada en [`../01-REQUIREMENTS.md`](../01-REQUIREMENTS.md) y [`../02-TECH_STACK.md`](../02-TECH_STACK.md).

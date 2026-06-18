@@ -1,5 +1,4 @@
 _docs/
-_docs2/
 .cursor/
 *.md
 !src-tauri/**/*.md
