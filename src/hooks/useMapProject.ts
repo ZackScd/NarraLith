@@ -1,147 +1,40 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { mapErrorKey } from "@/lib/maps/mapErrors";
-import type { MapData, MapStateAt, MapSummary } from "@/lib/types/maps";
+import type { MapDocumentV1, MapDrawingV2, MapSummaryV2 } from "@/lib/types/maps";
 import { useMapStore } from "@/stores/useMapStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 
-type MapsListSnapshot = {
+interface ListSnapshot {
   key: string;
-  maps: MapSummary[];
+  maps: MapSummaryV2[];
   errorKey: string | null;
-};
+}
 
-type MapDataSnapshot = {
+interface ActiveSnapshot {
   key: string;
-  data: MapData | null;
+  document: MapDocumentV1 | null;
+  drawing: MapDrawingV2 | null;
   errorKey: string | null;
-};
-
-type PreviewSnapshot = {
-  key: string;
-  state: MapStateAt | null;
-  errorKey: string | null;
-};
+}
 
 export function useMapProject() {
   const activeMapId = useMapStore((s) => s.activeMapId);
-  const previewTimestamp = useMapStore((s) => s.previewTimestamp);
   const rootPath = useProjectStore((s) => s.activeProject?.rootPath ?? "");
 
-  const [listSnapshot, setListSnapshot] = useState<MapsListSnapshot | null>(null);
-  const [dataSnapshot, setDataSnapshot] = useState<MapDataSnapshot | null>(null);
-  const [previewSnapshot, setPreviewSnapshot] = useState<PreviewSnapshot | null>(null);
-  const [saving, setSaving] = useState(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingSave = useRef<MapData | null>(null);
-  const [pendingData, setPendingData] = useState<MapData | null>(null);
+  const [listSnapshot, setListSnapshot] = useState<ListSnapshot | null>(null);
+  const [activeSnapshot, setActiveSnapshot] = useState<ActiveSnapshot | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const listKey = rootPath;
-  const dataKey = `${rootPath}:${activeMapId ?? ""}`;
-  const previewKey = `${dataKey}:${previewTimestamp ?? ""}`;
-
-  useEffect(() => {
-    if (!rootPath) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const maps = await invokeCommand<MapSummary[]>("list_project_maps");
-        if (!cancelled) {
-          setListSnapshot({ key: listKey, maps, errorKey: null });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setListSnapshot({
-            key: listKey,
-            maps: [],
-            errorKey: mapErrorKey(parseAppError(err)),
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [listKey, rootPath]);
-
-  useEffect(() => {
-    if (!activeMapId || !rootPath) {
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const loaded = await invokeCommand<MapData>("get_map_data_cmd", {
-          mapId: activeMapId,
-        });
-        if (!cancelled) {
-          setDataSnapshot({ key: dataKey, data: loaded, errorKey: null });
-          setPendingData(loaded);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setDataSnapshot({
-            key: dataKey,
-            data: null,
-            errorKey: mapErrorKey(parseAppError(err)),
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [dataKey, activeMapId, rootPath]);
-
-  useEffect(() => {
-    if (!activeMapId || !rootPath) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const state = await invokeCommand<MapStateAt>("get_map_state_at_cmd", {
-          mapId: activeMapId,
-          timestamp: previewTimestamp,
-        });
-        if (!cancelled) {
-          setPreviewSnapshot({ key: previewKey, state, errorKey: null });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setPreviewSnapshot({
-            key: previewKey,
-            state: null,
-            errorKey: mapErrorKey(parseAppError(err)),
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [previewKey, activeMapId, rootPath, previewTimestamp]);
-
-  const maps = listSnapshot?.key === listKey ? listSnapshot.maps : [];
-  const data =
-    pendingData ?? (dataSnapshot?.key === dataKey ? dataSnapshot.data : null);
-  const previewState =
-    previewSnapshot?.key === previewKey ? previewSnapshot.state : null;
-  const loadingList = listSnapshot?.key !== listKey;
-  const loadingData = Boolean(activeMapId) && dataSnapshot?.key !== dataKey;
-  const errorKey =
-    listSnapshot?.key === listKey
-      ? listSnapshot.errorKey
-      : dataSnapshot?.key === dataKey
-        ? dataSnapshot.errorKey
-        : previewSnapshot?.key === previewKey
-          ? previewSnapshot.errorKey
-          : null;
+  const activeKey = `${rootPath}:${activeMapId ?? ""}`;
 
   const loadMaps = useCallback(async () => {
     if (!rootPath) return;
     try {
-      const list = await invokeCommand<MapSummary[]>("list_project_maps");
-      setListSnapshot({ key: listKey, maps: list, errorKey: null });
+      const maps = await invokeCommand<MapSummaryV2[]>("list_project_maps");
+      setListSnapshot({ key: listKey, maps, errorKey: null });
     } catch (err) {
       setListSnapshot({
         key: listKey,
@@ -151,82 +44,94 @@ export function useMapProject() {
     }
   }, [listKey, rootPath]);
 
-  const flushSave = useCallback(async () => {
-    const payload = pendingSave.current;
-    if (!payload) return;
-    pendingSave.current = null;
-    setSaving(true);
-    try {
-      await invokeCommand("save_map_data_cmd", { data: payload });
-      setDataSnapshot({ key: dataKey, data: payload, errorKey: null });
-      await loadMaps();
-    } catch (err) {
-      setDataSnapshot({
-        key: dataKey,
-        data: payload,
-        errorKey: mapErrorKey(parseAppError(err)),
-      });
-    } finally {
-      setSaving(false);
+  useEffect(() => {
+    if (!rootPath) {
+      setListSnapshot(null);
+      return;
     }
-  }, [dataKey, loadMaps]);
-
-  const scheduleSave = useCallback(
-    (next: MapData) => {
-      setPendingData(next);
-      pendingSave.current = next;
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        void flushSave();
-      }, 500);
-    },
-    [flushSave],
-  );
+    void loadMaps();
+  }, [loadMaps, rootPath]);
 
   useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (pendingSave.current) {
-        void invokeCommand("save_map_data_cmd", { data: pendingSave.current });
+    if (!activeMapId || !rootPath) {
+      setActiveSnapshot(null);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [document, drawing] = await Promise.all([
+          invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId: activeMapId }),
+          invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: activeMapId }),
+        ]);
+        if (!cancelled) {
+          setActiveSnapshot({
+            key: activeKey,
+            document,
+            drawing,
+            errorKey: null,
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setActiveSnapshot({
+            key: activeKey,
+            document: null,
+            drawing: null,
+            errorKey: mapErrorKey(parseAppError(err)),
+          });
+        }
       }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-  }, []);
+  }, [activeKey, activeMapId, rootPath]);
 
-  const displayData = useMemo(() => {
-    if (previewTimestamp && previewState) {
-      return previewState;
-    }
-    return data;
-  }, [previewTimestamp, previewState, data]);
+  const createBlankMap = useCallback(
+    async (name: string, width: number, height: number) => {
+      setCreating(true);
+      try {
+        const summary = await invokeCommand<MapSummaryV2>("create_blank_map_cmd", {
+          name,
+          width,
+          height,
+        });
+        await loadMaps();
+        useMapStore.getState().setActiveMap(summary.id);
+        return summary;
+      } finally {
+        setCreating(false);
+      }
+    },
+    [loadMaps],
+  );
 
-  const reloadActiveMap = useCallback(async () => {
-    if (!activeMapId || !rootPath) return;
-    try {
-      const loaded = await invokeCommand<MapData>("get_map_data_cmd", {
-        mapId: activeMapId,
-      });
-      setDataSnapshot({ key: dataKey, data: loaded, errorKey: null });
-      setPendingData(loaded);
-    } catch (err) {
-      setDataSnapshot({
-        key: dataKey,
-        data: null,
-        errorKey: mapErrorKey(parseAppError(err)),
-      });
-    }
-  }, [activeMapId, dataKey, rootPath]);
+  const maps = listSnapshot?.key === listKey ? listSnapshot.maps : [];
+  const loadingList = Boolean(rootPath) && listSnapshot?.key !== listKey;
+  const loadingActive = Boolean(activeMapId) && activeSnapshot?.key !== activeKey;
+
+  const document =
+    activeSnapshot?.key === activeKey ? activeSnapshot.document : null;
+  const drawing = activeSnapshot?.key === activeKey ? activeSnapshot.drawing : null;
+
+  const errorKey =
+    listSnapshot?.key === listKey
+      ? listSnapshot.errorKey
+      : activeSnapshot?.key === activeKey
+        ? activeSnapshot.errorKey
+        : null;
 
   return {
     maps,
-    data,
-    displayData,
-    previewState,
-    loading: loadingList || loadingData,
-    saving,
+    document,
+    drawing,
+    loading: loadingList || loadingActive,
+    creating,
     errorKey,
     loadMaps,
-    reloadActiveMap,
-    scheduleSave,
-    flushSave,
+    createBlankMap,
   };
 }

@@ -1,77 +1,79 @@
-/** Tipos IPC mapas (espejo de Rust `fs::maps_store`). */
+/** Tipos IPC mapas v2 (espejo de Rust `fs::maps_store`). */
 
-export interface MapSummary {
+export type OpenPreference = "pinned" | "lastViewed" | "lastModified";
+
+export interface MapsIndexV2 {
+  version: 2;
+  openPreference?: OpenPreference;
+  maps: MapIndexEntryV2[];
+}
+
+export interface MapIndexEntryV2 {
   id: string;
   name: string;
-  parentMapId?: string | null;
-  imagePath: string;
+  defaultOnOpen?: boolean;
+  updatedAt: string;
+}
+
+export interface MapSummaryV2 {
+  id: string;
+  name: string;
   width: number;
   height: number;
+  updatedAt: string;
+  defaultOnOpen?: boolean;
 }
 
-export interface MapOverlay {
+export interface MapDocumentV1 {
+  version: 1;
   id: string;
   name: string;
-  imagePath: string;
-  bounds: [[number, number], [number, number]];
-  fromTimestamp?: string | null;
-  toTimestamp?: string | null;
-  zIndex: number;
-}
-
-export interface MapManifest {
-  id: string;
-  name: string;
-  imagePath: string;
   width: number;
   height: number;
-  parentMapId?: string | null;
-  overlays: MapOverlay[];
+  desde: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface MapLayer {
+export type MapStrokeTool = "brush" | "eraser";
+
+export interface MapStrokePointV2 {
+  x: number;
+  y: number;
+  pressure?: number;
+}
+
+export interface MapStrokeV2 {
+  id: string;
+  tool: MapStrokeTool;
+  brush: string;
+  color: string;
+  baseSize: number;
+  baseOpacity: number;
+  points: MapStrokePointV2[];
+}
+
+export interface MapDrawingLayerV2 {
   id: string;
   name: string;
   visible: boolean;
   opacity: number;
-  zIndex: number;
-  categoryFilter?: string | null;
+  locked: boolean;
+  strokes: MapStrokeV2[];
 }
 
-export type MapFeatureKind = "pin" | "polygon";
-
-export interface MapFeatureStyle {
-  color?: string | null;
-  fillOpacity?: number | null;
+export interface MapDrawingV2 {
+  version: 2;
+  width: number;
+  height: number;
+  layers: MapDrawingLayerV2[];
 }
 
-export interface MapFeature {
-  id: string;
-  layerId: string;
-  kind: MapFeatureKind;
-  latlng: [number, number][];
-  entityPath?: string | null;
-  label?: string | null;
-  childMapId?: string | null;
-  style?: MapFeatureStyle | null;
+export interface MapHotspotsFileV1 {
+  version: 1;
+  hotspots: unknown[];
 }
 
-export interface MapLayersFile {
-  version: number;
-  layers: MapLayer[];
-  features: MapFeature[];
-}
-
-export interface MapData {
-  manifest: MapManifest;
-  layers: MapLayersFile;
-}
-
-export interface MapStateAt {
-  manifest: MapManifest;
-  layers: MapLayersFile;
-  activeOverlays: MapOverlay[];
-  previewTimestamp?: string | null;
-}
-
-export type MapDrawMode = "select" | "pin" | "polygon" | "delete";
+/** Defaults MAP-003 sustituirá el diálogo completo. */
+export const MAP_CREATE_DEFAULT_WIDTH = 2400;
+export const MAP_CREATE_DEFAULT_HEIGHT = 1600;

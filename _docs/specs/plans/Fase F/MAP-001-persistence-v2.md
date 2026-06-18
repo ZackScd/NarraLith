@@ -1,6 +1,6 @@
 # MAP-001 — Persistencia v2 + purga legacy
 
-> **Estado:** 📋 **Planificado** (2026-06-11) · **Sin implementación**  
+> **Estado:** ✅ **Cerrado** (2026-06-11) · QA smoke sesiones `9392` + `15572` · Commits: usuario  
 > **Esfuerzo:** Alto · **Riesgo:** Medio (purga grande + app debe compilar)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §9 · **Previo:** [MAP-000 ✅](MAP-000-inventory-purge.md) · **Siguiente:** MAP-002
 
@@ -357,26 +357,26 @@ Ejecutar **antes** de escribir código v2 (o en el mismo commit final):
 
 ### Eliminar archivos
 
-- [ ] `src/modules/maps/*` (todos excepto reescrituras)
-- [ ] `src/hooks/useMapProject.ts`
-- [ ] `src/hooks/useMapImageUrl.ts` (recrear si MAP-003 import imagen)
-- [ ] `src/lib/maps/mapMutations.ts`
-- [ ] `src/lib/types/mapDrawing.ts` (tipos pasan a `maps.ts` v2)
+- [x] `src/modules/maps/*` (legacy)
+- [x] `src/hooks/useMapProject.ts` (reescrito v2)
+- [x] `src/hooks/useMapImageUrl.ts`
+- [x] `src/lib/maps/mapMutations.ts`
+- [x] `src/lib/types/mapDrawing.ts`
 
 ### Reescribir desde cero
 
-- [ ] `src-tauri/src/fs/maps_store.rs`
-- [ ] `src-tauri/src/commands/maps.rs`
-- [ ] `src/lib/types/maps.ts`
-- [ ] `src/stores/useMapStore.ts`
-- [ ] `src/modules/maps/MapWorkspace.tsx` (nuevo placeholder)
-- [ ] `src/lib/maps/mapErrors.ts`
+- [x] `src-tauri/src/fs/maps_store.rs`
+- [x] `src-tauri/src/commands/maps.rs`
+- [x] `src/lib/types/maps.ts`
+- [x] `src/stores/useMapStore.ts`
+- [x] `src/modules/maps/MapWorkspace.tsx`
+- [x] `src/lib/maps/mapErrors.ts` (sin cambio de patrón)
 
 ### Actualizar referencias
 
-- [ ] `src-tauri/src/lib.rs` — comandos
-- [ ] `src/stores/useProjectStore.ts` — reset
-- [ ] `src/i18n/{es,en}/maps.json`
+- [x] `src-tauri/src/lib.rs`
+- [x] `src/stores/useProjectStore.ts` (reset sin cambio)
+- [x] `src/i18n/{es,en}/maps.json`
 
 ### Verificar cero referencias legacy
 
@@ -398,26 +398,29 @@ rg "MapLeaflet|excalidraw|leaflet|layers\.json|manifest\.json|MapSketch|mapMutat
 | `npm test` | Sin regresión (203+ tests) |
 | `npm run build` | Build OK sin import Leaflet/Excalidraw |
 
-### 8.2 Manual (plantilla)
+### 8.2 Manual
 
-| # | Acción | Esperado |
-|---|--------|----------|
-| R1 | Abrir proyecto sin `.narralith/maps/` | Módulo Mapas: empty state |
-| R2 | Crear mapa blank (botón dev / IPC) | Carpeta `{mapId}/` en disco con §4.1 |
-| R3 | Inspeccionar `principal.json` | version 2, 1 capa, strokes `[]` |
-| R4 | Cerrar y reabrir proyecto | Mapa sigue en lista |
-| R5 | Cambiar de proyecto y volver | Store resetea; lista correcta |
-| R6 | Proyecto con legacy `.narralith/maps/` viejo | **Ignorar o error claro** — sin migrador; usuario borra proyecto prueba |
+| # | Acción | Esperado | Resultado |
+|---|--------|----------|-----------|
+| R1 | Abrir proyecto sin `.narralith/maps/` | Empty state | ✅ (sesión previa a creación) |
+| R2 | Crear mapa blank | Árbol §4.1 en disco | ✅ `mapTest`, `MapTest2` creados |
+| R3 | Inspeccionar `principal.json` | v2, 1 capa, 0 trazos | ✅ UI: capas 1, trazos 0 (`MapTest2`) |
+| R4 | Cerrar y reabrir app/proyecto | Mapas en lista | ✅ sesión `15572` — usuario confirma |
+| R5 | Cambiar de proyecto y volver | Store resetea | ⏸ no recorrido |
+| R6 | Legacy `.narralith/maps/` v1 | Ignorar / vacío | ⏸ no recorrido (proyecto v2 limpio) |
 
-### 8.3 OBS (opcional)
+### 8.3 OBS
 
-Con OBS-002 activo, al entrar a Mapas:
+| Sesión | Archivos | Hallazgos |
+|--------|----------|-----------|
+| **1** `1781752675290-9392` | `action-session-…9392.ndjson`, `ui-session-…9392.ndjson` | L2 `viewChange` editor→map · L3 `obs.action.map.open` · L18–21 `obs.ui.maps.viewport/compositor` stub |
+| **2** `1781752775763-15572` | `action-session-…15572.ndjson`, `ui-session-…15572.ndjson` | Misma secuencia al reabrir · mapas persistidos visibles en UI |
 
-- `obs.ui.maps.viewport` / `compositor` — stub OK; ideal `stub: false` + `mapId` si hay activo (nice-to-have MAP-001).
+**Captura QA:** `mapTest` + `MapTest2` (2400×1600); detalle `MapTest2` → `map_6d1eb17e9f8d1310`, 1 capa, 0 trazos.
 
-Plantilla NDJSON: buscar `viewChange` → `map`, `obs.action.*` si se añade botón crear.
+**Nota:** `obs.ui.maps.viewport` con `mapId: null` — stub emite al entrar al módulo antes de selección; esperado MAP-001. Instrumentar `mapId` post-selección → MAP-004.
 
-**El usuario puede adjuntar sesión NDJSON** post-QA para cerrar §8 evidencia (mismo patrón ERAII/FIX).
+**Gap:** no hay aún `obs.action.map.create` — añadir en MAP-003 si hace falta trazabilidad de creación.
 
 ---
 
@@ -451,6 +454,9 @@ Plantilla NDJSON: buscar `viewChange` → `map`, `obs.action.*` si se añade bot
 | Fecha | Evento |
 |-------|--------|
 | 2026-06-11 | Plan MAP-001 redactado (post MAP-000 ✅) |
+| 2026-06-11 | **Implementación** — purga legacy + maps_store v2 + IPC + MapWorkspace placeholder |
+| 2026-06-11 | **Tests auto:** `cargo test` maps_store 6/6 · `npm test` 203/203 · `npm run build` OK |
+| 2026-06-11 | **MAP-001 ✅ cerrado** — QA smoke NDJSON `9392`+`15572`; R4 persistencia disco confirmada |
 
 ---
 

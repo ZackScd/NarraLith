@@ -124,7 +124,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
 | **MAP-000** | ✅ | Inventario **conservar vs purgar** + decisiones stack/persistencia — [plan](plans/Fase%20F/MAP-000-inventory-purge.md) | Bajo | [`maps-design.md`](maps-design.md) §9 · §2 |
-| **MAP-001** | 📋 | Modelo de datos y persistencia en disco + **purga física legacy** — [plan](plans/Fase%20F/MAP-001-persistence-v2.md) | Alto | [`maps-design.md`](maps-design.md) §9 |
+| **MAP-001** | ✅ | Persistencia v2 + purga legacy — [plan](plans/Fase%20F/MAP-001-persistence-v2.md) | Alto | [`maps-design.md`](maps-design.md) §9 |
 | **MAP-002** | ⬜ | Multi-mundo: N mapas por proyecto; apertura fijado / último visto / último modificado | Medio | [`maps-design.md` §3ter](maps-design.md) |
 | **MAP-003** | ⬜ | Crear mapa: lienzo tamaño libre, relación de aspecto, expandir/recortar | Medio | [`maps-design.md` §3](maps-design.md) |
 | **MAP-004** | ⬜ | Modos vista: **interactivo por defecto** + edición solo con ✏️ | Medio | [`maps-design.md` §8](maps-design.md) |
@@ -200,7 +200,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 17 | ERAII-003 | Cierre v0.10.0 Era II ✅ |
 | — | **Doc order** | Ordenar `_docs/` | ✅ 2026-06-11 |
 | 18 | MAP-000 | Inventario purga mapas ✅ |
-| 19 | MAP-001 | Persistencia mapas v2 + purga 📋 plan |
+| 19 | MAP-001 | Persistencia mapas v2 + purga ✅ |
 | 20 | MAP-002 | Multi-mundo |
 | 21 | MAP-003 | Lienzo crear/expandir/recortar |
 | 22 | MAP-004 | Modos interactivo / edición |
@@ -275,6 +275,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **ERAII-001 ✅ M7 cerrado** — commit `a5c06f6`; plan retroactivo [`plans/_archive/Fase E/ERAII-001-single-model-manuscript.md`](plans/_archive/Fase%20E/ERAII-001-single-model-manuscript.md); QA `17440`+`24412` |
 | 2026-06-11 | **ERAII-002 ✅ M8 cerrado** — smoke QA `5608`/`22856`; §7 residual → Afinado · [`ERAII-002-qa-manual-section7.md`](plans/_archive/Fase%20E/ERAII-002-qa-manual-section7.md) |
 | 2026-06-11 | **MAP-001 📋** plan persistencia v2 + purga — [`plans/Fase F/MAP-001-persistence-v2.md`](plans/Fase%20F/MAP-001-persistence-v2.md) |
+| 2026-06-11 | **MAP-001 ✅** persistencia v2 + purga legacy; QA NDJSON `9392`/`15572` |
 
 ---
 

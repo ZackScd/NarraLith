@@ -1,10 +1,8 @@
-//! Persistencia de mapas interactivos (`.narralith/maps/`).
+//! Persistencia mapas Era III (`.narralith/maps/` esquema v2).
 
-use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use image::{ImageReader, Rgba, RgbaImage};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -14,175 +12,140 @@ use crate::error::AppError;
 
 const MAPS_DIR: &str = "maps";
 const INDEX_FILENAME: &str = "index.json";
-const MANIFEST_FILENAME: &str = "manifest.json";
-const LAYERS_FILENAME: &str = "layers.json";
-const SKETCH_REL: &str = "sketches/default.excalidraw.json";
-const DRAWING_FILENAME: &str = "drawing.json";
-const MAP_IMAGES_DIR: &str = "Imagenes/Mapas_y_Geografia";
+const MAP_FILENAME: &str = "map.json";
+const HOTSPOTS_FILENAME: &str = "hotspots.json";
+const PRINCIPAL_DRAWING_REL: &str = "drawings/principal.json";
 const MAX_IMAGE_BYTES: u64 = 50 * 1024 * 1024;
+const MIN_DIMENSION: u32 = 512;
+const MAX_DIMENSION: u32 = 8192;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapsIndex {
+pub struct MapsIndexV2 {
     pub version: u32,
-    pub maps: Vec<MapIndexEntry>,
+    #[serde(default = "default_open_preference")]
+    pub open_preference: OpenPreference,
+    pub maps: Vec<MapIndexEntryV2>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum OpenPreference {
+    #[default]
+    LastViewed,
+    Pinned,
+    LastModified,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapIndexEntry {
+pub struct MapIndexEntryV2 {
     pub id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parent_map_id: Option<String>,
+    pub default_on_open: Option<bool>,
+    pub updated_at: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapManifest {
+pub struct MapDocumentV1 {
+    pub version: u32,
     pub id: String,
     pub name: String,
-    pub image_path: String,
     pub width: u32,
     pub height: u32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parent_map_id: Option<String>,
-    #[serde(default)]
-    pub overlays: Vec<MapOverlay>,
+    pub desde: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapOverlay {
+pub struct MapSummaryV2 {
     pub id: String,
     pub name: String,
-    pub image_path: String,
-    /// `[[y1,x1],[y2,x2]]` en coordenadas del mapa (CRS.Simple).
-    pub bounds: [[f64; 2]; 2],
+    pub width: u32,
+    pub height: u32,
+    pub updated_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from_timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub to_timestamp: Option<String>,
-    #[serde(default)]
-    pub z_index: i32,
+    pub default_on_open: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapLayersFile {
+pub struct MapDrawingV2 {
     pub version: u32,
-    pub layers: Vec<MapLayer>,
-    pub features: Vec<MapFeature>,
+    pub width: u32,
+    pub height: u32,
+    pub layers: Vec<MapDrawingLayerV2>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapLayer {
+pub struct MapDrawingLayerV2 {
     pub id: String,
     pub name: String,
-    #[serde(default = "default_true")]
     pub visible: bool,
-    #[serde(default = "default_opacity")]
     pub opacity: f64,
-    #[serde(default)]
-    pub z_index: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category_filter: Option<String>,
+    pub locked: bool,
+    pub strokes: Vec<MapStrokeV2>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapFeatureStyle {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub color: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fill_opacity: Option<f64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct MapFeature {
+pub struct MapStrokeV2 {
     pub id: String,
-    pub layer_id: String,
-    pub kind: MapFeatureKind,
-    /// Cada punto es `[y, x]` en coordenadas del mapa.
-    pub latlng: Vec<[f64; 2]>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub entity_path: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub child_map_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub style: Option<MapFeatureStyle>,
+    pub tool: MapStrokeTool,
+    pub brush: String,
+    pub color: String,
+    pub base_size: f64,
+    pub base_opacity: f64,
+    pub points: Vec<MapStrokePointV2>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-pub enum MapFeatureKind {
-    Pin,
-    Polygon,
+pub enum MapStrokeTool {
+    Brush,
+    Eraser,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapSummary {
-    pub id: String,
-    pub name: String,
+pub struct MapStrokePointV2 {
+    pub x: f64,
+    pub y: f64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parent_map_id: Option<String>,
-    pub image_path: String,
-    pub width: u32,
-    pub height: u32,
+    pub pressure: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct MapData {
-    pub manifest: MapManifest,
-    pub layers: MapLayersFile,
+pub struct MapHotspotsFileV1 {
+    pub version: u32,
+    pub hotspots: Vec<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct MapStateAt {
-    pub manifest: MapManifest,
-    pub layers: MapLayersFile,
-    pub active_overlays: Vec<MapOverlay>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub preview_timestamp: Option<String>,
+fn default_open_preference() -> OpenPreference {
+    OpenPreference::LastViewed
 }
 
-fn default_true() -> bool {
-    true
-}
-
-fn default_opacity() -> f64 {
-    1.0
-}
-
-impl MapsIndex {
+impl MapsIndexV2 {
     fn empty() -> Self {
         Self {
-            version: 1,
+            version: 2,
+            open_preference: OpenPreference::LastViewed,
             maps: Vec::new(),
         }
     }
 }
 
-impl MapLayersFile {
+impl MapHotspotsFileV1 {
     fn empty() -> Self {
         Self {
             version: 1,
-            layers: vec![MapLayer {
-                id: "layer-default".to_string(),
-                name: "General".to_string(),
-                visible: true,
-                opacity: 1.0,
-                z_index: 0,
-                category_filter: None,
-            }],
-            features: Vec::new(),
+            hotspots: Vec::new(),
         }
     }
 }
@@ -196,194 +159,138 @@ pub fn ensure_maps_dir(project_root: &Path) -> Result<(), AppError> {
     fs::create_dir_all(&root).map_err(|e| AppError::database(e.to_string()))?;
     let index_path = root.join(INDEX_FILENAME);
     if !index_path.exists() {
-        let index = MapsIndex::empty();
-        write_json(&index_path, &index)?;
+        write_json(&index_path, &MapsIndexV2::empty())?;
     }
     Ok(())
 }
 
-pub fn list_maps(project_root: &Path) -> Result<Vec<MapSummary>, AppError> {
+pub fn list_maps(project_root: &Path) -> Result<Vec<MapSummaryV2>, AppError> {
     ensure_maps_dir(project_root)?;
     let index = load_index(project_root)?;
-    let mut out = Vec::new();
+    let mut summaries = Vec::with_capacity(index.maps.len());
     for entry in &index.maps {
-        if let Ok(data) = load_map_data(project_root, &entry.id) {
-            out.push(MapSummary {
-                id: data.manifest.id.clone(),
-                name: data.manifest.name.clone(),
-                parent_map_id: data.manifest.parent_map_id.clone(),
-                image_path: data.manifest.image_path.clone(),
-                width: data.manifest.width,
-                height: data.manifest.height,
-            });
+        let map_dir = maps_root(project_root).join(&entry.id);
+        let map_path = map_dir.join(MAP_FILENAME);
+        if !map_path.is_file() {
+            continue;
         }
-    }
-    Ok(out)
-}
-
-pub fn get_map_data(project_root: &Path, map_id: &str) -> Result<MapData, AppError> {
-    ensure_maps_dir(project_root)?;
-    load_map_data(project_root, map_id)
-}
-
-pub fn save_map_data(project_root: &Path, data: &MapData) -> Result<(), AppError> {
-    ensure_maps_dir(project_root)?;
-    validate_map_data(project_root, data)?;
-    validate_no_child_cycles(project_root, &data.manifest.id, &data.layers.features)?;
-
-    let map_dir = maps_root(project_root).join(&data.manifest.id);
-    fs::create_dir_all(&map_dir).map_err(|e| AppError::database(e.to_string()))?;
-
-    write_json(&map_dir.join(MANIFEST_FILENAME), &data.manifest)?;
-    write_json(&map_dir.join(LAYERS_FILENAME), &data.layers)?;
-
-    let mut index = load_index(project_root)?;
-    if let Some(entry) = index.maps.iter_mut().find(|m| m.id == data.manifest.id) {
-        entry.name = data.manifest.name.clone();
-        entry.parent_map_id = data.manifest.parent_map_id.clone();
-    } else {
-        index.maps.push(MapIndexEntry {
-            id: data.manifest.id.clone(),
-            name: data.manifest.name.clone(),
-            parent_map_id: data.manifest.parent_map_id.clone(),
+        let doc: MapDocumentV1 = match read_json(&map_path) {
+            Ok(doc) => doc,
+            Err(_) => continue,
+        };
+        if doc.version != 1 {
+            continue;
+        }
+        summaries.push(MapSummaryV2 {
+            id: entry.id.clone(),
+            name: entry.name.clone(),
+            width: doc.width,
+            height: doc.height,
+            updated_at: entry.updated_at.clone(),
+            default_on_open: entry.default_on_open,
         });
     }
-    write_json(&maps_root(project_root).join(INDEX_FILENAME), &index)?;
+    Ok(summaries)
+}
+
+pub fn get_map_document(project_root: &Path, map_id: &str) -> Result<MapDocumentV1, AppError> {
+    let path = map_dir(project_root, map_id)?.join(MAP_FILENAME);
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    let doc: MapDocumentV1 = read_json(&path)?;
+    if doc.version != 1 || doc.id != map_id {
+        return Err(AppError::new("error.maps.invalid_json"));
+    }
+    Ok(doc)
+}
+
+pub fn save_map_document(project_root: &Path, doc: &MapDocumentV1) -> Result<(), AppError> {
+    validate_map_document(doc)?;
+    let map_id = doc.id.clone();
+    let map_dir = map_dir(project_root, &map_id)?;
+    if !map_dir.is_dir() {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    write_json(&map_dir.join(MAP_FILENAME), doc)?;
+    upsert_index_entry(project_root, &map_id, &doc.name, &doc.updated_at, None)?;
     Ok(())
 }
 
-/// Crea un mapa con un lienzo PNG generado en el proyecto (sin importar archivo externo).
+pub fn get_map_drawing(project_root: &Path, map_id: &str) -> Result<MapDrawingV2, AppError> {
+    let path = map_dir(project_root, map_id)?.join(PRINCIPAL_DRAWING_REL);
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.drawing_not_found"));
+    }
+    let drawing: MapDrawingV2 = read_json(&path)?;
+    validate_drawing(&drawing)?;
+    Ok(drawing)
+}
+
+pub fn save_map_drawing(
+    project_root: &Path,
+    map_id: &str,
+    drawing: &MapDrawingV2,
+) -> Result<(), AppError> {
+    if !map_dir(project_root, map_id)?.is_dir() {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    validate_drawing(drawing)?;
+    let path = map_dir(project_root, map_id)?.join(PRINCIPAL_DRAWING_REL);
+    write_json_atomic(&path, drawing)?;
+    Ok(())
+}
+
 pub fn create_blank_map(
     project_root: &Path,
     name: &str,
     width: u32,
     height: u32,
-) -> Result<MapSummary, AppError> {
+) -> Result<MapSummaryV2, AppError> {
     ensure_maps_dir(project_root)?;
     let trimmed = name.trim();
     if trimmed.is_empty() {
         return Err(AppError::new("error.maps.name_required"));
     }
+    let (width, height) = validate_dimensions(width, height)?;
 
-    let width = width.clamp(512, 8192);
-    let height = height.clamp(512, 8192);
-
-    let dest_dir = project_root.join(MAP_IMAGES_DIR);
-    fs::create_dir_all(&dest_dir).map_err(|e| AppError::database(e.to_string()))?;
-
-    let safe_stem: String = trimmed
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-    let file_name = format!("blank_{safe_stem}_{}.png", unix_ms_now());
-    let dest = dest_dir.join(&file_name);
-    write_blank_map_png(&dest, width, height)?;
-
-    let rel = format!("{MAP_IMAGES_DIR}/{file_name}");
     let id = generate_map_id(trimmed);
+    let now = timestamp_now();
+    let map_dir = map_dir(project_root, &id)?;
+    fs::create_dir_all(map_dir.join("drawings"))
+        .map_err(|e| AppError::database(e.to_string()))?;
+    fs::create_dir_all(map_dir.join("assets"))
+        .map_err(|e| AppError::database(e.to_string()))?;
 
-    let manifest = MapManifest {
+    let doc = MapDocumentV1 {
+        version: 1,
         id: id.clone(),
         name: trimmed.to_string(),
-        image_path: rel.clone(),
         width,
         height,
-        parent_map_id: None,
-        overlays: Vec::new(),
+        desde: None,
+        created_at: now.clone(),
+        updated_at: now.clone(),
     };
+    write_json(&map_dir.join(MAP_FILENAME), &doc)?;
+    write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV1::empty())?;
 
-    let data = MapData {
-        manifest: manifest.clone(),
-        layers: MapLayersFile::empty(),
-    };
-    save_map_data(project_root, &data)?;
+    let drawing = default_principal_drawing(width, height);
+    write_json_atomic(&map_dir.join(PRINCIPAL_DRAWING_REL), &drawing)?;
 
-    Ok(MapSummary {
+    upsert_index_entry(project_root, &id, trimmed, &now, None)?;
+
+    Ok(MapSummaryV2 {
         id,
         name: trimmed.to_string(),
-        parent_map_id: None,
-        image_path: rel,
         width,
         height,
+        updated_at: now,
+        default_on_open: None,
     })
 }
 
-pub fn create_map(
-    project_root: &Path,
-    name: &str,
-    source_image_path: &str,
-) -> Result<MapSummary, AppError> {
-    ensure_maps_dir(project_root)?;
-    let trimmed = name.trim();
-    if trimmed.is_empty() {
-        return Err(AppError::new("error.maps.name_required"));
-    }
-
-    let (rel_path, width, height) = import_image_to_project(project_root, source_image_path)?;
-    let id = generate_map_id(trimmed);
-
-    let manifest = MapManifest {
-        id: id.clone(),
-        name: trimmed.to_string(),
-        image_path: rel_path.clone(),
-        width,
-        height,
-        parent_map_id: None,
-        overlays: Vec::new(),
-    };
-
-    let data = MapData {
-        manifest: manifest.clone(),
-        layers: MapLayersFile::empty(),
-    };
-    save_map_data(project_root, &data)?;
-
-    Ok(MapSummary {
-        id,
-        name: trimmed.to_string(),
-        parent_map_id: None,
-        image_path: rel_path,
-        width,
-        height,
-    })
-}
-
-pub fn import_map_image(
-    project_root: &Path,
-    map_id: &str,
-    source_image_path: &str,
-) -> Result<MapSummary, AppError> {
-    let mut data = load_map_data(project_root, map_id)?;
-    let (rel_path, width, height) = import_image_to_project(project_root, source_image_path)?;
-    data.manifest.image_path = rel_path.clone();
-    data.manifest.width = width;
-    data.manifest.height = height;
-    save_map_data(project_root, &data)?;
-    Ok(MapSummary {
-        id: data.manifest.id,
-        name: data.manifest.name,
-        parent_map_id: data.manifest.parent_map_id,
-        image_path: rel_path,
-        width,
-        height,
-    })
-}
-
-pub fn import_overlay_image(
-    project_root: &Path,
-    source_image_path: &str,
-) -> Result<(String, u32, u32), AppError> {
-    import_image_to_project(project_root, source_image_path)
-        .map(|(path, w, h)| (path, w, h))
-}
-
-/// Lee una imagen relativa al proyecto y la devuelve como data URL (para Leaflet).
+/// Lee una imagen relativa al proyecto y la devuelve como data URL.
 pub fn read_project_image_data_url(
     project_root: &Path,
     relative_path: &str,
@@ -396,6 +303,164 @@ pub fn read_project_image_data_url(
     let bytes = fs::read(&path).map_err(|_| AppError::new("error.maps.image_not_found"))?;
     let mime = image_mime_from_path(&path);
     Ok(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
+}
+
+fn default_principal_drawing(width: u32, height: u32) -> MapDrawingV2 {
+    MapDrawingV2 {
+        version: 2,
+        width,
+        height,
+        layers: vec![MapDrawingLayerV2 {
+            id: "layer-1".to_string(),
+            name: "Capa 1".to_string(),
+            visible: true,
+            opacity: 1.0,
+            locked: false,
+            strokes: Vec::new(),
+        }],
+    }
+}
+
+fn validate_dimensions(width: u32, height: u32) -> Result<(u32, u32), AppError> {
+    if width < MIN_DIMENSION
+        || width > MAX_DIMENSION
+        || height < MIN_DIMENSION
+        || height > MAX_DIMENSION
+    {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    Ok((width, height))
+}
+
+fn validate_map_document(doc: &MapDocumentV1) -> Result<(), AppError> {
+    if doc.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    if doc.name.trim().is_empty() {
+        return Err(AppError::new("error.maps.name_required"));
+    }
+    if doc.width < MIN_DIMENSION
+        || doc.width > MAX_DIMENSION
+        || doc.height < MIN_DIMENSION
+        || doc.height > MAX_DIMENSION
+    {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    Ok(())
+}
+
+fn validate_drawing(drawing: &MapDrawingV2) -> Result<(), AppError> {
+    if drawing.version != 2 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    if drawing.width < MIN_DIMENSION
+        || drawing.width > MAX_DIMENSION
+        || drawing.height < MIN_DIMENSION
+        || drawing.height > MAX_DIMENSION
+    {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    for stroke in drawing.layers.iter().flat_map(|l| &l.strokes) {
+        for point in &stroke.points {
+            if let Some(p) = point.pressure {
+                if !(0.0..=1.0).contains(&p) {
+                    return Err(AppError::new("error.maps.invalid_json"));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn load_index(project_root: &Path) -> Result<MapsIndexV2, AppError> {
+    let path = maps_root(project_root).join(INDEX_FILENAME);
+    if !path.is_file() {
+        return Ok(MapsIndexV2::empty());
+    }
+    let index: MapsIndexV2 = read_json(&path)?;
+    if index.version != 2 {
+        return Ok(MapsIndexV2::empty());
+    }
+    Ok(index)
+}
+
+fn save_index(project_root: &Path, index: &MapsIndexV2) -> Result<(), AppError> {
+    write_json(&maps_root(project_root).join(INDEX_FILENAME), index)
+}
+
+fn upsert_index_entry(
+    project_root: &Path,
+    map_id: &str,
+    name: &str,
+    updated_at: &str,
+    default_on_open: Option<bool>,
+) -> Result<(), AppError> {
+    let mut index = load_index(project_root)?;
+    if let Some(entry) = index.maps.iter_mut().find(|e| e.id == map_id) {
+        entry.name = name.to_string();
+        entry.updated_at = updated_at.to_string();
+        if default_on_open.is_some() {
+            entry.default_on_open = default_on_open;
+        }
+    } else {
+        index.maps.push(MapIndexEntryV2 {
+            id: map_id.to_string(),
+            name: name.to_string(),
+            default_on_open,
+            updated_at: updated_at.to_string(),
+        });
+    }
+    save_index(project_root, &index)
+}
+
+fn map_dir(project_root: &Path, map_id: &str) -> Result<PathBuf, AppError> {
+    if map_id.trim().is_empty() || map_id.contains("..") || map_id.contains('/') {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    Ok(maps_root(project_root).join(map_id))
+}
+
+fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T, AppError> {
+    let json = fs::read_to_string(path).map_err(|e| AppError::database(e.to_string()))?;
+    serde_json::from_str(&json).map_err(|_| AppError::new("error.maps.invalid_json"))
+}
+
+fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<(), AppError> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| AppError::database(e.to_string()))?;
+    }
+    let json =
+        serde_json::to_string_pretty(value).map_err(|e| AppError::database(e.to_string()))?;
+    fs::write(path, json.as_bytes()).map_err(|e| AppError::database(e.to_string()))
+}
+
+fn write_json_atomic<T: Serialize>(path: &Path, value: &T) -> Result<(), AppError> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| AppError::database(e.to_string()))?;
+    }
+    let json =
+        serde_json::to_string_pretty(value).map_err(|e| AppError::database(e.to_string()))?;
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, json.as_bytes()).map_err(|e| AppError::database(e.to_string()))?;
+    fs::rename(&tmp, path).map_err(|e| AppError::database(e.to_string()))
+}
+
+fn generate_map_id(name: &str) -> String {
+    let seed = format!("map:{name}:{}", unix_ms_now());
+    let hash = Sha256::digest(seed.as_bytes());
+    format!("map_{:016x}", u64::from_be_bytes(hash[..8].try_into().unwrap()))
+}
+
+fn timestamp_now() -> String {
+    unix_ms_now().to_string()
+}
+
+fn unix_ms_now() -> i64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0)
 }
 
 fn resolve_project_relative_path(
@@ -436,582 +501,103 @@ fn image_mime_from_path(path: &Path) -> &'static str {
     }
 }
 
-fn import_image_to_project(
-    project_root: &Path,
-    source_image_path: &str,
-) -> Result<(String, u32, u32), AppError> {
-    let source = PathBuf::from(source_image_path);
-    if !source.is_file() {
-        return Err(AppError::new("error.maps.image_not_found"));
-    }
-
-    let ext = source
-        .extension()
-        .and_then(|e| e.to_str())
-        .map(|e| e.to_ascii_lowercase())
-        .unwrap_or_default();
-    if !matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp") {
-        return Err(AppError::new("error.maps.invalid_image_type"));
-    }
-
-    let meta = fs::metadata(&source).map_err(|e| AppError::database(e.to_string()))?;
-    if meta.len() > MAX_IMAGE_BYTES {
-        return Err(AppError::new("error.maps.image_too_large"));
-    }
-
-    let (width, height) = read_image_dimensions(&source)?;
-
-    let dest_dir = project_root.join(MAP_IMAGES_DIR);
-    fs::create_dir_all(&dest_dir).map_err(|e| AppError::database(e.to_string()))?;
-
-    let stem = source
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("map");
-    let safe_stem: String = stem
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-    let file_name = format!("{safe_stem}_{}.{}", unix_ms_now(), ext);
-    let dest = dest_dir.join(&file_name);
-    fs::copy(&source, &dest).map_err(|e| AppError::database(e.to_string()))?;
-
-    let rel = format!("{MAP_IMAGES_DIR}/{file_name}");
-    Ok((rel, width, height))
-}
-
-/// Lienzo vacío blanco con rejilla sutil (estilo Sketchbook).
-fn write_blank_map_png(path: &Path, width: u32, height: u32) -> Result<(), AppError> {
-    let bg = Rgba([255, 255, 255, 255]);
-    let grid = Rgba([230, 230, 230, 255]);
-    let mut img = RgbaImage::from_pixel(width, height, bg);
-    const STEP: u32 = 80;
-    for x in (0..width).step_by(STEP as usize) {
-        for y in 0..height {
-            img.put_pixel(x, y, grid);
-        }
-    }
-    for y in (0..height).step_by(STEP as usize) {
-        for x in 0..width {
-            img.put_pixel(x, y, grid);
-        }
-    }
-    img.save(path)
-        .map_err(|e| AppError::database(format!("blank map png: {e}")))
-}
-
-fn read_image_dimensions(path: &Path) -> Result<(u32, u32), AppError> {
-    let reader = ImageReader::open(path).map_err(|_| AppError::new("error.maps.invalid_image"))?;
-    let img = reader
-        .decode()
-        .map_err(|_| AppError::new("error.maps.invalid_image"))?;
-    Ok((img.width(), img.height()))
-}
-
-fn load_index(project_root: &Path) -> Result<MapsIndex, AppError> {
-    let path = maps_root(project_root).join(INDEX_FILENAME);
-    if !path.exists() {
-        return Ok(MapsIndex::empty());
-    }
-    let json = fs::read_to_string(&path).map_err(|e| AppError::database(e.to_string()))?;
-    serde_json::from_str(&json).map_err(|_| AppError::new("error.maps.invalid_index"))
-}
-
-fn load_map_data(project_root: &Path, map_id: &str) -> Result<MapData, AppError> {
-    if map_id.trim().is_empty() {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    let map_dir = maps_root(project_root).join(map_id);
-    let manifest_path = map_dir.join(MANIFEST_FILENAME);
-    if !manifest_path.exists() {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    let manifest: MapManifest = read_json(&manifest_path)?;
-    let layers_path = map_dir.join(LAYERS_FILENAME);
-    let layers = if layers_path.exists() {
-        read_json(&layers_path)?
-    } else {
-        MapLayersFile::empty()
-    };
-    Ok(MapData { manifest, layers })
-}
-
-fn validate_map_data(project_root: &Path, data: &MapData) -> Result<(), AppError> {
-    if data.manifest.id.trim().is_empty() || data.manifest.name.trim().is_empty() {
-        return Err(AppError::new("error.maps.name_required"));
-    }
-    if data.manifest.width == 0 || data.manifest.height == 0 {
-        return Err(AppError::new("error.maps.invalid_dimensions"));
-    }
-
-    let index = load_index(project_root)?;
-    for child_id in data
-        .layers
-        .features
-        .iter()
-        .filter_map(|f| f.child_map_id.as_deref())
-    {
-        if child_id == data.manifest.id {
-            return Err(AppError::new("error.maps.child_cycle"));
-        }
-        if !index.maps.iter().any(|m| m.id == child_id) {
-            return Err(AppError::new("error.maps.child_not_found"));
-        }
-    }
-
-    if let Some(parent_id) = data.manifest.parent_map_id.as_deref() {
-        if parent_id == data.manifest.id {
-            return Err(AppError::new("error.maps.child_cycle"));
-        }
-        if !index.maps.iter().any(|m| m.id == parent_id) {
-            return Err(AppError::new("error.maps.parent_not_found"));
-        }
-    }
-
-    for overlay in &data.manifest.overlays {
-        validate_overlay(overlay)?;
-    }
-
-    let layer_ids: HashSet<&str> = data.layers.layers.iter().map(|l| l.id.as_str()).collect();
-    for feature in &data.layers.features {
-        if !layer_ids.contains(feature.layer_id.as_str()) {
-            return Err(AppError::new("error.maps.layer_not_found"));
-        }
-        match feature.kind {
-            MapFeatureKind::Pin if feature.latlng.len() != 1 => {
-                return Err(AppError::new("error.maps.invalid_feature"));
-            }
-            MapFeatureKind::Polygon if feature.latlng.len() < 3 => {
-                return Err(AppError::new("error.maps.invalid_feature"));
-            }
-            _ => {}
-        }
-    }
-
-    Ok(())
-}
-
-fn validate_overlay(overlay: &MapOverlay) -> Result<(), AppError> {
-    if overlay.id.trim().is_empty() || overlay.name.trim().is_empty() {
-        return Err(AppError::new("error.maps.overlay_invalid"));
-    }
-  if overlay.bounds[0][0] > overlay.bounds[1][0] || overlay.bounds[0][1] > overlay.bounds[1][1] {
-        return Err(AppError::new("error.maps.overlay_invalid"));
-    }
-    if let Some(from) = overlay.from_timestamp.as_deref() {
-        parse_timestamp(from)?;
-    }
-    if let Some(to) = overlay.to_timestamp.as_deref() {
-        parse_timestamp(to)?;
-    }
-    Ok(())
-}
-
-fn validate_no_child_cycles(
-    project_root: &Path,
-    map_id: &str,
-    features: &[MapFeature],
-) -> Result<(), AppError> {
-    for feature in features {
-        if let Some(child) = feature.child_map_id.as_deref() {
-            if child == map_id {
-                return Err(AppError::new("error.maps.child_cycle"));
-            }
-            let mut seen = HashSet::new();
-            if path_leads_to_map(project_root, child, map_id, &mut seen)? {
-                return Err(AppError::new("error.maps.child_cycle"));
-            }
-        }
-    }
-    Ok(())
-}
-
-fn path_leads_to_map(
-    project_root: &Path,
-    current: &str,
-    target: &str,
-    seen: &mut HashSet<String>,
-) -> Result<bool, AppError> {
-    if current == target {
-        return Ok(true);
-    }
-    if !seen.insert(current.to_string()) {
-        return Ok(false);
-    }
-    let data = load_map_data(project_root, current)?;
-    for feature in &data.layers.features {
-        if let Some(child) = feature.child_map_id.as_deref() {
-            if path_leads_to_map(project_root, child, target, seen)? {
-                return Ok(true);
-            }
-        }
-    }
-    Ok(false)
-}
-
-pub fn get_map_state_at(
-    project_root: &Path,
-    map_id: &str,
-    timestamp: Option<&str>,
-) -> Result<MapStateAt, AppError> {
-    let data = load_map_data(project_root, map_id)?;
-    let ts = timestamp.map(parse_timestamp).transpose()?;
-
-    let active_overlays: Vec<MapOverlay> = data
-        .manifest
-        .overlays
-        .iter()
-        .filter(|o| overlay_active_at(o, ts.as_ref()))
-        .cloned()
-        .collect();
-
-    Ok(MapStateAt {
-        manifest: data.manifest,
-        layers: data.layers,
-        active_overlays,
-        preview_timestamp: timestamp.map(String::from),
-    })
-}
-
-pub fn get_map_sketch(
-    project_root: &Path,
-    map_id: &str,
-) -> Result<Option<serde_json::Value>, AppError> {
-    ensure_maps_dir(project_root)?;
-    if map_id.trim().is_empty() {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    let path = sketch_path(project_root, map_id);
-    if !path.exists() {
-        return Ok(None);
-    }
-    read_json(&path).map(Some)
-}
-
-pub fn save_map_sketch(
-    project_root: &Path,
-    map_id: &str,
-    sketch: serde_json::Value,
-) -> Result<(), AppError> {
-    ensure_maps_dir(project_root)?;
-    if map_id.trim().is_empty() {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    if !load_index(project_root)?
-        .maps
-        .iter()
-        .any(|m| m.id == map_id)
-    {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    let path = sketch_path(project_root, map_id);
-    write_json(&path, &sketch)?;
-    Ok(())
-}
-
-pub fn get_map_drawing(
-    project_root: &Path,
-    map_id: &str,
-) -> Result<Option<serde_json::Value>, AppError> {
-    ensure_maps_dir(project_root)?;
-    if map_id.trim().is_empty() {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    let path = drawing_path(project_root, map_id);
-    if !path.exists() {
-        return Ok(None);
-    }
-    read_json(&path).map(Some)
-}
-
-pub fn save_map_drawing(
-    project_root: &Path,
-    map_id: &str,
-    drawing: serde_json::Value,
-) -> Result<(), AppError> {
-    ensure_maps_dir(project_root)?;
-    if map_id.trim().is_empty() {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    if !load_index(project_root)?
-        .maps
-        .iter()
-        .any(|m| m.id == map_id)
-    {
-        return Err(AppError::new("error.maps.not_found"));
-    }
-    let path = drawing_path(project_root, map_id);
-    write_json(&path, &drawing)?;
-    Ok(())
-}
-
-/// Reemplaza la imagen del mapa con un PNG exportado desde el estudio de dibujo.
-pub fn save_map_canvas_png(
-    project_root: &Path,
-    map_id: &str,
-    png_base64: &str,
-) -> Result<MapSummary, AppError> {
-    let mut data = load_map_data(project_root, map_id)?;
-    let trimmed = png_base64.trim();
-    let payload = trimmed
-        .strip_prefix("data:image/png;base64,")
-        .unwrap_or(trimmed);
-    let bytes = STANDARD
-        .decode(payload)
-        .map_err(|_| AppError::new("error.maps.invalid_image"))?;
-    if bytes.is_empty() || bytes.len() as u64 > MAX_IMAGE_BYTES {
-        return Err(AppError::new("error.maps.image_too_large"));
-    }
-    let img = image::load_from_memory(&bytes)
-        .map_err(|_| AppError::new("error.maps.invalid_image"))?;
-    let width = img.width();
-    let height = img.height();
-    if width == 0 || height == 0 {
-        return Err(AppError::new("error.maps.invalid_dimensions"));
-    }
-
-    let dest_dir = project_root.join(MAP_IMAGES_DIR);
-    fs::create_dir_all(&dest_dir).map_err(|e| AppError::database(e.to_string()))?;
-    let file_name = format!("canvas_{map_id}_{}.png", unix_ms_now());
-    let dest = dest_dir.join(&file_name);
-    fs::write(&dest, &bytes).map_err(|e| AppError::database(e.to_string()))?;
-
-    let rel = format!("{MAP_IMAGES_DIR}/{file_name}");
-    data.manifest.image_path = rel.clone();
-    data.manifest.width = width;
-    data.manifest.height = height;
-    save_map_data(project_root, &data)?;
-
-    Ok(MapSummary {
-        id: data.manifest.id,
-        name: data.manifest.name,
-        parent_map_id: data.manifest.parent_map_id,
-        image_path: rel,
-        width,
-        height,
-    })
-}
-
-fn sketch_path(project_root: &Path, map_id: &str) -> PathBuf {
-    maps_root(project_root).join(map_id).join(SKETCH_REL)
-}
-
-fn drawing_path(project_root: &Path, map_id: &str) -> PathBuf {
-    maps_root(project_root).join(map_id).join(DRAWING_FILENAME)
-}
-
-fn overlay_active_at(overlay: &MapOverlay, timestamp: Option<&u128>) -> bool {
-    match timestamp {
-        None => overlay.from_timestamp.is_none(),
-        Some(ts) => {
-            let from_ok = overlay
-                .from_timestamp
-                .as_deref()
-                .map(parse_timestamp)
-                .transpose()
-                .ok()
-                .flatten()
-                .map(|from| ts >= &from)
-                .unwrap_or(true);
-            let to_ok = overlay
-                .to_timestamp
-                .as_deref()
-                .map(parse_timestamp)
-                .transpose()
-                .ok()
-                .flatten()
-                .map(|to| ts < &to)
-                .unwrap_or(true);
-            from_ok && to_ok
-        }
-    }
-}
-
-fn parse_timestamp(raw: &str) -> Result<u128, AppError> {
-    if raw.trim().is_empty() || !raw.chars().all(|c| c.is_ascii_digit()) {
-        return Err(AppError::new("error.maps.invalid_timestamp"));
-    }
-    raw.parse::<u128>()
-        .map_err(|_| AppError::new("error.maps.invalid_timestamp"))
-}
-
-fn read_json<T: for<'de> Deserialize<'de>>(path: &Path) -> Result<T, AppError> {
-    let json = fs::read_to_string(path).map_err(|e| AppError::database(e.to_string()))?;
-    serde_json::from_str(&json).map_err(|_| AppError::new("error.maps.invalid_json"))
-}
-
-fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<(), AppError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| AppError::database(e.to_string()))?;
-    }
-    let json = serde_json::to_string_pretty(value).map_err(|e| AppError::database(e.to_string()))?;
-    fs::write(path, json.as_bytes()).map_err(|e| AppError::database(e.to_string()))
-}
-
-fn generate_map_id(name: &str) -> String {
-    let seed = format!("map:{name}:{}", unix_ms_now());
-    let hash = Sha256::digest(seed.as_bytes());
-    format!("map_{:016x}", u64::from_be_bytes(hash[..8].try_into().unwrap()))
-}
-
-fn unix_ms_now() -> i64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn sample_data(id: &str) -> MapData {
-        MapData {
-            manifest: MapManifest {
-                id: id.to_string(),
-                name: "Test".to_string(),
-                image_path: "Imagenes/Mapas_y_Geografia/test.png".to_string(),
-                width: 1000,
-                height: 800,
-                parent_map_id: None,
-                overlays: vec![MapOverlay {
-                    id: "ov1".to_string(),
-                    name: "Ruinas".to_string(),
-                    image_path: "Imagenes/Mapas_y_Geografia/ruins.png".to_string(),
-                    bounds: [[0.0, 0.0], [200.0, 200.0]],
-                    from_timestamp: Some("100".to_string()),
-                    to_timestamp: Some("500".to_string()),
-                    z_index: 1,
-                }],
-            },
-            layers: MapLayersFile::empty(),
-        }
+    fn test_root() -> tempfile::TempDir {
+        let tmp = tempfile::TempDir::new().unwrap();
+        fs::create_dir_all(tmp.path().join(NARRALITH_DIR)).unwrap();
+        tmp
     }
 
     #[test]
-    fn create_blank_map_writes_png() {
-        let tmp = tempfile::TempDir::new().unwrap();
-        let root = tmp.path();
-        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
-        let summary = create_blank_map(root, "Mundo", 1200, 800).unwrap();
-        assert_eq!(summary.name, "Mundo");
-        assert_eq!(summary.width, 1200);
-        assert_eq!(summary.height, 800);
-        let img_path = root.join(&summary.image_path.replace('/', std::path::MAIN_SEPARATOR_STR));
-        assert!(img_path.is_file());
-        let list = list_maps(root).unwrap();
-        assert_eq!(list.len(), 1);
-    }
-
-    #[test]
-    fn list_maps_empty_project() {
-        let tmp = tempfile::TempDir::new().unwrap();
-        let root = tmp.path();
-        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
-        let list = list_maps(root).unwrap();
+    fn list_maps_empty() {
+        let tmp = test_root();
+        let list = list_maps(tmp.path()).unwrap();
         assert!(list.is_empty());
     }
 
     #[test]
-    fn map_round_trip() {
-        let tmp = tempfile::TempDir::new().unwrap();
+    fn create_blank_map_creates_tree() {
+        let tmp = test_root();
         let root = tmp.path();
-        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
-        let data = sample_data("map_test");
-        save_map_data(root, &data).unwrap();
-        let loaded = get_map_data(root, "map_test").unwrap();
-        assert_eq!(loaded, data);
+        let summary = create_blank_map(root, "Mundo A", 2400, 1600).unwrap();
+        assert_eq!(summary.name, "Mundo A");
+        assert_eq!(summary.width, 2400);
+        assert_eq!(summary.height, 1600);
+
+        let map_dir = maps_root(root).join(&summary.id);
+        assert!(map_dir.join(MAP_FILENAME).is_file());
+        assert!(map_dir.join(PRINCIPAL_DRAWING_REL).is_file());
+        assert!(map_dir.join(HOTSPOTS_FILENAME).is_file());
+        assert!(map_dir.join("assets").is_dir());
+
         let list = list_maps(root).unwrap();
         assert_eq!(list.len(), 1);
-        assert_eq!(list[0].id, "map_test");
     }
 
     #[test]
-    fn sketch_round_trip() {
-        let tmp = tempfile::TempDir::new().unwrap();
+    fn create_blank_map_default_layer() {
+        let tmp = test_root();
         let root = tmp.path();
-        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
-        let data = sample_data("map_sk");
-        save_map_data(root, &data).unwrap();
-
-        let sketch = serde_json::json!({
-            "type": "excalidraw",
-            "version": 2,
-            "elements": [],
-            "appState": { "viewBackgroundColor": "#ffffff" }
-        });
-        save_map_sketch(root, "map_sk", sketch.clone()).unwrap();
-        let loaded = get_map_sketch(root, "map_sk").unwrap().expect("sketch");
-        assert_eq!(loaded, sketch);
+        let summary = create_blank_map(root, "Test", 1200, 800).unwrap();
+        let drawing = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(drawing.version, 2);
+        assert_eq!(drawing.layers.len(), 1);
+        assert_eq!(drawing.layers[0].id, "layer-1");
+        assert!(drawing.layers[0].strokes.is_empty());
     }
 
     #[test]
-    fn overlay_active_only_in_range() {
-        let overlay = MapOverlay {
-            id: "o".into(),
-            name: "n".into(),
-            image_path: "p".into(),
-            bounds: [[0.0, 0.0], [1.0, 1.0]],
-            from_timestamp: Some("100".into()),
-            to_timestamp: Some("200".into()),
-            z_index: 0,
-        };
-        assert!(!overlay_active_at(&overlay, Some(&99)));
-        assert!(overlay_active_at(&overlay, Some(&100)));
-        assert!(overlay_active_at(&overlay, Some(&150)));
-        assert!(!overlay_active_at(&overlay, Some(&200)));
-    }
-
-    #[test]
-    fn child_cycle_rejected() {
-        let tmp = tempfile::TempDir::new().unwrap();
+    fn map_document_round_trip() {
+        let tmp = test_root();
         let root = tmp.path();
-        fs::create_dir_all(root.join(NARRALITH_DIR)).unwrap();
-
-        let mut a = sample_data("map_a");
-        let mut b = sample_data("map_b");
-        b.manifest.id = "map_b".into();
-        b.manifest.name = "B".into();
-        save_map_data(root, &a).unwrap();
-        save_map_data(root, &b).unwrap();
-
-        a.layers.features.push(MapFeature {
-            id: "f1".into(),
-            layer_id: "layer-default".into(),
-            kind: MapFeatureKind::Polygon,
-            latlng: vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]],
-            entity_path: None,
-            label: None,
-            child_map_id: Some("map_b".into()),
-            style: None,
-        });
-        save_map_data(root, &a).unwrap();
-
-        b.layers.features.push(MapFeature {
-            id: "f2".into(),
-            layer_id: "layer-default".into(),
-            kind: MapFeatureKind::Pin,
-            latlng: vec![[5.0, 5.0]],
-            entity_path: None,
-            label: None,
-            child_map_id: Some("map_a".into()),
-            style: None,
-        });
-        let err = save_map_data(root, &b).unwrap_err();
-        assert_eq!(err.key, "error.maps.child_cycle");
+        let summary = create_blank_map(root, "Round", 1200, 800).unwrap();
+        let mut doc = get_map_document(root, &summary.id).unwrap();
+        doc.name = "Renamed".to_string();
+        doc.updated_at = "999".to_string();
+        save_map_document(root, &doc).unwrap();
+        let loaded = get_map_document(root, &summary.id).unwrap();
+        assert_eq!(loaded.name, "Renamed");
     }
 
     #[test]
-    fn read_project_image_rejects_path_traversal() {
-        let dir = tempfile::tempdir().unwrap();
-        let err = read_project_image_data_url(dir.path(), "../secret.png").unwrap_err();
-        assert_eq!(err.key, "error.maps.image_not_found");
+    fn drawing_round_trip() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Draw", 1200, 800).unwrap();
+        let mut drawing = get_map_drawing(root, &summary.id).unwrap();
+        drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "s1".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pencil".to_string(),
+            color: "#000000".to_string(),
+            base_size: 2.0,
+            base_opacity: 0.8,
+            points: vec![
+                MapStrokePointV2 {
+                    x: 1.0,
+                    y: 2.0,
+                    pressure: Some(0.5),
+                },
+                MapStrokePointV2 {
+                    x: 3.0,
+                    y: 4.0,
+                    pressure: None,
+                },
+            ],
+        });
+        save_map_drawing(root, &summary.id, &drawing).unwrap();
+        let loaded = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(loaded.layers[0].strokes.len(), 1);
+        assert_eq!(loaded.layers[0].strokes[0].points[0].pressure, Some(0.5));
+    }
+
+    #[test]
+    fn invalid_dimensions_rejected() {
+        let tmp = test_root();
+        let err = create_blank_map(tmp.path(), "Bad", 100, 800).unwrap_err();
+        assert_eq!(err.key, "error.maps.invalid_dimensions");
     }
 }
