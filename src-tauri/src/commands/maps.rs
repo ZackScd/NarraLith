@@ -4,8 +4,10 @@ use tauri::State;
 
 use crate::error::AppError;
 use crate::fs::maps_store::{
-    create_blank_map, get_map_document, get_map_drawing, list_maps, read_project_image_data_url,
-    save_map_document, save_map_drawing, MapDocumentV1, MapDrawingV2, MapSummaryV2,
+    create_blank_map, get_map_document, get_map_drawing, get_maps_session, list_maps,
+    read_project_image_data_url, record_map_viewed, save_map_document, save_map_drawing,
+    set_default_on_open, set_open_preference, MapDocumentV1, MapDrawingV2, MapSessionV2,
+    MapSummaryV2, OpenPreference,
 };
 use crate::state::ProjectState;
 
@@ -63,4 +65,34 @@ pub fn read_project_image_cmd(
     relative_path: String,
 ) -> Result<String, AppError> {
     state.with_db(|_db, root| read_project_image_data_url(root, &relative_path))
+}
+
+#[tauri::command]
+pub fn get_maps_session_cmd(state: State<'_, ProjectState>) -> Result<MapSessionV2, AppError> {
+    state.with_db(|_db, root| get_maps_session(root))
+}
+
+#[tauri::command]
+pub fn set_open_preference_cmd(
+    state: State<'_, ProjectState>,
+    open_preference: OpenPreference,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| set_open_preference(root, open_preference))
+}
+
+#[tauri::command]
+pub fn set_default_on_open_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    enabled: bool,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| set_default_on_open(root, &map_id, enabled))
+}
+
+#[tauri::command]
+pub fn record_map_viewed_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| record_map_viewed(root, &map_id))
 }

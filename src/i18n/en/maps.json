@@ -9,7 +9,22 @@
   "createMap": "New map",
   "mapNamePlaceholder": "e.g. Continent of Aetheria",
   "creating": "Creating…",
-  "placeholderHint": "MAP-001 preview: disk persistence is active; canvas and compositor ship in later phases.",
+  "placeholderHint": "MAP-002 preview: multi-map navigation is active; canvas and compositor ship in later phases.",
+  "selector": {
+    "label": "Active map",
+    "option": "{{name}} ({{width}}×{{height}})"
+  },
+  "openPreference": {
+    "label": "On open",
+    "lastViewed": "Last viewed",
+    "pinned": "Pinned map",
+    "lastModified": "Last modified"
+  },
+  "pin": {
+    "label": "Pin",
+    "pin": "Pin on open",
+    "unpin": "Unpin"
+  },
   "detail": {
     "id": "ID",
     "canvas": "Canvas",

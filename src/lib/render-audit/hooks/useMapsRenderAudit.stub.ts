@@ -5,22 +5,28 @@ import { UI_EVENTS } from "@/lib/render-audit/events";
 import { useMapStore } from "@/stores/useMapStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
-/** Stub MAP-004+: emite eventos mientras el compositor no esté instrumentado. */
+/** Stub MAP-004+: viewport con mapId real; compositor sigue stub hasta canvas. */
 export function useMapsRenderAuditStub(): void {
   const mainView = useWorkspaceStore((s) => s.mainView);
   const activeMapId = useMapStore((s) => s.activeMapId);
-  const logged = useRef(false);
+  const lastViewportMapId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!renderAudit.isStandardEnabled()) {
       return;
     }
-    if (mainView !== "map" || logged.current) {
+    if (mainView !== "map" || !activeMapId) {
+      if (mainView !== "map") {
+        lastViewportMapId.current = null;
+      }
       return;
     }
-    logged.current = true;
+    if (lastViewportMapId.current === activeMapId) {
+      return;
+    }
+    lastViewportMapId.current = activeMapId;
     renderAudit.ui(UI_EVENTS.maps.viewport, {
-      stub: true,
+      stub: false,
       mapId: activeMapId,
       zoom: null,
       pan: null,

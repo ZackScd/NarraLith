@@ -50,7 +50,7 @@ MAP-001 persistencia v2 + purga física legacy
 |----|------------|------|------------|
 | **MAP-000** | Inventario + decisiones stack/persistencia/purga | §2 · §9 · [plan](plans/Fase%20F/MAP-000-inventory-purge.md) | — |
 | **MAP-001** | Persistencia v2 + purga legacy + IPC + UI placeholder | §9 · [plan](plans/Fase%20F/MAP-001-persistence-v2.md) ✅ | MAP-000 |
-| **MAP-002** | N mapas/proyecto; fijado / último visto / modificado | §3ter | MAP-001 |
+| **MAP-002** | Selector + apertura (pinned / lastViewed / lastModified) | §3ter · [plan](plans/Fase%20F/MAP-002-multi-world.md) 📋 | MAP-001 |
 | **MAP-003** | Crear mapa: tamaño libre, aspect ratio, expandir/recortar | §3 | MAP-002 |
 | **MAP-004** | Interactivo por defecto; edición solo ✏️ | §8 | MAP-001 |
 | **MAP-005** | Estudio Sketchbook: color custom, pinceles, presión; autosave | §3bis | MAP-004 |

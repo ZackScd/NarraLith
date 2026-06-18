@@ -5,6 +5,7 @@ export type OpenPreference = "pinned" | "lastViewed" | "lastModified";
 export interface MapsIndexV2 {
   version: 2;
   openPreference?: OpenPreference;
+  lastViewedMapId?: string | null;
   maps: MapIndexEntryV2[];
 }
 
@@ -22,6 +23,21 @@ export interface MapSummaryV2 {
   height: number;
   updatedAt: string;
   defaultOnOpen?: boolean;
+}
+
+export type InitialMapReason =
+  | "pinned"
+  | "lastViewed"
+  | "lastModified"
+  | "fallbackFirst"
+  | "none";
+
+export interface MapSessionV2 {
+  openPreference: OpenPreference;
+  lastViewedMapId: string | null;
+  initialMapId: string | null;
+  initialReason: InitialMapReason;
+  maps: MapSummaryV2[];
 }
 
 export interface MapDocumentV1 {

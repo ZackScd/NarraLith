@@ -47,6 +47,10 @@ export const ACTION_EVENTS = {
   },
   map: {
     open: "obs.action.map.open",
+    resolveInitial: "obs.action.map.resolveInitial",
+    select: "obs.action.map.select",
+    setOpenPreference: "obs.action.map.setOpenPreference",
+    setDefaultOnOpen: "obs.action.map.setDefaultOnOpen",
   },
   graph: {
     nodeOpen: "obs.action.graph.nodeOpen",

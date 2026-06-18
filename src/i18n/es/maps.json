@@ -9,7 +9,22 @@
   "createMap": "Nuevo mapa",
   "mapNamePlaceholder": "p. ej. Continente de Aetheria",
   "creating": "Creando…",
-  "placeholderHint": "Vista preliminar MAP-001: persistencia en disco activa; canvas y compositor en fases posteriores.",
+  "placeholderHint": "Vista preliminar MAP-002: navegación multi-mapa activa; canvas y compositor en fases posteriores.",
+  "selector": {
+    "label": "Mapa activo",
+    "option": "{{name}} ({{width}}×{{height}})"
+  },
+  "openPreference": {
+    "label": "Al abrir",
+    "lastViewed": "Último visto",
+    "pinned": "Mapa fijado",
+    "lastModified": "Último modificado"
+  },
+  "pin": {
+    "label": "Fijar",
+    "pin": "Fijar al abrir",
+    "unpin": "Quitar fijado"
+  },
   "detail": {
     "id": "ID",
     "canvas": "Lienzo",

@@ -25,6 +25,8 @@ pub struct MapsIndexV2 {
     pub version: u32,
     #[serde(default = "default_open_preference")]
     pub open_preference: OpenPreference,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_viewed_map_id: Option<String>,
     pub maps: Vec<MapIndexEntryV2>,
 }
 
@@ -70,6 +72,31 @@ pub struct MapSummaryV2 {
     pub updated_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default_on_open: Option<bool>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum InitialMapReason {
+    Pinned,
+    LastViewed,
+    LastModified,
+    FallbackFirst,
+    None,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapSessionV2 {
+    pub open_preference: OpenPreference,
+    pub last_viewed_map_id: Option<String>,
+    pub initial_map_id: Option<String>,
+    pub initial_reason: InitialMapReason,
+    pub maps: Vec<MapSummaryV2>,
+}
+
+struct ResolvedInitial {
+    map_id: Option<String>,
+    reason: InitialMapReason,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -136,6 +163,7 @@ impl MapsIndexV2 {
         Self {
             version: 2,
             open_preference: OpenPreference::LastViewed,
+            last_viewed_map_id: None,
             maps: Vec::new(),
         }
     }
@@ -279,6 +307,7 @@ pub fn create_blank_map(
     write_json_atomic(&map_dir.join(PRINCIPAL_DRAWING_REL), &drawing)?;
 
     upsert_index_entry(project_root, &id, trimmed, &now, None)?;
+    record_map_viewed(project_root, &id)?;
 
     Ok(MapSummaryV2 {
         id,
@@ -303,6 +332,213 @@ pub fn read_project_image_data_url(
     let bytes = fs::read(&path).map_err(|_| AppError::new("error.maps.image_not_found"))?;
     let mime = image_mime_from_path(&path);
     Ok(format!("data:{mime};base64,{}", STANDARD.encode(bytes)))
+}
+
+pub fn get_maps_session(project_root: &Path) -> Result<MapSessionV2, AppError> {
+    ensure_maps_dir(project_root)?;
+    let index = load_index(project_root)?;
+    let maps = list_maps(project_root)?;
+    let resolved = resolve_initial_map(&index, project_root);
+    Ok(MapSessionV2 {
+        open_preference: index.open_preference,
+        last_viewed_map_id: index.last_viewed_map_id.clone(),
+        initial_map_id: resolved.map_id,
+        initial_reason: resolved.reason,
+        maps,
+    })
+}
+
+pub fn set_open_preference(
+    project_root: &Path,
+    preference: OpenPreference,
+) -> Result<(), AppError> {
+    ensure_maps_dir(project_root)?;
+    let mut index = load_index(project_root)?;
+    index.open_preference = preference;
+    save_index(project_root, &index)
+}
+
+pub fn set_default_on_open(
+    project_root: &Path,
+    map_id: &str,
+    enabled: bool,
+) -> Result<(), AppError> {
+    ensure_maps_dir(project_root)?;
+    if !map_dir(project_root, map_id)?.join(MAP_FILENAME).is_file() {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    let mut index = load_index(project_root)?;
+    if !index.maps.iter().any(|e| e.id == map_id) {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    if enabled {
+        for entry in &mut index.maps {
+            entry.default_on_open = if entry.id == map_id { Some(true) } else { None };
+        }
+    } else if let Some(entry) = index.maps.iter_mut().find(|e| e.id == map_id) {
+        entry.default_on_open = None;
+    }
+    save_index(project_root, &index)
+}
+
+pub fn record_map_viewed(project_root: &Path, map_id: &str) -> Result<(), AppError> {
+    ensure_maps_dir(project_root)?;
+    if !map_dir(project_root, map_id)?.join(MAP_FILENAME).is_file() {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    let mut index = load_index(project_root)?;
+    if !index.maps.iter().any(|e| e.id == map_id) {
+        return Err(AppError::new("error.maps.not_found"));
+    }
+    index.last_viewed_map_id = Some(map_id.to_string());
+    save_index(project_root, &index)
+}
+
+fn resolve_initial_map(index: &MapsIndexV2, project_root: &Path) -> ResolvedInitial {
+    let valid = valid_map_ids(index, project_root);
+    if valid.is_empty() {
+        return ResolvedInitial {
+            map_id: None,
+            reason: InitialMapReason::None,
+        };
+    }
+
+    let pinned = find_pinned(index, &valid);
+    let last_viewed = find_last_viewed(index, &valid);
+    let last_modified = find_last_modified(index, &valid);
+    let first = find_first(index, &valid);
+
+    match index.open_preference {
+        OpenPreference::Pinned => {
+            if let Some(id) = pinned {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::Pinned,
+                };
+            }
+            if let Some(id) = last_viewed {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::LastViewed,
+                };
+            }
+            if let Some(id) = last_modified {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::LastModified,
+                };
+            }
+            if let Some(id) = first {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::FallbackFirst,
+                };
+            }
+        }
+        OpenPreference::LastViewed => {
+            if let Some(id) = last_viewed {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::LastViewed,
+                };
+            }
+            if let Some(id) = pinned {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::Pinned,
+                };
+            }
+            if let Some(id) = last_modified {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::LastModified,
+                };
+            }
+            if let Some(id) = first {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::FallbackFirst,
+                };
+            }
+        }
+        OpenPreference::LastModified => {
+            if let Some(id) = last_modified {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::LastModified,
+                };
+            }
+            if let Some(id) = last_viewed {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::LastViewed,
+                };
+            }
+            if let Some(id) = pinned {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::Pinned,
+                };
+            }
+            if let Some(id) = first {
+                return ResolvedInitial {
+                    map_id: Some(id),
+                    reason: InitialMapReason::FallbackFirst,
+                };
+            }
+        }
+    }
+
+    ResolvedInitial {
+        map_id: None,
+        reason: InitialMapReason::None,
+    }
+}
+
+fn valid_map_ids(index: &MapsIndexV2, project_root: &Path) -> Vec<String> {
+    index
+        .maps
+        .iter()
+        .filter(|entry| {
+            map_dir(project_root, &entry.id)
+                .map(|dir| dir.join(MAP_FILENAME).is_file())
+                .unwrap_or(false)
+        })
+        .map(|entry| entry.id.clone())
+        .collect()
+}
+
+fn find_pinned(index: &MapsIndexV2, valid: &[String]) -> Option<String> {
+    index
+        .maps
+        .iter()
+        .find(|e| e.default_on_open == Some(true) && valid.contains(&e.id))
+        .map(|e| e.id.clone())
+}
+
+fn find_last_viewed(index: &MapsIndexV2, valid: &[String]) -> Option<String> {
+    index
+        .last_viewed_map_id
+        .as_ref()
+        .filter(|id| valid.contains(id))
+        .cloned()
+}
+
+fn find_last_modified(index: &MapsIndexV2, valid: &[String]) -> Option<String> {
+    index
+        .maps
+        .iter()
+        .filter(|e| valid.contains(&e.id))
+        .max_by(|a, b| a.updated_at.cmp(&b.updated_at))
+        .map(|e| e.id.clone())
+}
+
+fn find_first(index: &MapsIndexV2, valid: &[String]) -> Option<String> {
+    index
+        .maps
+        .iter()
+        .find(|e| valid.contains(&e.id))
+        .map(|e| e.id.clone())
 }
 
 fn default_principal_drawing(width: u32, height: u32) -> MapDrawingV2 {
@@ -599,5 +835,121 @@ mod tests {
         let tmp = test_root();
         let err = create_blank_map(tmp.path(), "Bad", 100, 800).unwrap_err();
         assert_eq!(err.key, "error.maps.invalid_dimensions");
+    }
+
+    #[test]
+    fn resolve_pinned() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let _b = create_blank_map(root, "B", 1200, 800).unwrap();
+        set_default_on_open(root, &a.id, true).unwrap();
+        set_open_preference(root, OpenPreference::Pinned).unwrap();
+
+        let index = load_index(root).unwrap();
+        let resolved = resolve_initial_map(&index, root);
+        assert_eq!(resolved.map_id, Some(a.id.clone()));
+        assert_eq!(resolved.reason, InitialMapReason::Pinned);
+    }
+
+    #[test]
+    fn resolve_pinned_fallback_to_last_viewed() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let b = create_blank_map(root, "B", 1200, 800).unwrap();
+        record_map_viewed(root, &b.id).unwrap();
+        set_open_preference(root, OpenPreference::Pinned).unwrap();
+
+        let index = load_index(root).unwrap();
+        let resolved = resolve_initial_map(&index, root);
+        assert_eq!(resolved.map_id, Some(b.id));
+        assert_eq!(resolved.reason, InitialMapReason::LastViewed);
+        let _ = a;
+    }
+
+    #[test]
+    fn resolve_last_viewed() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let _a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let b = create_blank_map(root, "B", 1200, 800).unwrap();
+        record_map_viewed(root, &b.id).unwrap();
+        set_open_preference(root, OpenPreference::LastViewed).unwrap();
+
+        let index = load_index(root).unwrap();
+        let resolved = resolve_initial_map(&index, root);
+        assert_eq!(resolved.map_id, Some(b.id));
+        assert_eq!(resolved.reason, InitialMapReason::LastViewed);
+    }
+
+    #[test]
+    fn resolve_last_viewed_stale_id() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let mut index = load_index(root).unwrap();
+        index.last_viewed_map_id = Some("map_deleted".to_string());
+        save_index(root, &index).unwrap();
+
+        let index = load_index(root).unwrap();
+        let resolved = resolve_initial_map(&index, root);
+        assert_eq!(resolved.map_id, Some(a.id));
+        assert_eq!(resolved.reason, InitialMapReason::LastModified);
+    }
+
+    #[test]
+    fn resolve_last_modified() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let b = create_blank_map(root, "B", 1200, 800).unwrap();
+        let mut index = load_index(root).unwrap();
+        for entry in &mut index.maps {
+            if entry.id == a.id {
+                entry.updated_at = "100".to_string();
+            } else if entry.id == b.id {
+                entry.updated_at = "200".to_string();
+            }
+        }
+        save_index(root, &index).unwrap();
+        set_open_preference(root, OpenPreference::LastModified).unwrap();
+
+        let index = load_index(root).unwrap();
+        let resolved = resolve_initial_map(&index, root);
+        assert_eq!(resolved.map_id, Some(b.id));
+        assert_eq!(resolved.reason, InitialMapReason::LastModified);
+    }
+
+    #[test]
+    fn set_default_on_open_exclusive() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let b = create_blank_map(root, "B", 1200, 800).unwrap();
+        set_default_on_open(root, &a.id, true).unwrap();
+        set_default_on_open(root, &b.id, true).unwrap();
+
+        let index = load_index(root).unwrap();
+        let pinned: Vec<_> = index
+            .maps
+            .iter()
+            .filter(|e| e.default_on_open == Some(true))
+            .collect();
+        assert_eq!(pinned.len(), 1);
+        assert_eq!(pinned[0].id, b.id);
+    }
+
+    #[test]
+    fn record_viewed_persists() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let a = create_blank_map(root, "A", 1200, 800).unwrap();
+        let b = create_blank_map(root, "B", 1200, 800).unwrap();
+        record_map_viewed(root, &b.id).unwrap();
+
+        let index = load_index(root).unwrap();
+        assert_eq!(index.last_viewed_map_id, Some(b.id));
+        let _ = a;
     }
 }
