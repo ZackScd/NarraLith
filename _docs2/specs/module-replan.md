@@ -31,7 +31,7 @@ Documento de trabajo para cerrar decisiones de producto antes de refactorizar m�
 
 | Módulo | Estado | Era objetivo | Acción |
 |--------|--------|--------------|--------|
-| Manuscrito / editor | 🔄 Era II activa | II | Estabilizar, QA §7, dirty cache |
+| Manuscrito / editor | ✅ Era II cerrada (v0.10.0) | II | Afinado §7 residual opcional; MAP tras orden doc |
 | Tiempo / calendario TS | ✅ motor; 🟡 UX E2E | II | Validar con manuscrito |
 | Timeline global | ✅ backend v5; 🟡 UX | II–III | Re-test tras II.5 |
 | Plothole | 🟡 legacy metadata | IV | ✗ hasta ubicación inline |

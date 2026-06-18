@@ -6,13 +6,53 @@ Historial de implementaciones **cerradas**. Las tareas completadas se trasladan 
 
 ## Próxima versión
 
-### v0.10.0 — Era II: Manuscrito v2 (en preparación)
+### v0.11.x — Era III: Espacio (planificada)
 
-**Objetivo:** Cerrar refactor por eventos (`+++event`), editor estable, tiempo multi-marca, sync `Worldbuilding/Eventos/`.
+Mapas re-hechos + ubicación inline. Ver [`03-ROADMAP.md`](03-ROADMAP.md) Era III · [`specs/maps-design.md`](specs/maps-design.md).
 
-**Seguimiento:** `04-TASK.md` § Era II.4–II.6 · `specs/manuscript-roadmap.md`
+---
 
-*(Entrada completa al cerrar II.6.)*
+### v0.10.0 — Era II: Manuscrito v2 ✅
+
+**Fecha de cierre documental:** 2026-06-11
+
+**Objetivo cumplido:** Editor de manuscrito operativo con formato por eventos (`+++event` / `+++end-event`), tiempo opt-in multi-marca, sync transparente con `Worldbuilding/Eventos/`, un solo modelo `ParsedManuscript` en RAM.
+
+#### Entregables principales
+
+| Área | Qué |
+|------|-----|
+| **Parser Rust** | `ParsedManuscript`, split eventos, inline `{{time:…}}`, round-trip serializer |
+| **SQLite v5** | `time_markers` multi-marca por segmento |
+| **IPC** | `read_manuscript` / `save_manuscript`, mutaciones evento/inline |
+| **Editor Lexical** | `EventTagBar`, marco overlay, `[-]`/`[+]`, chips tiempo, panel lateral |
+| **Estabilización (M7)** | Store solo `ParsedManuscript`; adaptador legacy fuera del flujo activo (`a5c06f6`) |
+| **Calendario / timeline** | FIX-010: chips stale, edit marcas, mini-timeline, persistencia calendario |
+| **UX editor** | FIX-004…007, FIX-012 save-all sin switch, FIX-013 diff inline, OBS-001/002/003 |
+| **Explorador** | FIX-008 inline create/rename |
+| **WB Eventos** | Ficha al guardar, `entity` en frontmatter, prioridad wikilink Eventos |
+
+#### Planes Fase E
+
+- [ERAII-001](specs/plans/Fase%20E/ERAII-001-single-model-manuscript.md) M7 ✅
+- [ERAII-002](specs/plans/Fase%20E/ERAII-002-qa-manual-section7.md) M8 ✅ (smoke; §7 residual → Afinado)
+- [ERAII-003](specs/plans/Fase%20E/ERAII-003-close-era-ii-v0.10.0.md) cierre ✅
+
+#### Verificación
+
+- `npm test` 203/203 · `cargo test` 176/176 · `npm run build` OK (2026-06-11)
+- Smoke QA: M7 `17440`/`24412` · M8 `5608`/`22856`
+
+#### Deuda conocida (no bloquea v0.10.0)
+
+Afinado final en [`specs/manuscript-roadmap.md`](specs/manuscript-roadmap.md) § Afinado: checklist §7 residual, dead code Lexical legacy, tests unitarios helpers M7, recorrido manual FIX-004/005/012/013, FIX-011 post-WB.
+
+#### Archivos clave
+
+- `src-tauri/src/parser/` — manuscrito §1.4
+- `src/stores/useEditorStore.ts` — caché manuscrito
+- `src/lib/editor/manuscriptBlocks.ts` — helpers segmento
+- `src/modules/editor/` — shell, plugins, side panel
 
 ---
 
@@ -67,4 +107,4 @@ Al cerrar una tarea en `04-TASK.md`:
 2. Vaciar o avanzar la sección «Fase activa» en `04-TASK.md`.
 3. Marcar fase ✅ en `03-ROADMAP.md`.
 
-**Última actualización:** 2026-06-06
+**Última actualización:** 2026-06-11

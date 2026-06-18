@@ -57,7 +57,7 @@ mod tests {
     use tempfile::TempDir;
 
     use super::*;
-    use crate::parser::{detect_manuscript_format, ManuscriptFormat};
+    use crate::parser::{detect_manuscript_format, parse_file, ManuscriptFormat};
 
     fn write_md(root: &Path, rel: &str, content: &str) {
         let full = root.join(rel.replace('/', std::path::MAIN_SEPARATOR_STR));
@@ -80,8 +80,33 @@ mod tests {
         let rel = "Manuscrito/Escena.md";
         write_md(root, rel, raw);
 
-        let doc = convert_unlinked_mention(&db, root, rel, 2, 3, 7, "Hero").unwrap();
-        assert!(doc.blocks[2].body.contains("[[Hero]]"));
+        let parsed = parse_file(root, rel).unwrap();
+        assert!(
+            parsed.blocks.len() >= 3,
+            "expected header + 2 events, got {} blocks: {:?}",
+            parsed.blocks.len(),
+            parsed.blocks.iter().map(|b| (&b.index, &b.body)).collect::<Vec<_>>()
+        );
+        let block = parsed
+            .blocks
+            .iter()
+            .find(|b| b.body.contains("Hero") || b.body.contains("hero"))
+            .expect("expected an event block containing plain mention Hero");
+        let body = &block.body;
+        let start = body
+            .find("Hero")
+            .or_else(|| body.find("hero"))
+            .expect("event body must contain plain mention Hero");
+        let end = start + "Hero".len();
+
+        let doc =
+            convert_unlinked_mention(&db, root, rel, block.index, start, end, "Hero").unwrap();
+        let wiki_block = doc
+            .blocks
+            .iter()
+            .find(|b| b.body.contains("[[Hero]]"))
+            .expect("converted document must contain [[Hero]]");
+        assert!(wiki_block.body.contains("[[Hero]]"));
 
         let saved = fs::read_to_string(root.join(rel)).unwrap();
         assert!(saved.contains("+++event"));

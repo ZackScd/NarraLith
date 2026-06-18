@@ -107,11 +107,11 @@ Orden acordado en [`03-ROADMAP.md`](../03-ROADMAP.md) y [`manuscript-roadmap.md`
 
 | ID | Estado | Tarea | Esfuerzo | Spec / referencia |
 |----|--------|-------|----------|-------------------|
-| **ERAII-001** | ✅ | **M7** — Un solo modelo en memoria (`ParsedManuscript`; quitar adaptador legacy) | Alto | [`manuscript-roadmap.md` M7](manuscript-roadmap.md) · [`04-TASK.md` § II.4.1](../04-TASK.md) · QA `17440`+`24412` |
-| **ERAII-002** | ⬜ | **M8** — QA manual checklist §7 | Medio | [`manuscript-design.md`](manuscript-design.md) §7 · [`04-TASK.md` § II.5.1](../04-TASK.md) |
-| **ERAII-003** | ⬜ | **II.6** — Changelog v0.10.0 + marcar Era II cerrada en roadmap | Bajo | [`03-ROADMAP.md`](../03-ROADMAP.md) · [`05-CHANGELOG.md`](../05-CHANGELOG.md) |
+| **ERAII-001** | ✅ | **M7** — Un solo modelo en memoria (`ParsedManuscript`; quitar adaptador legacy) | Alto | [**plan**](plans/Fase%20E/ERAII-001-single-model-manuscript.md) · [`manuscript-roadmap.md` M7](manuscript-roadmap.md) · QA `17440`+`24412` |
+| **ERAII-002** | ✅ | **M8** — QA manual checklist §7 (smoke; residual → Afinado) | Medio | [**plan**](plans/Fase%20E/ERAII-002-qa-manual-section7.md) · QA `5608`/`22856` |
+| **ERAII-003** | ✅ | **II.6** — Changelog v0.10.0 + Era II cerrada | Bajo | [**plan**](plans/Fase%20E/ERAII-003-close-era-ii-v0.10.0.md) · [`05-CHANGELOG.md`](../05-CHANGELOG.md) |
 
-**Criterio:** `cargo test` + `npm test` verdes; checklist §7 cerrada.
+**Criterio Fase E:** ✅ cerrada 2026-06-11 · v0.10.0 · tests verdes · smoke QA M8.
 
 ---
 
@@ -196,8 +196,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 13e | FIX-010e | Migración + consistencia (v2) ⏸️ pospuesto |
 | 14 | FIX-011 | Épica 6.B evento WB huérfano ⏸️ post WB v2 [plan](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) |
 | 15 | ERAII-001 | M7 un solo modelo manuscrito ✅ |
-| 16 | ERAII-002 | M8 QA manual §7 |
-| 17 | ERAII-003 | Cierre v0.10.0 Era II |
+| 16 | ERAII-002 | M8 QA smoke ✅ |
+| 17 | ERAII-003 | Cierre v0.10.0 Era II ✅ |
+| — | **Doc order** | Ordenar `_docs2/` (próximo, antes MAP) |
 | 18 | MAP-000 | Inventario purga mapas |
 | 19 | MAP-001 | Persistencia mapas |
 | 20 | MAP-002 | Multi-mundo |
@@ -222,7 +223,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | Grafo, versiones Git, exportación | [`03-ROADMAP.md`](../03-ROADMAP.md) Eras IV–V | Tras WB |
 | Plothole | [`module-replan.md`](module-replan.md) | Era IV+ |
 | Backlinks WB en nuevo panel | Tras ERAII-001 ✅ | Era II–IV |
-| Afinado editor manuscrito (dead code, tests, OBS residual) | [`manuscript-roadmap.md` § Afinado](manuscript-roadmap.md) | Tras MAP/WB — pre II.6 |
+| Afinado editor manuscrito (dead code, tests, §7 residual) | [`manuscript-roadmap.md` § Afinado](manuscript-roadmap.md) | Post v0.10.0 — no bloqueante |
 | Diff borrador vs disco | [`plans/Fase B/FIX-013-dirty-diff-viewer.md`](plans/Fase%20B/FIX-013-dirty-diff-viewer.md) | ✅ FIX-013 |
 
 ---
@@ -271,7 +272,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **FIX-010 v1 ✅ cerrada** · 010e pospuesto v2 |
 | 2026-06-11 | **FIX-011 📋 planificado:** [`plans/Fase D/FIX-011/FIX-011-orphan-event-entity.md`](plans/Fase%20D/FIX-011/FIX-011-orphan-event-entity.md) · QA sesión `14924` |
 | 2026-06-11 | **FIX-011 ⏸️ pospuesto** — implementar tras rediseño WB (post-mapas); plan + QA conservados |
-| 2026-06-11 | **ERAII-001 ✅ M7 cerrado** — store solo `ParsedManuscript`; paneles por segmentos; nodos legacy fuera de Lexical; QA post-M7 `17440`+`24412`; afinado residual → [`manuscript-roadmap.md` § Afinado](manuscript-roadmap.md) |
+| 2026-06-11 | **ERAII-001 ✅ M7 cerrado** — commit `a5c06f6`; plan retroactivo [`plans/Fase E/ERAII-001-single-model-manuscript.md`](plans/Fase%20E/ERAII-001-single-model-manuscript.md); QA `17440`+`24412` |
+| 2026-06-11 | **ERAII-002 ✅ M8 cerrado** — smoke QA `5608`/`22856`; §7 residual → Afinado · [`ERAII-002-qa-manual-section7.md`](plans/Fase%20E/ERAII-002-qa-manual-section7.md) |
+| 2026-06-11 | **ERAII-003 ✅ Era II cerrada** — v0.10.0 en [`05-CHANGELOG.md`](../05-CHANGELOG.md); próximo: orden doc (no MAP aún) · [`ERAII-003-close-era-ii-v0.10.0.md`](plans/Fase%20E/ERAII-003-close-era-ii-v0.10.0.md) |
 
 ---
 

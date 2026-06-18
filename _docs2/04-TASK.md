@@ -86,27 +86,28 @@ El store mantiene `ParsedManuscript` + `ParsedDocument` adaptado. Paneles y back
 
 #### Criterio de salida
 
-Ninguna importación activa de `ParsedDocument` en flujo manuscrito (salvo tests si aplica). **Cumplido** (2026-06-11).
-
-> **Afinado residual** (borrado de archivos muertos, tests unitarios nuevos, ítems OBS/§7 no críticos): pospuesto hasta tener módulos principales operativos — ver [`specs/manuscript-roadmap.md`](specs/manuscript-roadmap.md) § Afinado final.
+Ninguna importación activa de `ParsedDocument` en flujo manuscrito (salvo tests si aplica). **Cumplido** (2026-06-11). Plan retroactivo: [`specs/plans/Fase E/ERAII-001-single-model-manuscript.md`](specs/plans/Fase%20E/ERAII-001-single-model-manuscript.md).
 
 ---
 
-### Tarea II.5.1 — QA manual manuscrito
+### Tarea II.5.1 — QA manual manuscrito ✅
 
-#### Checklist (resumen — detalle en `specs/manuscript-design.md`)
+> **Cerrado 2026-06-11** — smoke QA (`5608`/`22856` + histórico). Checklist §7 completa pospuesta → Afinado final.
 
-- [ ] Toggle etiquetas OFF/ON sin huecos
-- [ ] Evento solo nombre → sin `barTags`, sin timeline
-- [ ] Tiempo staging → `barTags`; inline en cursor → `{{time:…}}`
-- [ ] Commit RAM sin disco; Ctrl+S persiste §1.4
-- [ ] `[-]` / `[+]` según reglas
-- [ ] Ficha `Worldbuilding/Eventos/` + `[[nombre]]`
-- [ ] Renombrar evento al guardar
+> **Plan de ejecución:** [`specs/plans/Fase E/ERAII-002-qa-manual-section7.md`](specs/plans/Fase%20E/ERAII-002-qa-manual-section7.md) — matriz **S7-01…S7-13** + QA residual FIX-004/005/012/013.
+
+- [x] Toggle etiquetas OFF/ON sin huecos (S7-10) — smoke `22856`
+- [x] Evento solo nombre → sin `barTags`, sin timeline (S7-02) — smoke `5608`
+- [ ] Tiempo staging → `barTags`; inline en cursor → `{{time:…}}` → **Afinado**
+- [x] Commit RAM sin disco; Ctrl+S persiste §1.4 (S7-11)
+- [x] `[-]` / `[+]` según reglas (S7-05)
+- [x] Ficha `Worldbuilding/Eventos/` + `[[nombre]]` (S7-07)
+- [ ] Renombrar evento al guardar (S7-12) → **Afinado**
+- [ ] Resto §7 → **Afinado** (ver `manuscript-design.md` §7)
 
 #### Criterio de salida
 
-Todos los ítems marcados; bugs encontrados → fix antes de II.6.
+✅ Smoke QA + tests verdes (2026-06-11). §7 completo → Afinado final, no bloqueó II.6.
 
 ---
 
@@ -138,6 +139,6 @@ Todos los ítems marcados; bugs encontrados → fix antes de II.6.
 | Tarea | Estado | Notas |
 |-------|--------|-------|
 | II.0.1 Cadena `_docs2/` | ✅ | 2026-06-06 |
-| II.4.1 Un solo modelo | ✅ | 2026-06-11 · QA `17440`+`24412` |
-| II.5.1 QA manual | ⬜ | Tras módulos; smoke M7 OK · § Afinado en roadmap |
-| II.6 Changelog v0.10.0 | ⬜ | Cierre Era II |
+| II.4.1 Un solo modelo | ✅ | 2026-06-11 · `a5c06f6` · [plan Fase E](specs/plans/Fase%20E/ERAII-001-single-model-manuscript.md) |
+| II.5.1 QA manual | ✅ | 2026-06-11 · smoke `5608`/`22856` · [plan Fase E](specs/plans/Fase%20E/ERAII-002-qa-manual-section7.md) |
+| II.6 Changelog v0.10.0 | ✅ | 2026-06-11 · [plan Fase E](specs/plans/Fase%20E/ERAII-003-close-era-ii-v0.10.0.md) · Era II cerrada |

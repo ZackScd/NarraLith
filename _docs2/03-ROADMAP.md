@@ -32,8 +32,8 @@ Este roadmap parte del **código y la deuda real**, no del escenario ideal.
 | Era | Versión | Estado | Resumen |
 |-----|---------|--------|---------|
 | **I — Cimientos** | v0.1.0 – v0.9.0 | ✅ Cerrada | FS, parser legacy, WB, refs, calendario v1, mapas, grafo |
-| **II — Manuscrito v2** | v0.10.x | 🔄 **Activa** | Eventos `+++event`, editor Lexical, tiempo multi-marca, estabilización |
-| **III — Espacio** | v0.11.x | 📋 | Ubicación inline + reintegración mapas |
+| **II — Manuscrito v2** | v0.10.x | ✅ **Cerrada** | Eventos `+++event`, editor Lexical, tiempo multi-marca, estabilización |
+| **III — Espacio** | v0.11.x | 📋 **Siguiente (código)** | Ubicación inline + reintegración mapas |
 | **IV — Confianza** | v0.12.x | 📋 | Versiones Git, QA transversal, deuda UI rota |
 | **V — Salida** | v0.13.x | 📋 | Exportación editorial |
 | **VI — QoL y futuro** | — | 📋 | Focus mode, dashboard, plugins, P2P |
@@ -42,26 +42,24 @@ La Era I **no se rehace**. Su changelog queda en `05-CHANGELOG.md` como archivo 
 
 ---
 
-## Era II — Manuscrito v2 (activa)
+## Era II — Manuscrito v2 ✅ (cerrada 2026-06-11)
 
-**Objetivo:** Editor de manuscrito fiable con formato por eventos, tiempo opt-in, sync WB Eventos. Cero legacy `+++` en flujo de usuario.
+**Versión:** v0.10.0 · **Changelog:** [`05-CHANGELOG.md`](05-CHANGELOG.md)
 
 **Spec de diseño:** [`specs/manuscript-design.md`](specs/manuscript-design.md)  
 **Plan de ejecución:** [`specs/manuscript-roadmap.md`](specs/manuscript-roadmap.md)
 
 | Fase | Nombre | Estado | Entregable clave |
 |------|--------|--------|------------------|
-| II.0 | Documentación limpia | 🔄 | `_docs2/` completo |
+| II.0 | Documentación limpia | ✅ | `_docs2/` completo |
 | II.1 | Backend parser + SQLite | ✅ | `+++event`, `time_markers` v5, tests |
 | II.2 | IPC + tipos TS | ✅ | `read/save_manuscript` |
-| II.3 | Lexical + panel | 🟡 | Eventos, inline, staging — deuda adaptador |
-| II.4 | Estabilización editor | 📋 | Un modelo en memoria, sin legacy |
-| II.5 | QA manual | 📋 | Checklist §1.6 cerrada |
-| II.6 | Cierre Era II | 📋 | Changelog v0.10.0 |
+| II.3 | Lexical + panel | ✅ | Eventos, inline, staging |
+| II.4 | Estabilización editor | ✅ | Un modelo en memoria (M7) |
+| II.5 | QA manual | ✅ | Smoke M8; §7 residual → Afinado |
+| II.6 | Cierre Era II | ✅ | Changelog v0.10.0 |
 
-**Criterio de cierre Era II:** checklist en `specs/manuscript-design.md` §7 + `npm test` + `cargo test` verdes.
-
-**Fuera de alcance Era II:** ubicación inline, mapas, Git snapshots, exportación.
+**Próximo paso acordado (jun 2026):** **ordenar documentación** `_docs2/` — **no** abrir Fase F (MAP) hasta completar esa pasada.
 
 ---
 
@@ -133,6 +131,6 @@ flowchart LR
   E5 --> E6
 ```
 
-**Regla:** no abrir Era III hasta cerrar II.5 + II.6.
+**Regla:** Era II cerrada 2026-06-11. Era III (MAP) tras ordenar documentación.
 
-**Última actualización:** 2026-06-06
+**Última actualización:** 2026-06-11

@@ -14,13 +14,13 @@
 | M1 | Parser Rust | ✅ |
 | M2 | SQLite + wiki-links | ✅ |
 | M3 | IPC + TS | ✅ |
-| M4 | Lexical + panel | 🟡 hecho con deuda |
+| M4 | Lexical + panel | ✅ |
 | M5 | WB + timeline downstream | ✅ |
 | M6 | FS + referencias | ✅ |
 | M7 | Estabilización editor (II.4) | ✅ |
-| M8 | QA manual (II.5) | ⬜ |
+| M8 | QA manual (II.5) | ✅ |
 
-M1–M6 corresponden al refactor ya implementado en código (antes documentado en `_docs/plan_roadmap.md` Fases 0–6). **M8** + afinado final cierran v0.10.0.
+M1–M6 corresponden al refactor ya implementado en código. **Era II cerrada** v0.10.0 (2026-06-11). § Afinado final = optimización post-cierre.
 
 ---
 
@@ -68,7 +68,7 @@ Tipos: `src/lib/types/manuscript.ts`, `editor.ts`
 | `commitManuscriptLabel` | Nodos legacy desregistrados (M7) |
 | Panel evento/tiempo | Lee `ParsedManuscript.segments` (M7) |
 
-**Siguiente:** M8 (+ § Afinado final antes de II.6)
+**Siguiente (código):** Era III / MAP — **después** de ordenar documentación `_docs2/`.
 
 ---
 
@@ -95,7 +95,7 @@ Tipos: `src/lib/types/manuscript.ts`, `editor.ts`
 
 ## M7 — Estabilización editor ✅
 
-> Tarea detallada: `../04-TASK.md` § II.4.1 · Cerrado 2026-06-11
+> Tarea detallada: `../04-TASK.md` § II.4.1 · **Plan:** [`plans/Fase E/ERAII-001-single-model-manuscript.md`](../plans/Fase%20E/ERAII-001-single-model-manuscript.md) · Cerrado 2026-06-11 · commit `a5c06f6`
 
 1. ~~Eliminar `manuscriptToParsedDocument` del flujo activo~~
 2. ~~Paneles leen `ParsedManuscript.segments`~~
@@ -107,27 +107,26 @@ Tipos: `src/lib/types/manuscript.ts`, `editor.ts`
 
 ---
 
-## Afinado final (post-módulos)
+## Afinado final (optimización — post Era II)
 
-> **Política (jun 2026):** no bloquea M7 ni el avance MAP/WB. Ejecutar cuando el producto esté operativo de punta a punta, antes de II.6 / v0.10.0.
+> **Política (jun 2026):** no bloqueó cierre v0.10.0. Ejecutar cuando convenga antes de MAP o en paralelo con orden doc.
 
 | Ítem | Notas |
 |------|--------|
+| **QA §7 residual** | S7-01, S7-03, S7-04 revalidar, S7-06, S7-08, S7-09, S7-12; FIX-004/005/012/013 recorrido manual |
 | Borrar dead code | `BlockSeparatorNode`, `BlockMetadataNode`, `BlockMetadataChips`, `resolveBlockTime.ts` |
 | Tests unitarios | `findLastAddedTimeInManuscript`, helpers `metadataForLegacyBlockIndex` |
-| OBS residual | `sidePanelTab`, `insertTimeTag` en action log; smoke toggle etiquetas OFF/ON |
-| QA §7 residual | Diff FIX-013 en recorrido manual; ítems no cubiertos por OBS `17440`/`24412` |
+| OBS residual | `insertTimeTag` en action log |
 | Deuda menor | `legacyBlockIndexFromSegmentIndex` sin uso; alinear log `segmentCount` FE/Rust en expand |
 
 ---
 
-## M8 — QA manual ⬜
+## M8 — QA manual ✅
 
-> Tarea detallada: `../04-TASK.md` § II.5.1
+> Cerrado 2026-06-11 · **Plan:** [`plans/Fase E/ERAII-002-qa-manual-section7.md`](plans/Fase%20E/ERAII-002-qa-manual-section7.md)  
+> **Criterio:** smoke QA (`5608`/`22856` + histórico M7/FIX); checklist §7 completa → § Afinado final.
 
-Checklist completa: `manuscript-design.md` §7.
-
-Al cerrar → `../05-CHANGELOG.md` v0.10.0 · Era II ✅ en `../03-ROADMAP.md`
+Changelog: [`../05-CHANGELOG.md`](../05-CHANGELOG.md) v0.10.0 · Era II ✅ [`../03-ROADMAP.md`](../03-ROADMAP.md)
 
 ---
 
@@ -149,6 +148,6 @@ flowchart TD
 
 - Parser Rust M1–M2 salvo bug demostrado en QA
 - No parchear formato `+++` legacy — no hay proyectos legacy
-- No abrir ubicación/mapas/Git hasta M8 cerrado
+- No abrir ubicación/mapas/Git hasta **orden doc** + decisión explícita Era III
 
-**Última sincronización:** 2026-06-06
+**Última sincronización:** 2026-06-11

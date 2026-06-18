@@ -124,19 +124,21 @@ Prioridad resolver `[[…]]`: `Worldbuilding/Eventos/` sobre homónimos en `Manu
 
 ## 7. Criterios de cierre Era II
 
-- [ ] `title` ↔ rename archivo
-- [ ] Evento solo nombre → sin `barTags`; sin timeline por tiempo
-- [ ] Tiempo en staging → solo lo confirmado en `barTags`
+> **Cierre v0.10.0 (2026-06-11):** smoke QA M8 + tests verdes. Ítems sin `[x]` → [`manuscript-roadmap.md`](manuscript-roadmap.md) § Afinado final.
+
+- [ ] `title` ↔ rename archivo → **Afinado**
+- [x] Evento solo nombre → sin `barTags`; sin timeline por tiempo
+- [ ] Tiempo en staging → solo lo confirmado en `barTags` → **Afinado**
 - [x] Guardado manual; borrador sucio persistente al cerrar app
-- [ ] Botón único `[-]`/`[+]` según §3
-- [ ] Shift+Enter conserva saltos de línea al guardar
-- [ ] Guardar con evento nuevo no falla (sync WB + round-trip §4)
-- [ ] Guardar no devuelve scroll al inicio del documento
-- [ ] Tiempo inline sin `+++` espurio
-- [ ] Toggle OFF sin huecos
-- [ ] Commit evento → ficha WB + `entity`
-- [ ] Guardar → sync ficha; renombrar → wikilinks
-- [ ] Round-trip §4 tras reabrir
+- [x] Botón único `[-]`/`[+]` según §3
+- [ ] Shift+Enter conserva saltos de línea al guardar → **Afinado**
+- [x] Guardar con evento nuevo no falla (sync WB + round-trip §4)
+- [ ] Guardar no devuelve scroll al inicio del documento → **Afinado**
+- [ ] Tiempo inline sin `+++` espurio → **Afinado**
+- [x] Toggle OFF sin huecos
+- [x] Commit evento → ficha WB + `entity`
+- [ ] Guardar → sync ficha; renombrar → wikilinks → **Afinado**
+- [x] Round-trip §4 tras reabrir
 
 ---
 
