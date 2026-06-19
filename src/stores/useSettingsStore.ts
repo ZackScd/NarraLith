@@ -18,6 +18,10 @@ import {
   EDITOR_SAVE_LIMITS,
   type EditorSaveSettings,
 } from "@/lib/types/editorSettings";
+import {
+  DEFAULT_MAP_SAVE_SETTINGS,
+  type MapSaveSettings,
+} from "@/lib/types/mapSettings";
 
 const STORAGE_KEY = "narralith-settings-v1";
 
@@ -42,10 +46,18 @@ function clampEditorSave(settings: EditorSaveSettings): EditorSaveSettings {
   };
 }
 
-interface PersistedSettings
-  extends Partial<EditorSaveSettings>, Partial<AppAppearanceSettings> {}
+function clampMapSave(settings: MapSaveSettings): MapSaveSettings {
+  return {
+    mapAutosaveEnabled: Boolean(settings.mapAutosaveEnabled),
+  };
+}
 
-function loadPersisted(): EditorSaveSettings & AppAppearanceSettings {
+interface PersistedSettings
+  extends Partial<EditorSaveSettings>,
+    Partial<MapSaveSettings>,
+    Partial<AppAppearanceSettings> {}
+
+function loadPersisted(): EditorSaveSettings & MapSaveSettings & AppAppearanceSettings {
   let parsed: PersistedSettings = {};
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -72,20 +84,24 @@ function loadPersisted(): EditorSaveSettings & AppAppearanceSettings {
 
   return {
     ...clampEditorSave({ ...DEFAULT_EDITOR_SAVE_SETTINGS, ...parsed }),
+    ...clampMapSave({ ...DEFAULT_MAP_SAVE_SETTINGS, ...parsed }),
     theme,
     locale,
     panelDateDisplayFormat,
   };
 }
 
-function persistSettings(state: EditorSaveSettings & AppAppearanceSettings): void {
+function persistSettings(
+  state: EditorSaveSettings & MapSaveSettings & AppAppearanceSettings,
+): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   localStorage.setItem(THEME_STORAGE_KEY, state.theme);
   localStorage.setItem(LOCALE_STORAGE_KEY, state.locale);
 }
 
-interface SettingsState extends EditorSaveSettings, AppAppearanceSettings {
+interface SettingsState extends EditorSaveSettings, MapSaveSettings, AppAppearanceSettings {
   setEditorSave: (patch: Partial<EditorSaveSettings>) => void;
+  setMapSave: (patch: Partial<MapSaveSettings>) => void;
   setAppearance: (patch: Partial<AppAppearanceSettings>) => void;
 }
 
@@ -103,6 +119,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       patch.autosaveEnabled !== prev.autosaveEnabled
     ) {
       trackAction("settings", "autosave", { enabled: patch.autosaveEnabled });
+    }
+    persistSettings(next);
+    set(next);
+  },
+
+  setMapSave: (patch) => {
+    const prev = get();
+    const next = { ...prev, ...clampMapSave({ ...prev, ...patch }) };
+    if (
+      patch.mapAutosaveEnabled !== undefined &&
+      patch.mapAutosaveEnabled !== prev.mapAutosaveEnabled
+    ) {
+      trackAction("settings", "mapAutosave", { enabled: patch.mapAutosaveEnabled });
     }
     persistSettings(next);
     set(next);

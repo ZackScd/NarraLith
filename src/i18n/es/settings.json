@@ -14,8 +14,8 @@
     "languageHint": "Afecta a toda la interfaz de la aplicación."
   },
   "editor": {
-    "sectionTitle": "Editor",
-    "autosaveEnabled": "Activar autoguardado",
+    "sectionTitle": "Editor (manuscrito)",
+    "autosaveEnabled": "Autoguardado del manuscrito",
     "debounceLabel": "Guardar tras pausa (segundos)",
     "debounceHint": "Tras dejar de escribir durante este tiempo (5–600 s).",
     "intervalLabel": "Guardar cada X segundos (0 = desactivado)",
@@ -42,5 +42,11 @@
     "dateFormatShort": "2030-03-10 (AAAA-MM-DD)",
     "dateFormatLong": "Martes 10 de Marzo, 2030",
     "dateFormatHint": "Aplica a «Última fecha añadida» y «Última fecha en el documento»."
+  },
+  "maps": {
+    "sectionTitle": "Mapas",
+    "autosaveLabel": "Autoguardado de dibujos",
+    "autosaveHint": "Guarda el dibujo del mapa ~500 ms después de cada trazo. Ctrl+Z sigue disponible tras guardar.",
+    "manualHint": "Con el autoguardado desactivado: Ctrl+S guarda el dibujo en modo edición. Los trazos no guardados se conservan en borrador local hasta que guardes o descartes."
   }
 }

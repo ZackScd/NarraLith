@@ -327,6 +327,8 @@ Función pura: `resolveActiveLayer(drawing): MapDrawingLayerV2` — primera capa
 
 ### D15 — Flush antes de operaciones destructivas
 
+> **Supersedido parcialmente por [MAP-005b D24](MAP-005b-save-undo-persistence.md)** — modo manual: diálogo sucio; autosave ON: flush silencioso.
+
 Secuencia obligatoria antes de:
 
 - `selectMap(otherId)`
@@ -363,6 +365,8 @@ Si flush falla: **bloquear** cambio de mapa y mostrar error (no perder trazos si
 Redo invalidado al trazo nuevo post-undo.
 
 ### D9 — Autosave
+
+> **Default off desde [MAP-005b D17/D22](MAP-005b-save-undo-persistence.md)** — autosave mapas opcional en Ajustes; manual + Ctrl+S por defecto.
 
 | Parámetro | Valor |
 |-----------|-------|
@@ -613,3 +617,4 @@ MAP-005 debe **no** hardcodear solo `layer-1` en más de un sitio — usar `reso
 | 2026-06-11 | **Revisión implementabilidad** — D12–D16, D10 obligatorio, fases reordenadas |
 | 2026-06-11 | **Fases 1–3** — libs, stores, session, offscreen compositor, presión/goma render |
 | 2026-06-11 | **Fase 4** — `useMapDrawGesture`, pan vs dibujo (D5), preview en vivo |
+| 2026-06-11 | **Suplemento [MAP-005b](MAP-005b-save-undo-persistence.md)** — guardado manual, borrador, undo estable (fases 1–8 ✅) |

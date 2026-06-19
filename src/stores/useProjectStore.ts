@@ -12,7 +12,7 @@ import { useMapStore } from "@/stores/useMapStore";
 import { useMapStudioStore } from "@/stores/useMapStudioStore";
 import { useProjectTimelineStore } from "@/stores/useProjectTimelineStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
-import { flushMapDrawingAutosave } from "@/lib/maps/mapAutosaveFlush";
+import { guardMapDrawingNavigation } from "@/lib/maps/mapDrawingGuard";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 import type { ProjectMeta } from "@/lib/types/models";
 import type { RecentProjectEntry } from "@/lib/types/project";
@@ -94,52 +94,56 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   createProject: async (parentPath, name, templateId) => {
-    await flushMapDrawingAutosave("projectSwitch");
-    set({ isLoading: true, lastErrorKey: null });
-    try {
-      const locale = useSettingsStore.getState().locale;
-      const meta = await invokeCommand<ProjectMeta>("create_project", {
-        parentPath,
-        name,
-        templateId,
-        locale,
-      });
-      set({ activeProject: meta });
-      audit.info("project", "obs.project.open", { name: meta.name, created: true });
-      trackAction("project", "create", { name: meta.name });
-      trackAction("project", "open", { name: meta.name, created: true });
-      await get().loadRecents();
-      void useCalendarStore.getState().loadCalendar();
-      return true;
-    } catch (err) {
-      set({
-        lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
-      });
-      return false;
-    } finally {
-      set({ isLoading: false });
-    }
+    let created = false;
+    const allowed = await guardMapDrawingNavigation(async () => {
+      set({ isLoading: true, lastErrorKey: null });
+      try {
+        const locale = useSettingsStore.getState().locale;
+        const meta = await invokeCommand<ProjectMeta>("create_project", {
+          parentPath,
+          name,
+          templateId,
+          locale,
+        });
+        set({ activeProject: meta });
+        audit.info("project", "obs.project.open", { name: meta.name, created: true });
+        trackAction("project", "create", { name: meta.name });
+        trackAction("project", "open", { name: meta.name, created: true });
+        await get().loadRecents();
+        void useCalendarStore.getState().loadCalendar();
+        created = true;
+      } catch (err) {
+        set({
+          lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
+        });
+      } finally {
+        set({ isLoading: false });
+      }
+    }, "projectSwitch");
+    return allowed && created;
   },
 
   openProject: async (path) => {
-    await flushMapDrawingAutosave("projectSwitch");
-    set({ isLoading: true, lastErrorKey: null });
-    try {
-      const meta = await invokeCommand<ProjectMeta>("open_project", { path });
-      set({ activeProject: meta });
-      audit.info("project", "obs.project.open", { name: meta.name });
-      trackAction("project", "open", { name: meta.name });
-      await get().loadRecents();
-      void useCalendarStore.getState().loadCalendar();
-      return true;
-    } catch (err) {
-      set({
-        lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
-      });
-      return false;
-    } finally {
-      set({ isLoading: false });
-    }
+    let opened = false;
+    const allowed = await guardMapDrawingNavigation(async () => {
+      set({ isLoading: true, lastErrorKey: null });
+      try {
+        const meta = await invokeCommand<ProjectMeta>("open_project", { path });
+        set({ activeProject: meta });
+        audit.info("project", "obs.project.open", { name: meta.name });
+        trackAction("project", "open", { name: meta.name });
+        await get().loadRecents();
+        void useCalendarStore.getState().loadCalendar();
+        opened = true;
+      } catch (err) {
+        set({
+          lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
+        });
+      } finally {
+        set({ isLoading: false });
+      }
+    }, "projectSwitch");
+    return allowed && opened;
   },
 
   openProjectDialog: async () => {
@@ -155,28 +159,32 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   closeProject: async () => {
-    await flushMapDrawingAutosave("projectSwitch");
-    const projectName = get().activeProject?.name;
-    set({ isLoading: true, lastErrorKey: null });
-    try {
-      await invokeCommand("close_project");
-      useFileTreeStore.getState().reset();
-      useEditorStore.getState().reset();
-      useEntitySearchStore.getState().reset();
-      useCalendarStore.getState().reset();
-      useProjectTimelineStore.getState().reset();
-      useWorkspaceStore.getState().reset();
-      useMapStore.getState().reset();
-      useMapStudioStore.getState().reset();
-      set({ activeProject: null });
-      audit.info("project", "obs.project.close", { name: projectName ?? null });
-      trackAction("project", "close", { name: projectName ?? null });
-    } catch (err) {
-      set({
-        lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
-      });
-    } finally {
-      set({ isLoading: false });
+    const allowed = await guardMapDrawingNavigation(async () => {
+      const projectName = get().activeProject?.name;
+      set({ isLoading: true, lastErrorKey: null });
+      try {
+        await invokeCommand("close_project");
+        useFileTreeStore.getState().reset();
+        useEditorStore.getState().reset();
+        useEntitySearchStore.getState().reset();
+        useCalendarStore.getState().reset();
+        useProjectTimelineStore.getState().reset();
+        useWorkspaceStore.getState().reset();
+        useMapStore.getState().reset();
+        useMapStudioStore.getState().reset();
+        set({ activeProject: null });
+        audit.info("project", "obs.project.close", { name: projectName ?? null });
+        trackAction("project", "close", { name: projectName ?? null });
+      } catch (err) {
+        set({
+          lastErrorKey: parseAppError(err)?.key ?? "error.unknown",
+        });
+      } finally {
+        set({ isLoading: false });
+      }
+    }, "projectSwitch");
+    if (!allowed) {
+      return;
     }
   },
 

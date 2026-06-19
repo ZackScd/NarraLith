@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { useMapAutosave } from "@/hooks/useMapAutosave";
 import { useMapProject } from "@/hooks/useMapProject";
 import { useMapDrawingSession } from "@/hooks/useMapDrawingSession";
+import { useMapSaveShortcut } from "@/hooks/useMapSaveShortcut";
+import { useMapDrawingGuardRegistration, guardMapDrawingNavigation } from "@/hooks/useMapDrawingGuardRegistration";
+import { usePersistMapDrawingDraft } from "@/hooks/usePersistMapDrawingDraft";
 import { trackAction } from "@/lib/action-audit/trackAction";
 import type { MapCreateDraft, OpenPreference } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
@@ -20,6 +23,7 @@ import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
 const SELECT_CLASS =
   "flex h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm";
@@ -57,11 +61,24 @@ export function MapWorkspace() {
   const isPinned = activeSummary?.defaultOnOpen === true;
   const showEmpty = !loading && maps.length === 0;
   const isEditMode = viewMode === "edit";
+  const mapAutosaveEnabled = useSettingsStore((s) => s.mapAutosaveEnabled);
 
   const drawingSession = useMapDrawingSession({
     sessionKey,
     sourceDrawing: drawing,
     mapId: activeMapId,
+    projectRoot: rootPath,
+  });
+
+  usePersistMapDrawingDraft({
+    enabled: isEditMode && Boolean(rootPath) && Boolean(activeMapId),
+    projectRoot: rootPath,
+    mapId: activeMapId,
+    isDirty: drawingSession.isDirty,
+    drawing: drawingSession.drawing,
+    undoDepth: drawingSession.undoDepth,
+    redoDepth: drawingSession.redoDepth,
+    exportDraft: drawingSession.exportDraftSnapshot,
   });
 
   useMapStudioShortcuts({
@@ -73,13 +90,19 @@ export function MapWorkspace() {
   });
 
   const { flushAutosave } = useMapAutosave({
-    enabled: isEditMode,
+    enabled: isEditMode && mapAutosaveEnabled,
     mapId: activeMapId,
     drawing: drawingSession.drawing,
     isDirty: drawingSession.isDirty,
     setSaveStatus: drawingSession.setSaveStatus,
     markSaved: drawingSession.markSaved,
     saveDrawing,
+  });
+
+  useMapSaveShortcut({
+    viewMode,
+    isDirty: drawingSession.isDirty,
+    onSave: () => flushAutosave("manual"),
   });
 
   const viewportDrawing =
@@ -90,6 +113,16 @@ export function MapWorkspace() {
     await createMap(draft);
   };
 
+  useMapDrawingGuardRegistration({
+    enabled: isEditMode && Boolean(rootPath) && Boolean(activeMapId),
+    projectRoot: rootPath,
+    mapId: activeMapId,
+    diskDrawing: drawing,
+    isDirty: drawingSession.isDirty,
+    flushAutosave,
+    resetFromSource: drawingSession.resetFromSource,
+  });
+
   const openCanvasDialog = (mode: MapCanvasSizeMode) => {
     setCanvasMode(mode);
     setCanvasDialogOpen(true);
@@ -97,11 +130,9 @@ export function MapWorkspace() {
 
   const handleMapChange = (mapId: string) => {
     if (!mapId || mapId === activeMapId) return;
-    void (async () => {
-      const ok = await flushAutosave("mapSwitch");
-      if (!ok) return;
+    void guardMapDrawingNavigation(async () => {
       await selectMap(mapId);
-    })();
+    }, "mapSwitch");
   };
 
   const handlePreferenceChange = (value: OpenPreference) => {
@@ -122,11 +153,7 @@ export function MapWorkspace() {
 
   const handleExitEdit = () => {
     if (!activeMapId) return;
-    void (async () => {
-      if (drawingSession.isDirty) {
-        const ok = await flushAutosave("exitEdit");
-        if (!ok) return;
-      }
+    void guardMapDrawingNavigation(async () => {
       const fromMode = viewMode;
       setViewMode("interactive");
       trackAction("map", "setViewMode", {
@@ -134,7 +161,7 @@ export function MapWorkspace() {
         mode: "interactive",
         fromMode,
       });
-    })();
+    }, "exitEdit");
   };
 
   return (
@@ -272,6 +299,7 @@ export function MapWorkspace() {
               <MapEditStudio
                 mapId={activeMapId}
                 canvasBusy={canvasBusy}
+                isDirty={drawingSession.isDirty}
                 saveStatus={drawingSession.saveStatus}
                 canUndo={drawingSession.canUndo}
                 canRedo={drawingSession.canRedo}
@@ -308,14 +336,20 @@ export function MapWorkspace() {
           currentHeight={document.height}
           busy={canvasBusy}
           onExpand={async (addRight, addBottom) => {
-            const ok = await flushAutosave("canvasOp");
-            if (!ok) return;
-            await expandCanvas(addRight, addBottom);
+            const ok = await guardMapDrawingNavigation(async () => {
+              await expandCanvas(addRight, addBottom);
+            }, "canvasOp");
+            if (!ok) {
+              throw new Error("guard");
+            }
           }}
           onCrop={async (newWidth, newHeight) => {
-            const ok = await flushAutosave("canvasOp");
-            if (!ok) return;
-            await cropCanvas(newWidth, newHeight);
+            const ok = await guardMapDrawingNavigation(async () => {
+              await cropCanvas(newWidth, newHeight);
+            }, "canvasOp");
+            if (!ok) {
+              throw new Error("guard");
+            }
           }}
         />
       ) : null}

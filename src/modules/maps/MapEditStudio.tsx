@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 interface MapEditStudioProps {
   mapId: string;
   canvasBusy: boolean;
+  isDirty: boolean;
   saveStatus: MapDrawingSaveStatus;
   canUndo: boolean;
   canRedo: boolean;
@@ -33,16 +34,21 @@ const TOOLS: { id: MapStudioTool; icon: typeof Hand; labelKey: string }[] = [
 const SELECT_CLASS =
   "h-8 min-w-[7rem] rounded-md border border-input bg-background px-2 text-xs";
 
-function saveStatusLabelKey(status: MapDrawingSaveStatus): string | null {
+function saveStatusLabelKey(
+  status: MapDrawingSaveStatus,
+  isDirty: boolean,
+): string | null {
   if (status === "saving") return "studio.save.saving";
-  if (status === "saved") return "studio.save.saved";
   if (status === "error") return "studio.save.error";
+  if (isDirty) return "studio.save.unsaved";
+  if (status === "saved") return "studio.save.saved";
   return null;
 }
 
 export function MapEditStudio({
   mapId,
   canvasBusy,
+  isDirty,
   saveStatus,
   canUndo,
   canRedo,
@@ -65,7 +71,7 @@ export function MapEditStudio({
 
   const disabled = canvasBusy;
   const showBrushControls = tool === "brush";
-  const saveLabelKey = saveStatusLabelKey(saveStatus);
+  const saveLabelKey = saveStatusLabelKey(saveStatus, isDirty);
 
   const handleToolChange = (next: MapStudioTool) => {
     if (next === tool) return;
@@ -194,7 +200,11 @@ export function MapEditStudio({
           <span
             className={cn(
               "text-xs",
-              saveStatus === "error" ? "text-destructive" : "text-muted-foreground",
+              saveStatus === "error"
+                ? "text-destructive"
+                : isDirty
+                  ? "text-amber-600 dark:text-amber-500"
+                  : "text-muted-foreground",
             )}
             data-map-id={mapId}
           >

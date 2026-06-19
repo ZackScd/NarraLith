@@ -6,7 +6,8 @@ import {
   MAP_AUTOSAVE_DEBOUNCE_MS,
   type MapAutosaveFlushReason,
 } from "@/lib/maps/mapAutosave";
-import { registerMapAutosaveFlush } from "@/lib/maps/mapAutosaveFlush";
+import type { MapSaveDrawingObsReason } from "@/lib/maps/mapSaveObs";
+import { resolveMapSaveDrawingObsReason } from "@/lib/maps/mapSaveObs";
 import type { MapDrawingSaveStatus } from "@/lib/maps/mapDrawingSession";
 import type { MapDrawingV2 } from "@/lib/types/maps";
 
@@ -40,7 +41,10 @@ export function useMapAutosave({
   isDirtyRef.current = isDirty;
 
   const performSave = useCallback(
-    async (_reason: MapAutosaveFlushReason): Promise<boolean> => {
+    async (
+      _reason: MapAutosaveFlushReason,
+      obsReasonOverride?: MapSaveDrawingObsReason,
+    ): Promise<boolean> => {
       if (savePromiseRef.current) {
         const prior = await savePromiseRef.current;
         if (!isDirtyRef.current) {
@@ -68,7 +72,7 @@ export function useMapAutosave({
             mapId: mapIdAtStart,
             strokeCount: countMapStrokes(targetDrawing),
             layerCount: targetDrawing.layers.length,
-            reason: _reason,
+            reason: resolveMapSaveDrawingObsReason(_reason, obsReasonOverride),
           });
           return true;
         } catch {
@@ -88,12 +92,12 @@ export function useMapAutosave({
   );
 
   const flushAutosave = useCallback(
-    (reason: MapAutosaveFlushReason) => {
+    (reason: MapAutosaveFlushReason, obsReasonOverride?: MapSaveDrawingObsReason) => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         debounceRef.current = null;
       }
-      return performSave(reason);
+      return performSave(reason, obsReasonOverride);
     },
     [performSave],
   );
@@ -128,6 +132,9 @@ export function useMapAutosave({
   }, [mapId]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     const onPageHide = () => {
       void flushAutosave("pagehide");
     };
@@ -143,9 +150,12 @@ export function useMapAutosave({
       window.removeEventListener("pagehide", onPageHide);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [flushAutosave]);
+  }, [enabled, flushAutosave]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
@@ -153,11 +163,7 @@ export function useMapAutosave({
       }
       void performSave("pagehide");
     };
-  }, [performSave]);
-
-  useEffect(() => {
-    return registerMapAutosaveFlush(flushAutosave);
-  }, [flushAutosave]);
+  }, [enabled, performSave]);
 
   return { flushAutosave };
 }

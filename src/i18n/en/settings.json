@@ -14,8 +14,8 @@
     "languageHint": "Applies to the entire application interface."
   },
   "editor": {
-    "sectionTitle": "Editor",
-    "autosaveEnabled": "Enable autosave",
+    "sectionTitle": "Editor (manuscript)",
+    "autosaveEnabled": "Manuscript autosave",
     "debounceLabel": "Save after idle (seconds)",
     "debounceHint": "After you stop typing for this long (5–600 s).",
     "intervalLabel": "Save every X seconds (0 = off)",
@@ -42,5 +42,11 @@
     "dateFormatShort": "2030-03-10 (YYYY-MM-DD)",
     "dateFormatLong": "Tuesday 10 March, 2030",
     "dateFormatHint": "Applies to “Last added date” and “Last date in document”."
+  },
+  "maps": {
+    "sectionTitle": "Maps",
+    "autosaveLabel": "Drawing autosave",
+    "autosaveHint": "Saves the map drawing ~500 ms after each stroke. Undo remains available after save.",
+    "manualHint": "With autosave off: Ctrl+S saves while in edit mode. Unsaved strokes are kept in a local draft until you save or discard."
   }
 }

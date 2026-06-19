@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { EDITOR_SAVE_LIMITS } from "@/lib/types/editorSettings";
 import { AppearanceSettingsSection } from "@/modules/settings/AppearanceSettingsSection";
 import { ManuscriptSettingsSection } from "@/modules/settings/ManuscriptSettingsSection";
+import { MapSettingsSection } from "@/modules/settings/MapSettingsSection";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 
 interface SettingsDialogProps {
@@ -49,6 +50,8 @@ export function SettingsDialog({
         <AppearanceSettingsSection />
 
         <ManuscriptSettingsSection />
+
+        <MapSettingsSection />
 
         <section className="space-y-4 border-t border-border pt-4">
           <h3 className="text-sm font-medium">{t("editor.sectionTitle")}</h3>

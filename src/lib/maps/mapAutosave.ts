@@ -3,6 +3,7 @@ export const MAP_AUTOSAVE_DEBOUNCE_MS = 500;
 
 export type MapAutosaveFlushReason =
   | "debounce"
+  | "manual"
   | "mapSwitch"
   | "canvasOp"
   | "exitEdit"

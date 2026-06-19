@@ -93,6 +93,18 @@
     "enterEdit": "Edit map",
     "exitEdit": "View interactive map"
   },
+  "unsaved": {
+    "title": "Unsaved changes",
+    "messageLeave": "If you leave now, unsaved map strokes will be lost.",
+    "messageExitEdit": "If you switch to interactive view, unsaved strokes will be lost.",
+    "messageMapSwitch": "If you switch maps, unsaved strokes on this map will be lost.",
+    "messageCanvasOp": "Save or discard pending strokes before resizing the canvas.",
+    "messageProjectSwitch": "If you close or switch projects, unsaved map strokes will be lost.",
+    "cancel": "Cancel",
+    "discard": "Discard",
+    "save": "Save",
+    "saving": "Saving…"
+  },
   "viewport": {
     "ariaLabel": "Map view {{name}}"
   },
@@ -118,6 +130,7 @@
     "save": {
       "saving": "Saving…",
       "saved": "Saved",
+      "unsaved": "Unsaved",
       "error": "Save failed"
     }
   },

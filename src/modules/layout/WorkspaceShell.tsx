@@ -24,6 +24,7 @@ import { useFileTreeStore } from "@/stores/useFileTreeStore";
 import { SettingsDialog } from "@/modules/settings/SettingsDialog";
 import { GraphView } from "@/modules/graph/GraphView";
 import { MapWorkspace } from "@/modules/maps/MapWorkspace";
+import { MapUnsavedChangesDialog } from "@/modules/maps/MapUnsavedChangesDialog";
 import { ConsistencyPanel } from "@/modules/consistency/ConsistencyPanel";
 import { CalendarWorkspace } from "@/modules/calendar/CalendarWorkspace";
 import { CalendarDraftDialogs } from "@/modules/calendar/CalendarDraftDialogs";
@@ -32,6 +33,7 @@ import { TimelineSidePanel } from "@/modules/timeline/TimelineSidePanel";
 import { VersionHistoryPanel } from "@/modules/versions/VersionHistoryPanel";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { guardMapDrawingNavigation } from "@/lib/maps/mapDrawingGuard";
 import { guardCalendarNavigation } from "@/stores/useCalendarViewStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
@@ -47,6 +49,10 @@ export function WorkspaceShell() {
   const handleMainViewChange = (view: typeof mainView) => {
     if (mainView === "calendar" && view !== "calendar") {
       guardCalendarNavigation(() => setMainView(view), "leave");
+      return;
+    }
+    if (mainView === "map" && view !== "map") {
+      void guardMapDrawingNavigation(() => setMainView(view), "leave");
       return;
     }
     setMainView(view);
@@ -147,6 +153,7 @@ export function WorkspaceShell() {
       ) : null}
 
       <UnsavedChangesDialog />
+      <MapUnsavedChangesDialog />
       <CalendarDraftDialogs />
       <ExternalReloadDialog />
       <SettingsDialog

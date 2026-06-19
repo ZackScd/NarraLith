@@ -1,6 +1,6 @@
 # MAP-005b — Guardado manual, borrador sucio y undo estable
 
-> **Estado:** 📋 **Planificado** (2026-06-11) · Sin ejecución  
+> **Estado:** ✅ **Implementado + QA OK** (2026-06-11)  
 > **Esfuerzo:** Medio · **Riesgo:** Medio (localStorage + guards navegación)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3bis · **Previo:** [MAP-005 🔨](MAP-005-draw-studio.md) (fases 1–8) · **Siguiente:** MAP-006 (sin cambio)
 
@@ -416,4 +416,5 @@ Tras cerrar MAP-005b, actualizar en [MAP-005-draw-studio.md](MAP-005-draw-studio
 | Fecha | Evento |
 |-------|--------|
 | 2026-06-11 | Plan MAP-005b redactado — QA `1781837265659-23296`, feedback undo/autosave invasivo |
-| | **Ejecución pendiente** |
+| 2026-06-11 | **Fases 1–8 implementadas** — baseline D18, Ctrl+S, borrador localStorage, diálogo sucio, ajustes autosave mapas, flush D24, OBS §6, tests 264 |
+| 2026-06-11 | **QA usuario** — sesiones `1781847929216-22504` (pre-reload) + `1781848001932-22504` (post-reload); criterios §9 C1–C12 ✅ en action log; `draftPersist` solo en `action-verbose-*.ndjson` |

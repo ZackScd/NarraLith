@@ -9,6 +9,9 @@ import type {
 
 export type MapDrawingSaveStatus = "idle" | "saving" | "saved" | "error";
 
+/** Profundidad máxima undo/redo (MAP-005b D20). */
+export const MAP_UNDO_MAX_DEPTH = 50;
+
 export interface MapDrawingUndoOp {
   kind: "addStroke" | "removeStroke";
   layerId: string;

@@ -93,6 +93,18 @@
     "enterEdit": "Editar mapa",
     "exitEdit": "Ver mapa interactivo"
   },
+  "unsaved": {
+    "title": "Cambios sin guardar",
+    "messageLeave": "Si sales ahora, perderás los trazos del mapa que no hayas guardado.",
+    "messageExitEdit": "Si vuelves al modo interactivo, perderás los trazos que no hayas guardado.",
+    "messageMapSwitch": "Si cambias de mapa, perderás los trazos que no hayas guardado en este mapa.",
+    "messageCanvasOp": "Antes de cambiar el tamaño del lienzo, guarda o descarta los trazos pendientes.",
+    "messageProjectSwitch": "Si cierras o cambias de proyecto, perderás los trazos del mapa que no hayas guardado.",
+    "cancel": "Cancelar",
+    "discard": "Descartar",
+    "save": "Guardar",
+    "saving": "Guardando…"
+  },
   "viewport": {
     "ariaLabel": "Vista del mapa {{name}}"
   },
@@ -118,6 +130,7 @@
     "save": {
       "saving": "Guardando…",
       "saved": "Guardado",
+      "unsaved": "Sin guardar",
       "error": "Error al guardar"
     }
   },
