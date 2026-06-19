@@ -2,7 +2,7 @@
 
 > **Estado:** ✅ **Cerrado** (2026-06-11) — Fases 1–11 implementadas · **QA parcial** · **polish §13 diferido** (no bloquea MAP-011)  
 > **Esfuerzo:** Alto · **Riesgo:** Alto (stack navegación + hit-test + schema nuevo + compositor)  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §5, §8 · **Previo:** [MAP-009 ✅](MAP-009-map-timeline-scrubber.md) · **Siguiente:** MAP-011
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §5, §8 · **Previo:** [MAP-009 ✅](MAP-009-map-timeline-scrubber.md) · **Siguiente:** [MAP-011 📋](MAP-011-manuscript-location-x.md)
 
 ---
 

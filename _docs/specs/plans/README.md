@@ -37,4 +37,4 @@ No duplica la lista maestra de trabajo futuro (MAP, WB, FIX-010e…) — eso sig
 
 ---
 
-**Última revisión:** 2026-06-11 (MAP-010 cerrado · próximo MAP-011)
+**Última revisión:** 2026-06-11 (MAP-011 planificado · próximo ejecutar MAP-011)
