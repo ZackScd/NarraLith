@@ -30,6 +30,7 @@ export function drawMapStrokes(
   ctx: CanvasRenderingContext2D,
   drawing: MapDrawingV2,
   previewStroke?: MapStrokeV2 | null,
+  activeLayerId?: string | null,
 ): void {
   for (const layer of drawing.layers) {
     if (!layer.visible) continue;
@@ -42,7 +43,10 @@ export function drawMapStrokes(
   }
 
   if (previewStroke && previewStroke.points.length > 0) {
-    const layer = drawing.layers.find((item) => item.visible && !item.locked);
+    const layer =
+      (activeLayerId
+        ? drawing.layers.find((item) => item.id === activeLayerId)
+        : null) ?? drawing.layers.find((item) => item.visible && !item.locked);
     const layerOpacity = layer?.opacity ?? 1;
     ctx.save();
     ctx.globalAlpha = layerOpacity;

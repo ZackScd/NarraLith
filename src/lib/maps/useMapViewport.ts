@@ -32,6 +32,7 @@ interface UseMapViewportOptions {
   drawing: MapDrawingV2;
   viewMode: MapViewMode;
   previewStroke?: MapStrokeV2 | null;
+  activeLayerId?: string | null;
   studioTool?: MapStudioTool;
 }
 
@@ -126,6 +127,7 @@ export function paintMapViewport(
   baseImage: HTMLImageElement | null,
   mapId: string,
   previewStroke?: MapStrokeV2 | null,
+  activeLayerId?: string | null,
 ): void {
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -147,7 +149,7 @@ export function paintMapViewport(
   }
 
   const strokeLayer = paintStrokeLayer(mapId, document, (bufferCtx) => {
-    drawMapStrokes(bufferCtx, drawing, previewStroke);
+    drawMapStrokes(bufferCtx, drawing, previewStroke, activeLayerId);
   });
   ctx.drawImage(strokeLayer, 0, 0);
 
@@ -182,6 +184,7 @@ export function useMapViewport({
   drawing,
   viewMode,
   previewStroke = null,
+  activeLayerId = null,
   studioTool = "brush",
 }: UseMapViewportOptions) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -230,8 +233,18 @@ export function useMapViewport({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    paintMapViewport(ctx, containerSize, viewport, document, drawing, baseImage, mapId, previewStroke);
-  }, [baseImage, containerSize, document, drawing, mapId, previewStroke, viewport]);
+    paintMapViewport(
+      ctx,
+      containerSize,
+      viewport,
+      document,
+      drawing,
+      baseImage,
+      mapId,
+      previewStroke,
+      activeLayerId,
+    );
+  }, [activeLayerId, baseImage, containerSize, document, drawing, mapId, previewStroke, viewport]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -312,10 +325,17 @@ export function useMapViewport({
         visibleLayers,
         strokeCount,
         layerCount: drawing.layers.length,
+        activeLayerId,
+        layers: drawing.layers.map((layer) => ({
+          id: layer.id,
+          visible: layer.visible,
+          locked: layer.locked,
+          opacity: layer.opacity,
+        })),
       });
     }, COMPOSITOR_AUDIT_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [drawing, mapId]);
+  }, [activeLayerId, drawing, mapId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

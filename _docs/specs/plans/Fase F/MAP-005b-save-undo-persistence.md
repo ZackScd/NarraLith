@@ -2,7 +2,7 @@
 
 > **Estado:** ✅ **Implementado + QA OK** (2026-06-11)  
 > **Esfuerzo:** Medio · **Riesgo:** Medio (localStorage + guards navegación)  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3bis · **Previo:** [MAP-005 🔨](MAP-005-draw-studio.md) (fases 1–8) · **Siguiente:** MAP-006 (sin cambio)
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3bis · **Previo:** [MAP-005 🔨](MAP-005-draw-studio.md) (fases 1–8) · **Siguiente:** [MAP-006 📋](MAP-006-layers.md)
 
 ---
 

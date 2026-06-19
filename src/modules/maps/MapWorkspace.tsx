@@ -20,6 +20,7 @@ import {
 } from "@/modules/maps/MapCanvasSizeDialog";
 import { useMapStudioShortcuts } from "@/hooks/useMapStudioShortcuts";
 import { MapEditStudio } from "@/modules/maps/MapEditStudio";
+import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
 import { useProjectStore } from "@/stores/useProjectStore";
@@ -93,6 +94,7 @@ export function MapWorkspace() {
     enabled: isEditMode && mapAutosaveEnabled,
     mapId: activeMapId,
     drawing: drawingSession.drawing,
+    activeLayerId: drawingSession.activeLayerId,
     isDirty: drawingSession.isDirty,
     setSaveStatus: drawingSession.setSaveStatus,
     markSaved: drawingSession.markSaved,
@@ -286,15 +288,34 @@ export function MapWorkspace() {
 
         {activeMapId && document && viewportDrawing ? (
           <>
-            <MapViewport
-              mapId={activeMapId}
-              document={document}
-              drawing={viewportDrawing}
-              viewMode={viewMode}
-              previewStroke={previewStroke}
-              onPreviewStroke={drawingSession.setPreviewStroke}
-              onCommitStroke={drawingSession.commitStroke}
-            />
+            <div className="flex min-h-0 flex-1">
+              <MapViewport
+                mapId={activeMapId}
+                document={document}
+                drawing={viewportDrawing}
+                viewMode={viewMode}
+                activeLayerId={isEditMode ? drawingSession.activeLayerId : null}
+                previewStroke={previewStroke}
+                onPreviewStroke={drawingSession.setPreviewStroke}
+                onCommitStroke={drawingSession.commitStroke}
+              />
+              {isEditMode && drawingSession.drawing ? (
+                <MapLayersPanel
+                  mapId={activeMapId}
+                  drawing={drawingSession.drawing}
+                  activeLayerId={drawingSession.activeLayerId}
+                  onSelectLayer={drawingSession.selectActiveLayer}
+                  onCreateLayer={() => {
+                    drawingSession.createLayer(t("studio.layers.defaultName", {
+                      index: drawingSession.drawing!.layers.length + 1,
+                    }));
+                  }}
+                  onDeleteLayer={drawingSession.deleteLayer}
+                  onPatchLayer={drawingSession.patchLayer}
+                  onReorderLayer={drawingSession.reorderLayer}
+                />
+              ) : null}
+            </div>
             {isEditMode && activeMapId ? (
               <MapEditStudio
                 mapId={activeMapId}

@@ -129,7 +129,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-003** | ✅ | Crear mapa: diálogo, tamaño libre, aspect ratio, import, expandir/recortar — [plan](plans/Fase%20F/MAP-003-create-canvas.md) · QA cerrado | Medio–alto | [`maps-design.md` §3](maps-design.md) |
 | **MAP-004** | ✅ | Modos vista: **interactivo por defecto** + edición solo con ✏️ — [plan](plans/Fase%20F/MAP-004-view-modes.md) · QA `1781831409032-13548` | Medio–alto | [`maps-design.md` §8](maps-design.md) |
 | **MAP-005** | 📋 | Estudio dibujo: colores custom, pinceles, presión tableta — [plan](plans/Fase%20F/MAP-005-draw-studio.md) | Alto | [`maps-design.md` §3bis](maps-design.md) |
-| **MAP-006** | ⬜ | Capas internas por archivo de dibujo | Medio | [`maps-design.md` §4.1](maps-design.md) |
+| **MAP-006** | ✅ | Capas internas por archivo de dibujo — [plan](plans/Fase%20F/MAP-006-layers.md) · QA `1781849729654` + fix D13 `1781850121442` | Medio | [`maps-design.md` §4.1](maps-design.md) |
 | **MAP-007** | ⬜ | Dibujo principal: «Desde», terreno base | Medio | [`maps-design.md` §4.2](maps-design.md) |
 | **MAP-008** | ⬜ | Secundarios: parches transparentes, visibilidad temporal, apilar vs `tiempo_fin` | Alto | [`maps-design.md` §4.3](maps-design.md) |
 | **MAP-009** | ⬜ | Compositor + timeline del mapa (scrubber **T**) | Alto | [`maps-design.md` §4.4](maps-design.md) |

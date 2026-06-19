@@ -20,6 +20,7 @@ export interface MapDrawingDraft {
   undoOps: MapDrawingUndoOp[];
   redoOps: MapDrawingUndoOp[];
   baselineFingerprint: string;
+  activeLayerId?: string;
   updatedAt: number;
 }
 

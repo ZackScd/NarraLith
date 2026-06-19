@@ -15,6 +15,7 @@ interface UseMapAutosaveOptions {
   enabled: boolean;
   mapId: string | null;
   drawing: MapDrawingV2 | null;
+  activeLayerId?: string | null;
   isDirty: boolean;
   setSaveStatus: (status: MapDrawingSaveStatus) => void;
   markSaved: () => void;
@@ -25,6 +26,7 @@ export function useMapAutosave({
   enabled,
   mapId,
   drawing,
+  activeLayerId = null,
   isDirty,
   setSaveStatus,
   markSaved,
@@ -34,10 +36,12 @@ export function useMapAutosave({
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const mapIdRef = useRef(mapId);
   const drawingRef = useRef(drawing);
+  const activeLayerIdRef = useRef(activeLayerId);
   const isDirtyRef = useRef(isDirty);
 
   mapIdRef.current = mapId;
   drawingRef.current = drawing;
+  activeLayerIdRef.current = activeLayerId;
   isDirtyRef.current = isDirty;
 
   const performSave = useCallback(
@@ -72,6 +76,10 @@ export function useMapAutosave({
             mapId: mapIdAtStart,
             strokeCount: countMapStrokes(targetDrawing),
             layerCount: targetDrawing.layers.length,
+            activeLayerId: activeLayerIdRef.current,
+            visibleLayerIds: targetDrawing.layers
+              .filter((layer) => layer.visible)
+              .map((layer) => layer.id),
             reason: resolveMapSaveDrawingObsReason(_reason, obsReasonOverride),
           });
           return true;

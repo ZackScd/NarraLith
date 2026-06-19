@@ -2,7 +2,7 @@
 
 > **Estado:** 🔨 **En progreso** (2026-06-11) · Fases 1–4 implementadas · Fase 5+ pendiente  
 > **Esfuerzo:** Alto · **Riesgo:** Medio (↓ tras revisión; goma/capas offscreen acotadas)  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3bis · **Previo:** [MAP-004 ✅](MAP-004-view-modes.md) · **Siguiente:** MAP-006
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3bis · **Previo:** [MAP-004 ✅](MAP-004-view-modes.md) · **Siguiente:** [MAP-006 📋](MAP-006-layers.md)
 
 ---
 
@@ -597,6 +597,8 @@ Fase 9  QA manual §9
 ---
 
 ## 11. Handoff → MAP-006
+
+Plan detallado: [MAP-006-layers.md](MAP-006-layers.md).
 
 MAP-006 tomará:
 

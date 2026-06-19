@@ -831,6 +831,21 @@ fn validate_drawing(drawing: &MapDrawingV2) -> Result<(), AppError> {
     {
         return Err(AppError::new("error.maps.invalid_dimensions"));
     }
+    if drawing.layers.is_empty() {
+        return Err(AppError::new("error.maps.invalid_json"));
+    }
+    let mut seen_layer_ids = std::collections::HashSet::new();
+    for layer in &drawing.layers {
+        if layer.id.trim().is_empty() || !seen_layer_ids.insert(layer.id.clone()) {
+            return Err(AppError::new("error.maps.invalid_json"));
+        }
+        if layer.name.trim().is_empty() {
+            return Err(AppError::new("error.maps.invalid_json"));
+        }
+        if !(0.0..=1.0).contains(&layer.opacity) {
+            return Err(AppError::new("error.maps.invalid_json"));
+        }
+    }
     for stroke in drawing.layers.iter().flat_map(|l| &l.strokes) {
         for point in &stroke.points {
             if let Some(p) = point.pressure {
@@ -1401,5 +1416,51 @@ mod tests {
         assert_eq!(doc.height, 700);
         assert_eq!(drawing.width, 1000);
         assert_eq!(drawing.height, 700);
+    }
+
+    #[test]
+    fn validate_drawing_rejects_duplicate_layer_ids() {
+        let drawing = MapDrawingV2 {
+            version: 2,
+            width: 800,
+            height: 600,
+            layers: vec![
+                MapDrawingLayerV2 {
+                    id: "layer-a".to_string(),
+                    name: "A".to_string(),
+                    visible: true,
+                    opacity: 1.0,
+                    locked: false,
+                    strokes: vec![],
+                },
+                MapDrawingLayerV2 {
+                    id: "layer-a".to_string(),
+                    name: "B".to_string(),
+                    visible: true,
+                    opacity: 1.0,
+                    locked: false,
+                    strokes: vec![],
+                },
+            ],
+        };
+        assert!(validate_drawing(&drawing).is_err());
+    }
+
+    #[test]
+    fn validate_drawing_rejects_invalid_layer_opacity() {
+        let drawing = MapDrawingV2 {
+            version: 2,
+            width: 800,
+            height: 600,
+            layers: vec![MapDrawingLayerV2 {
+                id: "layer-1".to_string(),
+                name: "Capa".to_string(),
+                visible: true,
+                opacity: 1.5,
+                locked: false,
+                strokes: vec![],
+            }],
+        };
+        assert!(validate_drawing(&drawing).is_err());
     }
 }

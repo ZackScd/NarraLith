@@ -132,6 +132,28 @@
       "saved": "Guardado",
       "unsaved": "Sin guardar",
       "error": "Error al guardar"
+    },
+    "layers": {
+      "title": "Capas",
+      "panelAria": "Panel de capas del mapa {{mapId}}",
+      "add": "Añadir capa",
+      "defaultName": "Capa {{index}}",
+      "strokeCount": "{{count}} trazos",
+      "active": "Activa",
+      "show": "Mostrar capa",
+      "hide": "Ocultar capa",
+      "lock": "Bloquear capa",
+      "unlock": "Desbloquear capa",
+      "moveUp": "Subir capa",
+      "moveDown": "Bajar capa",
+      "delete": "Eliminar capa",
+      "opacityLabel": "Opacidad",
+      "lockedToast": "La capa activa está bloqueada.",
+      "noLayerToast": "No hay capa activa disponible para dibujar.",
+      "deleteTitle": "Eliminar capa",
+      "deleteMessage": "Esta capa tiene {{count}} trazos. ¿Eliminarla?",
+      "deleteCancel": "Cancelar",
+      "deleteConfirm": "Eliminar"
     }
   },
   "errors": {

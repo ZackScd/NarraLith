@@ -54,6 +54,13 @@ describe("fingerprintMapDrawing", () => {
     });
     expect(fingerprintMapDrawing(next)).not.toBe(base);
   });
+
+  it("cambia al modificar metadata de capa", () => {
+    const base = fingerprintMapDrawing(sampleDrawing());
+    const next = sampleDrawing();
+    next.layers[0]!.visible = false;
+    expect(fingerprintMapDrawing(next)).not.toBe(base);
+  });
 });
 
 describe("isDrawingDirtyAgainstBaseline", () => {

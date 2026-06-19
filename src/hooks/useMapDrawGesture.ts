@@ -22,9 +22,11 @@ interface UseMapDrawGestureOptions {
   baseOpacity: number;
   viewport: MapViewportState;
   canDraw: boolean;
+  drawBlockReason?: "locked" | "no_layer" | null;
   isSpacePressed: () => boolean;
   onPreviewStroke: (stroke: MapStrokeV2 | null) => void;
   onCommitStroke: (stroke: MapStrokeV2) => void;
+  onDrawBlocked?: (reason: "locked" | "no_layer") => void;
 }
 
 export function useMapDrawGesture({
@@ -37,9 +39,11 @@ export function useMapDrawGesture({
   baseOpacity,
   viewport,
   canDraw,
+  drawBlockReason = null,
   isSpacePressed,
   onPreviewStroke,
   onCommitStroke,
+  onDrawBlocked,
 }: UseMapDrawGestureOptions) {
   const drawSession = useRef<{
     pointerId: number;
@@ -54,6 +58,15 @@ export function useMapDrawGesture({
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>): boolean => {
       if (!enabled) return false;
+      const wantsDraw =
+        viewMode === "edit" &&
+        !isSpacePressed() &&
+        event.button === 0 &&
+        (tool === "brush" || tool === "eraser");
+      if (wantsDraw && !canDraw && drawBlockReason) {
+        onDrawBlocked?.(drawBlockReason);
+        return false;
+      }
       if (
         !shouldDrawPointer(viewMode, tool, event.button, isSpacePressed(), canDraw)
       ) {
@@ -83,8 +96,10 @@ export function useMapDrawGesture({
       brushId,
       canDraw,
       color,
+      drawBlockReason,
       enabled,
       isSpacePressed,
+      onDrawBlocked,
       onPreviewStroke,
       tool,
       viewMode,

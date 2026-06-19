@@ -132,6 +132,28 @@
       "saved": "Saved",
       "unsaved": "Unsaved",
       "error": "Save failed"
+    },
+    "layers": {
+      "title": "Layers",
+      "panelAria": "Map layers panel {{mapId}}",
+      "add": "Add layer",
+      "defaultName": "Layer {{index}}",
+      "strokeCount": "{{count}} strokes",
+      "active": "Active",
+      "show": "Show layer",
+      "hide": "Hide layer",
+      "lock": "Lock layer",
+      "unlock": "Unlock layer",
+      "moveUp": "Move layer up",
+      "moveDown": "Move layer down",
+      "delete": "Delete layer",
+      "opacityLabel": "Opacity",
+      "lockedToast": "The active layer is locked.",
+      "noLayerToast": "No active layer is available for drawing.",
+      "deleteTitle": "Delete layer",
+      "deleteMessage": "This layer has {{count}} strokes. Delete it?",
+      "deleteCancel": "Cancel",
+      "deleteConfirm": "Delete"
     }
   },
   "errors": {

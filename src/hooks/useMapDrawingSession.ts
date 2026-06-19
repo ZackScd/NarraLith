@@ -10,13 +10,21 @@ import {
   type MapDrawingDraft,
 } from "@/lib/maps/mapDrawingDraft";
 import {
+  addLayer,
   cloneDrawing,
+  ensureActiveLayerId,
   MAP_UNDO_MAX_DEPTH,
+  moveLayerTowardBack,
+  moveLayerTowardFront,
   pushStrokeToLayer,
+  removeLayer,
   removeStrokeFromLayer,
   resolveActiveLayer,
+  resolveDefaultActiveLayerId,
+  updateLayer,
   type MapDrawingSaveStatus,
   type MapDrawingUndoOp,
+  type MapLayerPatch,
 } from "@/lib/maps/mapDrawingSession";
 import { strokeHadPressure } from "@/lib/maps/mapDrawingStats";
 import { trackAction } from "@/lib/action-audit/trackAction";
@@ -38,6 +46,7 @@ export function useMapDrawingSession({
   projectRoot = "",
 }: UseMapDrawingSessionOptions) {
   const [drawing, setDrawing] = useState<MapDrawingV2 | null>(null);
+  const [activeLayerId, setActiveLayerIdState] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<MapDrawingSaveStatus>("idle");
   const [currentStroke, setCurrentStroke] = useState<MapStrokeV2 | null>(null);
@@ -46,10 +55,12 @@ export function useMapDrawingSession({
   const lastKey = useRef<string | null>(null);
   const baselineFingerprint = useRef("");
   const drawingRef = useRef<MapDrawingV2 | null>(null);
+  const activeLayerIdRef = useRef<string | null>(null);
   const [undoDepth, setUndoDepth] = useState(0);
   const [redoDepth, setRedoDepth] = useState(0);
 
   drawingRef.current = drawing;
+  activeLayerIdRef.current = activeLayerId;
 
   const applyDirtyFromDrawing = useCallback((next: MapDrawingV2 | null) => {
     if (!next) {
@@ -59,9 +70,16 @@ export function useMapDrawingSession({
     setIsDirty(isDrawingDirtyAgainstBaseline(next, baselineFingerprint.current));
   }, []);
 
+  const syncActiveLayerAfterDrawingChange = useCallback((next: MapDrawingV2) => {
+    const resolved = ensureActiveLayerId(next, activeLayerIdRef.current);
+    setActiveLayerIdState(resolved);
+    return resolved;
+  }, []);
+
   const resetFromSource = useCallback((next: MapDrawingV2 | null) => {
     setDrawing(next ? cloneDrawing(next) : null);
     baselineFingerprint.current = next ? fingerprintMapDrawing(next) : "";
+    setActiveLayerIdState(next ? resolveDefaultActiveLayerId(next) : null);
     setIsDirty(false);
     setSaveStatus("idle");
     setCurrentStroke(null);
@@ -78,6 +96,12 @@ export function useMapDrawingSession({
     redoStack.current = draft.redoOps.slice(-MAP_UNDO_MAX_DEPTH);
     setUndoDepth(undoStack.current.length);
     setRedoDepth(redoStack.current.length);
+    setActiveLayerIdState(
+      ensureActiveLayerId(
+        draft.drawing,
+        draft.activeLayerId ?? resolveDefaultActiveLayerId(draft.drawing),
+      ),
+    );
     setIsDirty(isDrawingDirtyAgainstBaseline(draft.drawing, draft.baselineFingerprint));
     setSaveStatus("idle");
     setCurrentStroke(null);
@@ -133,6 +157,7 @@ export function useMapDrawingSession({
       undoOps: undoStack.current.slice(-MAP_UNDO_MAX_DEPTH),
       redoOps: redoStack.current.slice(-MAP_UNDO_MAX_DEPTH),
       baselineFingerprint: baselineFingerprint.current,
+      activeLayerId: activeLayerIdRef.current ?? undefined,
       updatedAt: Date.now(),
     };
   }, []);
@@ -141,11 +166,140 @@ export function useMapDrawingSession({
     setCurrentStroke(stroke);
   }, []);
 
+  const mutateDrawing = useCallback(
+    (
+      mutator: (current: MapDrawingV2) => MapDrawingV2,
+      options?: { nextActiveLayerId?: string | null },
+    ) => {
+      setDrawing((prev) => {
+        if (!prev) return prev;
+        const next = mutator(prev);
+        if (options?.nextActiveLayerId !== undefined) {
+          setActiveLayerIdState(options.nextActiveLayerId);
+        } else {
+          syncActiveLayerAfterDrawingChange(next);
+        }
+        applyDirtyFromDrawing(next);
+        setSaveStatus("idle");
+        return next;
+      });
+    },
+    [applyDirtyFromDrawing, syncActiveLayerAfterDrawingChange],
+  );
+
+  const selectActiveLayer = useCallback(
+    (layerId: string) => {
+      if (!drawing) return;
+      const layer = drawing.layers.find((item) => item.id === layerId);
+      if (!layer) return;
+      const previousLayerId = activeLayerIdRef.current;
+      if (previousLayerId === layerId) return;
+      setActiveLayerIdState(layerId);
+      if (mapId) {
+        trackAction("map", "layerSelect", {
+          mapId,
+          layerId,
+          previousLayerId: previousLayerId ?? undefined,
+        });
+      }
+    },
+    [drawing, mapId],
+  );
+
+  const createLayer = useCallback(
+    (name?: string) => {
+      if (!drawing) return null;
+      const result = addLayer(drawing, name);
+      mutateDrawing(() => result.drawing, { nextActiveLayerId: result.layerId });
+      if (mapId) {
+        trackAction("map", "layerCreate", {
+          mapId,
+          layerId: result.layerId,
+          index: result.drawing.layers.length - 1,
+        });
+        trackAction("map", "layerSelect", {
+          mapId,
+          layerId: result.layerId,
+          previousLayerId: activeLayerIdRef.current ?? undefined,
+        });
+      }
+      return result.layerId;
+    },
+    [drawing, mapId, mutateDrawing],
+  );
+
+  const deleteLayer = useCallback(
+    (layerId: string) => {
+      if (!drawing) return false;
+      const strokeCount =
+        drawing.layers.find((layer) => layer.id === layerId)?.strokes.length ?? 0;
+      try {
+        const next = removeLayer(drawing, layerId);
+        const nextActiveLayerId = ensureActiveLayerId(next, activeLayerIdRef.current);
+        mutateDrawing(() => next, { nextActiveLayerId });
+        if (mapId) {
+          trackAction("map", "layerDelete", { mapId, layerId, strokeCount });
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [drawing, mapId, mutateDrawing],
+  );
+
+  const patchLayer = useCallback(
+    (layerId: string, patch: MapLayerPatch, obsAction?: "layerVisible" | "layerOpacity" | "layerLock" | "layerRename") => {
+      if (!drawing) return;
+      try {
+        const next = updateLayer(drawing, layerId, patch);
+        mutateDrawing(() => next);
+        if (mapId && obsAction) {
+          if (obsAction === "layerVisible" && typeof patch.visible === "boolean") {
+            trackAction("map", "layerVisible", { mapId, layerId, visible: patch.visible });
+          } else if (obsAction === "layerOpacity" && typeof patch.opacity === "number") {
+            trackAction("map", "layerOpacity", { mapId, layerId, opacity: patch.opacity });
+          } else if (obsAction === "layerLock" && typeof patch.locked === "boolean") {
+            trackAction("map", "layerLock", { mapId, layerId, locked: patch.locked });
+          } else if (obsAction === "layerRename" && typeof patch.name === "string") {
+            trackAction("map", "layerRename", {
+              mapId,
+              layerId,
+              nameLength: patch.name.length,
+            });
+          }
+        }
+      } catch {
+        // capa no encontrada — ignorar
+      }
+    },
+    [drawing, mapId, mutateDrawing],
+  );
+
+  const reorderLayer = useCallback(
+    (layerId: string, direction: "front" | "back") => {
+      if (!drawing) return;
+      const fromIndex = drawing.layers.findIndex((layer) => layer.id === layerId);
+      if (fromIndex === -1) return;
+      const next =
+        direction === "front"
+          ? moveLayerTowardFront(drawing, layerId)
+          : moveLayerTowardBack(drawing, layerId);
+      const toIndex = next.layers.findIndex((layer) => layer.id === layerId);
+      if (fromIndex === toIndex) return;
+      mutateDrawing(() => next);
+      if (mapId) {
+        trackAction("map", "layerReorder", { mapId, layerId, fromIndex, toIndex });
+      }
+    },
+    [drawing, mapId, mutateDrawing],
+  );
+
   const commitStroke = useCallback(
     (stroke: MapStrokeV2) => {
       setDrawing((prev) => {
         if (!prev) return prev;
-        const layer = resolveActiveLayer(prev);
+        const layer = resolveActiveLayer(prev, activeLayerIdRef.current);
         if (!layer) return prev;
         const next = pushStrokeToLayer(prev, layer.id, stroke);
         undoStack.current = [
@@ -161,8 +315,13 @@ export function useMapDrawingSession({
       setCurrentStroke(null);
       setSaveStatus("idle");
       if (mapId) {
+        const currentDrawing = drawingRef.current;
+        const layer = currentDrawing
+          ? resolveActiveLayer(currentDrawing, activeLayerIdRef.current)
+          : null;
         trackAction("map", "drawStroke", {
           mapId,
+          layerId: layer?.id,
           strokeId: stroke.id,
           tool: stroke.tool,
           brush: stroke.brush,
@@ -187,7 +346,12 @@ export function useMapDrawingSession({
       applyDirtyFromDrawing(next);
       setSaveStatus("idle");
       if (mapId) {
-        trackAction("map", "undo", { mapId, depth: undoStack.current.length });
+        trackAction("map", "undo", {
+          mapId,
+          depth: undoStack.current.length,
+          layerId: op.layerId,
+          strokeId: op.stroke.id,
+        });
       }
       return true;
     }
@@ -206,7 +370,12 @@ export function useMapDrawingSession({
       applyDirtyFromDrawing(next);
       setSaveStatus("idle");
       if (mapId) {
-        trackAction("map", "redo", { mapId, depth: redoStack.current.length });
+        trackAction("map", "redo", {
+          mapId,
+          depth: redoStack.current.length,
+          layerId: op.layerId,
+          strokeId: op.stroke.id,
+        });
       }
       return true;
     }
@@ -224,6 +393,7 @@ export function useMapDrawingSession({
 
   return {
     drawing,
+    activeLayerId,
     isDirty,
     saveStatus,
     setSaveStatus,
@@ -241,5 +411,10 @@ export function useMapDrawingSession({
     exportDraftSnapshot,
     syncFromServer,
     resetFromSource,
+    selectActiveLayer,
+    createLayer,
+    deleteLayer,
+    patchLayer,
+    reorderLayer,
   };
 }

@@ -60,6 +60,8 @@ export function usePersistMapDrawingDraft({
         {
           mapId,
           strokeCount: countMapStrokes(draft.drawing),
+          layerCount: draft.drawing.layers.length,
+          activeLayerId: draft.activeLayerId,
           undoDepth: draft.undoOps.length,
         },
         { channel: "verbose" },
