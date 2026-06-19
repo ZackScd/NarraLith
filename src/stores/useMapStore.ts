@@ -10,10 +10,11 @@ interface MapStoreV2 {
   viewMode: MapViewMode;
   activeDrawingRef: MapDrawingRef;
   previewTimeTRaw: string | null;
+  previewTimeByMapId: Record<string, string>;
   setActiveMap: (mapId: string | null) => void;
   setViewMode: (mode: MapViewMode) => void;
   setActiveDrawingRef: (ref: MapDrawingRef) => void;
-  setPreviewTimeTRaw: (raw: string | null) => void;
+  setPreviewTimeTRaw: (raw: string | null, mapId?: string | null) => void;
   resetMapSessionState: (previewDefault?: string | null) => void;
   reset: () => void;
 }
@@ -23,20 +24,42 @@ const initial = {
   viewMode: "interactive" as MapViewMode,
   activeDrawingRef: DEFAULT_MAP_DRAWING_REF,
   previewTimeTRaw: null as string | null,
+  previewTimeByMapId: {} as Record<string, string>,
 };
 
 export const useMapStore = create<MapStoreV2>((set) => ({
   ...initial,
   setActiveMap: (mapId) =>
-    set((state) => ({
-      activeMapId: mapId,
-      viewMode: state.activeMapId !== mapId ? "interactive" : state.viewMode,
-      activeDrawingRef: DEFAULT_MAP_DRAWING_REF,
-      previewTimeTRaw: null,
-    })),
+    set((state) => {
+      const nextByMapId = { ...state.previewTimeByMapId };
+      if (state.activeMapId && state.previewTimeTRaw?.trim()) {
+        nextByMapId[state.activeMapId] = state.previewTimeTRaw.trim();
+      }
+      const restored =
+        mapId && nextByMapId[mapId] ? nextByMapId[mapId] : null;
+      return {
+        activeMapId: mapId,
+        viewMode: state.activeMapId !== mapId ? "interactive" : state.viewMode,
+        activeDrawingRef: DEFAULT_MAP_DRAWING_REF,
+        previewTimeTRaw: restored,
+        previewTimeByMapId: nextByMapId,
+      };
+    }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setActiveDrawingRef: (ref) => set({ activeDrawingRef: ref }),
-  setPreviewTimeTRaw: (raw) => set({ previewTimeTRaw: raw }),
+  setPreviewTimeTRaw: (raw, mapId) =>
+    set((state) => {
+      const targetMapId = mapId ?? state.activeMapId;
+      const trimmed = raw?.trim() ? raw.trim() : null;
+      const nextByMapId =
+        targetMapId && trimmed
+          ? { ...state.previewTimeByMapId, [targetMapId]: trimmed }
+          : state.previewTimeByMapId;
+      return {
+        previewTimeTRaw: trimmed,
+        previewTimeByMapId: nextByMapId,
+      };
+    }),
   resetMapSessionState: (previewDefault) =>
     set({
       previewTimeTRaw: previewDefault ?? null,

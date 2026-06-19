@@ -37,7 +37,7 @@ export const MAP_VIEWPORT_MAX_ZOOM = 2;
 
 const GRID_SIZE = 32;
 const MAX_DPR = 2;
-const COMPOSITOR_AUDIT_DEBOUNCE_MS = 300;
+const COMPOSITOR_AUDIT_DEBOUNCE_MS = 150;
 
 interface UseMapViewportOptions {
   mapId: string;
@@ -270,6 +270,7 @@ export function useMapViewport({
         stub: false,
         mapId,
         previewTRaw: previewTimeTRaw,
+        timeT: previewTimeTRaw,
         previewTDisplay: formatMapDesdeDisplay(previewTimeTRaw),
         desdeRaw: document.desde,
         desdeDisplay: formatMapDesdeDisplay(document.desde),
@@ -404,6 +405,7 @@ export function useMapViewport({
         stub: false,
         mapId,
         previewTRaw: previewTimeTRaw,
+        timeT: previewTimeTRaw,
         previewTDisplay: formatMapDesdeDisplay(previewTimeTRaw),
         desdeRaw: document.desde,
         desdeDisplay: formatMapDesdeDisplay(document.desde),

@@ -37,6 +37,26 @@ describe("useMapStore viewMode", () => {
   });
 });
 
+describe("useMapStore previewTimeTRaw", () => {
+  it("memoriza T por mapId al cambiar de mapa", () => {
+    useMapStore.getState().reset();
+    useMapStore.getState().setActiveMap("map-a");
+    useMapStore.getState().setPreviewTimeTRaw("15.7.2028", "map-a");
+    useMapStore.getState().setActiveMap("map-b");
+    useMapStore.getState().setPreviewTimeTRaw("1.1.2015", "map-b");
+    useMapStore.getState().setActiveMap("map-a");
+    expect(useMapStore.getState().previewTimeTRaw).toBe("15.7.2028");
+  });
+
+  it("setViewMode no resetea previewTimeTRaw", () => {
+    useMapStore.getState().reset();
+    useMapStore.getState().setActiveMap("map-a");
+    useMapStore.getState().setPreviewTimeTRaw("15.7.2028", "map-a");
+    useMapStore.getState().setViewMode("edit");
+    expect(useMapStore.getState().previewTimeTRaw).toBe("15.7.2028");
+  });
+});
+
 describe("computeFitViewport", () => {
   it("encaja documento en contenedor con padding", () => {
     const fit = computeFitViewport(800, 600, 2400, 1600);

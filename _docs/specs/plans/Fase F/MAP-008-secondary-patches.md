@@ -1,6 +1,6 @@
 # MAP-008 — Dibujos secundarios (parches temporales)
 
-> **Estado:** ✅ **Implementado** (Fases 1–9, 2026-06-11) · QA manual **parcial** §9 · polish pendiente  
+> **Estado:** ✅ **Cerrado** (2026-06-11) — implementado · QA parcial · polish usuario pendiente  
 > **Esfuerzo:** Alto · **Riesgo:** Alto (multi-archivo, compositor alpha, sesión dibujo multi-target)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §4.3 · **Previo:** [MAP-007 ✅](MAP-007-principal-desde.md) · **Siguiente:** MAP-009
 

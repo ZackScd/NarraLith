@@ -92,6 +92,16 @@
     "dialogTitle": "Temporal preview (T)",
     "dialogDescription": "Preview date for composing historical patches. Does not modify strokes."
   },
+  "timeline": {
+    "barAria": "Map timeline {{mapId}}",
+    "scrubberAria": "Map time cursor",
+    "currentT": "View at T",
+    "desdeShort": "From",
+    "desdeMarker": "Go to From ({{date}})",
+    "zoomIn": "Zoom in timeline",
+    "zoomOut": "Zoom out timeline",
+    "readonlyHint": "Read-only while editing"
+  },
   "secondary": {
     "panelTitle": "Patches",
     "panelAria": "Temporal patches for map {{mapId}}",

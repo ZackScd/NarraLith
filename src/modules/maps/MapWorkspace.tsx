@@ -12,6 +12,7 @@ import { useMapSaveShortcut } from "@/hooks/useMapSaveShortcut";
 import { useMapDrawingGuardRegistration, guardMapDrawingNavigation } from "@/hooks/useMapDrawingGuardRegistration";
 import { usePersistMapDrawingDraft } from "@/hooks/usePersistMapDrawingDraft";
 import { trackAction } from "@/lib/action-audit/trackAction";
+import { resolveMapPreviewT, type MapPreviewTSource } from "@/lib/maps/mapPreviewT";
 import { filterVisibleSecondaries } from "@/lib/maps/mapSecondaryVisibility";
 import type { MapCreateDraft, MapDrawingRef, OpenPreference } from "@/lib/types/maps";
 import { DEFAULT_MAP_DRAWING_REF, drawingRefKey, parseDrawingRefKey } from "@/lib/types/maps";
@@ -27,6 +28,7 @@ import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
 import { MapPreviewTField } from "@/modules/maps/MapPreviewTField";
 import { MapSecondariesPanel } from "@/modules/maps/MapSecondariesPanel";
+import { MapTimelineBar } from "@/modules/maps/MapTimelineBar";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
 import { useCalendarStore } from "@/stores/useCalendarStore";
@@ -107,12 +109,34 @@ export function MapWorkspace() {
   });
 
   useEffect(() => {
-    if (!document) return;
-    setPreviewTimeTRaw(document.desde);
-  }, [activeMapId, document?.id, setPreviewTimeTRaw]);
+    if (!document || !activeMapId) return;
+    if (useMapStore.getState().previewTimeTRaw !== null) return;
+    if (!document.desde) return;
+    setPreviewTimeTRaw(document.desde, activeMapId);
+    trackAction("map", "previewTSet", {
+      mapId: activeMapId,
+      previewT: document.desde,
+      previousT: null,
+      source: "mapLoad",
+    });
+  }, [activeMapId, document?.desde, document?.id, setPreviewTimeTRaw]);
 
-  const previewT =
-    previewTimeTRaw ?? document?.desde ?? null;
+  const previewT = resolveMapPreviewT(previewTimeTRaw, document?.desde ?? null);
+
+  const handlePreviewTChange = useCallback(
+    (raw: string, source: MapPreviewTSource) => {
+      if (!activeMapId) return;
+      const previousT = previewT;
+      setPreviewTimeTRaw(raw, activeMapId);
+      trackAction("map", "previewTSet", {
+        mapId: activeMapId,
+        previewT: raw,
+        previousT,
+        source,
+      });
+    },
+    [activeMapId, previewT, setPreviewTimeTRaw],
+  );
 
   const visibleSecondaries = useMemo(() => {
     if (!calendar || !previewT) return [];
@@ -468,14 +492,15 @@ export function MapWorkspace() {
             onUpdate={handleDesdeUpdate}
             onSuggest={handleDesdeSuggest}
           />
-          <MapPreviewTField
-            mapId={activeMapId}
-            previewT={previewT}
-            calendar={calendar}
-            baselineConfig={baselineConfig}
-            events={timelineEvents}
-            onChange={setPreviewTimeTRaw}
-          />
+          {isEditMode && calendar ? (
+            <MapPreviewTField
+              previewT={previewT}
+              calendar={calendar}
+              baselineConfig={baselineConfig}
+              events={timelineEvents}
+              onPreviewTChange={handlePreviewTChange}
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -570,6 +595,17 @@ export function MapWorkspace() {
                 />
               ) : null}
             </div>
+            {calendar ? (
+              <MapTimelineBar
+                mapId={activeMapId}
+                desde={document.desde}
+                previewT={previewT}
+                secondaries={secondaries}
+                calendar={calendar}
+                interactive={!isEditMode}
+                onPreviewTChange={handlePreviewTChange}
+              />
+            ) : null}
             {isEditMode && activeMapId ? (
               <MapEditStudio
                 mapId={activeMapId}

@@ -92,6 +92,16 @@
     "dialogTitle": "Vista temporal (T)",
     "dialogDescription": "Fecha de previsualización para componer parches históricos. No modifica trazos."
   },
+  "timeline": {
+    "barAria": "Timeline del mapa {{mapId}}",
+    "scrubberAria": "Cursor temporal del mapa",
+    "currentT": "Vista en T",
+    "desdeShort": "Desde",
+    "desdeMarker": "Ir a Desde ({{date}})",
+    "zoomIn": "Acercar timeline",
+    "zoomOut": "Alejar timeline",
+    "readonlyHint": "Solo lectura en edición"
+  },
   "secondary": {
     "panelTitle": "Parches",
     "panelAria": "Parches temporales del mapa {{mapId}}",
