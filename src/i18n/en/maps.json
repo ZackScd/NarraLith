@@ -9,7 +9,7 @@
   "createMap": "New map",
   "mapNamePlaceholder": "e.g. Continent of Aetheria",
   "creating": "Creating…",
-  "placeholderHint": "MAP-003 preview: canvas creation and import are active; canvas and compositor ship in later phases.",
+  "placeholderHint": "MAP-004 preview: interactive viewport and edit mode are active; drawing tools ship in MAP-005.",
   "create": {
     "title": "New map",
     "description": "Set the name and canvas size, or import an image as the base.",
@@ -88,6 +88,16 @@
     "baseImage": "Base image",
     "layers": "Internal layers",
     "strokes": "Strokes"
+  },
+  "viewMode": {
+    "enterEdit": "Edit map",
+    "exitEdit": "View interactive map"
+  },
+  "viewport": {
+    "ariaLabel": "Map view {{name}}"
+  },
+  "editToolbar": {
+    "placeholder": "Drawing tools — MAP-005 (coming soon). Expand and crop canvas available below."
   },
   "errors": {
     "generic": "Could not complete the map operation.",

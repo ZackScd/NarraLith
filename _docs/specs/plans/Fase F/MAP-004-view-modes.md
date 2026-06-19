@@ -1,6 +1,6 @@
 # MAP-004 — Modos vista: interactivo (default) y edición ✏️
 
-> **Estado:** 📋 **Planificado** (2026-06-11) · **Sin implementación**  
+> **Estado:** ✅ **Cerrado** (2026-06-11) · QA sesión `1781831409032-13548`  
 > **Esfuerzo:** Medio–alto · **Riesgo:** Medio  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §8 · **Previo:** [MAP-003 ✅](MAP-003-create-canvas.md) · **Siguiente:** MAP-005
 
@@ -428,4 +428,5 @@ MAP-004 debe dejar **un solo viewport** compartido — MAP-005 no duplica canvas
 
 | Fecha | Evento |
 |-------|--------|
-| 2026-06-11 | Plan MAP-004 redactado (auditoría post MAP-003 ✅) |
+| 2026-06-11 | Implementación MAP-004 (6 fases) — tests TS 214/214, build OK |
+| 2026-06-11 | **QA cerrado** sesión `1781831409032-13548` — viewport, modos, expand, compositor OBS |

@@ -1,10 +1,11 @@
-import { Loader2, Map as MapIcon, Plus, Star } from "lucide-react";
+import { Eye, Loader2, Map as MapIcon, Pencil, Plus, Star } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useMapProject } from "@/hooks/useMapProject";
+import { trackAction } from "@/lib/action-audit/trackAction";
 import type { MapCreateDraft, OpenPreference } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
 import { CreateMapDialog } from "@/modules/maps/CreateMapDialog";
@@ -12,6 +13,8 @@ import {
   MapCanvasSizeDialog,
   type MapCanvasSizeMode,
 } from "@/modules/maps/MapCanvasSizeDialog";
+import { MapEditToolbar } from "@/modules/maps/MapEditToolbar";
+import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
 
 const SELECT_CLASS =
@@ -20,6 +23,8 @@ const SELECT_CLASS =
 export function MapWorkspace() {
   const { t } = useTranslation("maps");
   const activeMapId = useMapStore((s) => s.activeMapId);
+  const viewMode = useMapStore((s) => s.viewMode);
+  const setViewMode = useMapStore((s) => s.setViewMode);
   const {
     maps,
     openPreference,
@@ -44,6 +49,7 @@ export function MapWorkspace() {
   const activeSummary = maps.find((map) => map.id === activeMapId);
   const isPinned = activeSummary?.defaultOnOpen === true;
   const showEmpty = !loading && maps.length === 0;
+  const isEditMode = viewMode === "edit";
 
   const handleCreate = async (draft: MapCreateDraft) => {
     await createMap(draft);
@@ -68,22 +74,60 @@ export function MapWorkspace() {
     void setDefaultOnOpen(activeMapId, !isPinned);
   };
 
+  const handleEnterEdit = () => {
+    if (!activeMapId) return;
+    const fromMode = viewMode;
+    setViewMode("edit");
+    trackAction("map", "setViewMode", { mapId: activeMapId, mode: "edit", fromMode });
+  };
+
+  const handleExitEdit = () => {
+    if (!activeMapId) return;
+    const fromMode = viewMode;
+    setViewMode("interactive");
+    trackAction("map", "setViewMode", {
+      mapId: activeMapId,
+      mode: "interactive",
+      fromMode,
+    });
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <MapIcon className="size-5 text-muted-foreground" />
-            <h1 className="text-sm font-semibold">{t("title")}</h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <MapIcon className="size-5 shrink-0 text-muted-foreground" />
+            <div className="min-w-0">
+              <h1 className="text-sm font-semibold">{t("title")}</h1>
+              {document ? (
+                <p className="truncate text-xs text-muted-foreground">{document.name}</p>
+              ) : null}
+            </div>
           </div>
-          <Button size="sm" disabled={creating} onClick={() => setCreateOpen(true)}>
-            {creating ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Plus className="size-4" />
-            )}
-            {t("createMap")}
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            {activeMapId && document ? (
+              isEditMode ? (
+                <Button size="sm" onClick={handleExitEdit}>
+                  <Eye className="size-4" />
+                  {t("viewMode.exitEdit")}
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" onClick={handleEnterEdit}>
+                  <Pencil className="size-4" />
+                  {t("viewMode.enterEdit")}
+                </Button>
+              )
+            ) : null}
+            <Button size="sm" disabled={creating} onClick={() => setCreateOpen(true)}>
+              {creating ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+              {t("createMap")}
+            </Button>
+          </div>
         </div>
 
         {maps.length > 0 ? (
@@ -147,20 +191,20 @@ export function MapWorkspace() {
         ) : null}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className="flex min-h-0 flex-1 flex-col">
         {loading && maps.length === 0 ? (
-          <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
             {t("loadingMaps")}
           </div>
         ) : null}
 
         {errorKey ? (
-          <p className="mb-4 text-sm text-destructive">{t(errorKey)}</p>
+          <p className="shrink-0 px-4 pt-4 text-sm text-destructive">{t(errorKey)}</p>
         ) : null}
 
         {showEmpty ? (
-          <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
+          <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
             <MapIcon className="size-10 text-muted-foreground/60" />
             <h2 className="text-lg font-medium">{t("emptyTitle")}</h2>
             <p className="text-sm text-muted-foreground">{t("emptyDescription")}</p>
@@ -169,60 +213,28 @@ export function MapWorkspace() {
         ) : null}
 
         {activeMapId && document && drawing ? (
-          <section className="rounded-lg border border-border/60 p-4">
-            <h2 className="text-sm font-semibold">{document.name}</h2>
-            <dl className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <div>
-                <dt className="text-xs uppercase tracking-wide">{t("detail.id")}</dt>
-                <dd className="font-mono text-xs text-foreground">{document.id}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide">{t("detail.canvas")}</dt>
-                <dd>
-                  {document.width} × {document.height}
-                </dd>
-              </div>
-              {document.baseImageRel ? (
-                <div className="sm:col-span-2">
-                  <dt className="text-xs uppercase tracking-wide">{t("detail.baseImage")}</dt>
-                  <dd className="font-mono text-xs text-foreground">{document.baseImageRel}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt className="text-xs uppercase tracking-wide">{t("detail.layers")}</dt>
-                <dd>{drawing.layers.length}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide">{t("detail.strokes")}</dt>
-                <dd>
-                  {drawing.layers.reduce((n, layer) => n + layer.strokes.length, 0)}
-                </dd>
-              </div>
-            </dl>
+          <>
+            <MapViewport
+              mapId={activeMapId}
+              document={document}
+              drawing={drawing}
+              viewMode={viewMode}
+            />
+            {isEditMode ? (
+              <MapEditToolbar
+                canvasBusy={canvasBusy}
+                onExpand={() => openCanvasDialog("expand")}
+                onCrop={() => openCanvasDialog("crop")}
+              />
+            ) : null}
+          </>
+        ) : null}
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={canvasBusy}
-                onClick={() => openCanvasDialog("expand")}
-              >
-                {t("canvas.expandAction")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={canvasBusy}
-                onClick={() => openCanvasDialog("crop")}
-              >
-                {t("canvas.cropAction")}
-              </Button>
-            </div>
-
-            <p className="mt-4 text-xs text-muted-foreground">{t("placeholderHint")}</p>
-          </section>
+        {loading && maps.length > 0 && (!document || !drawing) ? (
+          <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            {t("loadingMaps")}
+          </div>
         ) : null}
       </div>
 

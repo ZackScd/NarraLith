@@ -9,7 +9,7 @@
   "createMap": "Nuevo mapa",
   "mapNamePlaceholder": "p. ej. Continente de Aetheria",
   "creating": "Creando…",
-  "placeholderHint": "Vista preliminar MAP-003: creación de lienzo e import activos; canvas y compositor en fases posteriores.",
+  "placeholderHint": "Vista preliminar MAP-004: viewport interactivo y modo edición activos; herramientas de dibujo en MAP-005.",
   "create": {
     "title": "Nuevo mapa",
     "description": "Define el nombre y el tamaño del lienzo, o importa una imagen como base.",
@@ -88,6 +88,16 @@
     "baseImage": "Imagen base",
     "layers": "Capas internas",
     "strokes": "Trazos"
+  },
+  "viewMode": {
+    "enterEdit": "Editar mapa",
+    "exitEdit": "Ver mapa interactivo"
+  },
+  "viewport": {
+    "ariaLabel": "Vista del mapa {{name}}"
+  },
+  "editToolbar": {
+    "placeholder": "Herramientas de dibujo — MAP-005 (próximamente). Expandir y recortar lienzo disponibles abajo."
   },
   "errors": {
     "generic": "No se pudo completar la operación del mapa.",

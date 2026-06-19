@@ -152,9 +152,17 @@ export function useMapProject() {
     async (mapId: string) => {
       const fromMapId = useMapStore.getState().activeMapId;
       if (fromMapId === mapId) return;
+      const fromMode = useMapStore.getState().viewMode;
 
       await invokeCommand("record_map_viewed_cmd", { mapId });
       useMapStore.getState().setActiveMap(mapId);
+      if (fromMode !== "interactive") {
+        trackAction("map", "setViewMode", {
+          mapId,
+          mode: "interactive",
+          fromMode,
+        });
+      }
       trackAction("map", "select", { mapId, fromMapId });
       await loadSession();
     },
@@ -184,6 +192,7 @@ export function useMapProject() {
       setCreating(true);
       try {
         const fromMapId = useMapStore.getState().activeMapId;
+        const fromMode = useMapStore.getState().viewMode;
         const summary = await invokeCommand<MapSummaryV2>("create_map_cmd", {
           name: draft.name,
           mode: draft.mode,
@@ -192,6 +201,13 @@ export function useMapProject() {
           sourcePath: draft.mode === "import" ? draft.importPath : null,
         });
         useMapStore.getState().setActiveMap(summary.id);
+        if (fromMode !== "interactive") {
+          trackAction("map", "setViewMode", {
+            mapId: summary.id,
+            mode: "interactive",
+            fromMode,
+          });
+        }
         trackAction("map", "create", {
           mode: draft.mode,
           width: summary.width,
