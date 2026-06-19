@@ -1,11 +1,12 @@
 import { Eye, Loader2, Map as MapIcon, Pencil, Plus, Star } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useMapAutosave } from "@/hooks/useMapAutosave";
 import { useMapProject } from "@/hooks/useMapProject";
+import { useProjectTimeline } from "@/hooks/useProjectTimeline";
 import { useMapDrawingSession } from "@/hooks/useMapDrawingSession";
 import { useMapSaveShortcut } from "@/hooks/useMapSaveShortcut";
 import { useMapDrawingGuardRegistration, guardMapDrawingNavigation } from "@/hooks/useMapDrawingGuardRegistration";
@@ -19,10 +20,12 @@ import {
   type MapCanvasSizeMode,
 } from "@/modules/maps/MapCanvasSizeDialog";
 import { useMapStudioShortcuts } from "@/hooks/useMapStudioShortcuts";
+import { MapDesdeField } from "@/modules/maps/MapDesdeField";
 import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
+import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 
@@ -52,7 +55,15 @@ export function MapWorkspace() {
     expandCanvas,
     cropCanvas,
     saveDrawing,
+    updateMapDesde,
+    applyDefaultDesde,
+    ensureTimelineAndCalendar,
   } = useMapProject();
+
+  const { events: timelineEvents } = useProjectTimeline();
+  const calendar = useCalendarStore((s) => s.config);
+  const baselineConfig = useCalendarStore((s) => s.baselineConfig);
+  const loadCalendar = useCalendarStore((s) => s.loadCalendar);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [canvasDialogOpen, setCanvasDialogOpen] = useState(false);
@@ -125,6 +136,28 @@ export function MapWorkspace() {
     resetFromSource: drawingSession.resetFromSource,
   });
 
+  useEffect(() => {
+    if (!rootPath || calendar) return;
+    void loadCalendar();
+  }, [calendar, loadCalendar, rootPath]);
+
+  const handleDesdeUpdate = async (desde: string | null) => {
+    if (!activeMapId) return;
+    await updateMapDesde(activeMapId, desde);
+  };
+
+  const handleDesdeSuggest = async () => {
+    if (!activeMapId) return;
+    const { events, config, baselineConfig: baseline } = await ensureTimelineAndCalendar();
+    if (!config) return;
+    await applyDefaultDesde(activeMapId, {
+      events,
+      config,
+      baselineConfig: baseline,
+      trackAs: "suggest",
+    });
+  };
+
   const openCanvasDialog = (mode: MapCanvasSizeMode) => {
     setCanvasMode(mode);
     setCanvasDialogOpen(true);
@@ -173,7 +206,14 @@ export function MapWorkspace() {
           <div className="flex min-w-0 items-center gap-2">
             <MapIcon className="size-5 shrink-0 text-muted-foreground" />
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold">{t("title")}</h1>
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className="text-sm font-semibold">{t("title")}</h1>
+                {document ? (
+                  <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("principal.badge")}
+                  </span>
+                ) : null}
+              </div>
               {document ? (
                 <p className="truncate text-xs text-muted-foreground">{document.name}</p>
               ) : null}
@@ -264,6 +304,20 @@ export function MapWorkspace() {
           </div>
         ) : null}
       </header>
+
+      {activeMapId && document ? (
+        <div className="shrink-0 border-b border-border/60 px-4 py-2">
+          <MapDesdeField
+            mapId={activeMapId}
+            desde={document.desde}
+            calendar={calendar}
+            baselineConfig={baselineConfig}
+            events={timelineEvents}
+            onUpdate={handleDesdeUpdate}
+            onSuggest={handleDesdeSuggest}
+          />
+        </div>
+      ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col">
         {loading && maps.length === 0 ? (

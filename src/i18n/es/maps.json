@@ -82,6 +82,24 @@
     "pin": "Fijar al abrir",
     "unpin": "Quitar fijado"
   },
+  "principal": {
+    "badge": "Terreno base"
+  },
+  "desde": {
+    "label": "Desde",
+    "hint": "Origen temporal local del mapa (año 0)",
+    "unset": "Sin definir",
+    "edit": "Editar…",
+    "suggest": "Usar sugerencia del manuscrito",
+    "dialogTitle": "Etiqueta «Desde»",
+    "dialogDescription": "Ancla temporal de este mapa. No redefine el calendario del proyecto.",
+    "dayLabel": "Día",
+    "monthLabel": "Mes",
+    "yearLabel": "Año",
+    "markedDatesLabel": "Marcas del manuscrito",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
   "detail": {
     "id": "ID",
     "canvas": "Lienzo",
@@ -167,6 +185,7 @@
     "invalid_image_type": "Formato no admitido. Usa PNG, JPG o WebP.",
     "image_too_large": "La imagen supera el tamaño máximo (50 MB).",
     "image_dimensions_invalid": "Dimensiones de imagen no válidas (512–8192 px).",
-    "invalid_dimensions": "Dimensiones del mapa no válidas (512–8192 px)."
+    "invalid_dimensions": "Dimensiones del mapa no válidas (512–8192 px).",
+    "invalid_desde": "La etiqueta «Desde» no tiene un formato de fecha válido."
   }
 }

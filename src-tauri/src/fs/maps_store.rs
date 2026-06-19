@@ -249,7 +249,17 @@ pub fn save_map_document(project_root: &Path, doc: &MapDocumentV1) -> Result<(),
     if !map_dir.is_dir() {
         return Err(AppError::new("error.maps.not_found"));
     }
-    write_json(&map_dir.join(MAP_FILENAME), doc)?;
+    let mut doc = doc.clone();
+    if doc
+        .desde
+        .as_ref()
+        .map(|s| s.trim().is_empty())
+        .unwrap_or(false)
+    {
+        doc.desde = None;
+    }
+    doc.updated_at = timestamp_now();
+    write_json(&map_dir.join(MAP_FILENAME), &doc)?;
     upsert_index_entry(project_root, &map_id, &doc.name, &doc.updated_at, None)?;
     Ok(())
 }
@@ -803,6 +813,35 @@ fn validate_dimensions(width: u32, height: u32) -> Result<(u32, u32), AppError> 
     Ok((width, height))
 }
 
+fn validate_time_tag_format(raw: &str) -> Result<(), AppError> {
+    let parts: Vec<&str> = raw.split('.').collect();
+    if parts.len() != 3 {
+        return Err(AppError::new("error.maps.invalid_desde"));
+    }
+    let day: i32 = parts[0]
+        .parse()
+        .map_err(|_| AppError::new("error.maps.invalid_desde"))?;
+    let month: i32 = parts[1]
+        .parse()
+        .map_err(|_| AppError::new("error.maps.invalid_desde"))?;
+    let year: i32 = parts[2]
+        .parse()
+        .map_err(|_| AppError::new("error.maps.invalid_desde"))?;
+    if day < 1 || month < 1 {
+        return Err(AppError::new("error.maps.invalid_desde"));
+    }
+    let _ = (day, month, year);
+    Ok(())
+}
+
+fn validate_desde_field(desde: &Option<String>) -> Result<(), AppError> {
+    match desde {
+        None => Ok(()),
+        Some(s) if s.trim().is_empty() => Ok(()),
+        Some(s) => validate_time_tag_format(s.trim()),
+    }
+}
+
 fn validate_map_document(doc: &MapDocumentV1) -> Result<(), AppError> {
     if doc.version != 1 {
         return Err(AppError::new("error.maps.schema_version_unsupported"));
@@ -817,6 +856,7 @@ fn validate_map_document(doc: &MapDocumentV1) -> Result<(), AppError> {
     {
         return Err(AppError::new("error.maps.invalid_dimensions"));
     }
+    validate_desde_field(&doc.desde)?;
     Ok(())
 }
 
@@ -1462,5 +1502,46 @@ mod tests {
             }],
         };
         assert!(validate_drawing(&drawing).is_err());
+    }
+
+    #[test]
+    fn save_map_document_persists_desde_and_updates_timestamp() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Desde", 1200, 800).unwrap();
+        let mut doc = get_map_document(root, &summary.id).unwrap();
+        doc.desde = Some("15.3.2000".to_string());
+        doc.updated_at = "stale".to_string();
+        save_map_document(root, &doc).unwrap();
+        let loaded = get_map_document(root, &summary.id).unwrap();
+        assert_eq!(loaded.desde.as_deref(), Some("15.3.2000"));
+        assert_ne!(loaded.updated_at, "stale");
+
+        let index = load_index(root).unwrap();
+        let entry = index.maps.iter().find(|e| e.id == summary.id).unwrap();
+        assert_eq!(entry.updated_at, loaded.updated_at);
+    }
+
+    #[test]
+    fn save_map_document_rejects_invalid_desde() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "BadDesde", 1200, 800).unwrap();
+        let mut doc = get_map_document(root, &summary.id).unwrap();
+        doc.desde = Some("not-a-date".to_string());
+        let err = save_map_document(root, &doc).unwrap_err();
+        assert_eq!(err.key, "error.maps.invalid_desde");
+    }
+
+    #[test]
+    fn save_map_document_normalizes_empty_desde_to_none() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "EmptyDesde", 1200, 800).unwrap();
+        let mut doc = get_map_document(root, &summary.id).unwrap();
+        doc.desde = Some("   ".to_string());
+        save_map_document(root, &doc).unwrap();
+        let loaded = get_map_document(root, &summary.id).unwrap();
+        assert!(loaded.desde.is_none());
     }
 }

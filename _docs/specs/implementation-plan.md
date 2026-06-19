@@ -130,7 +130,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-004** | ✅ | Modos vista: **interactivo por defecto** + edición solo con ✏️ — [plan](plans/Fase%20F/MAP-004-view-modes.md) · QA `1781831409032-13548` | Medio–alto | [`maps-design.md` §8](maps-design.md) |
 | **MAP-005** | 📋 | Estudio dibujo: colores custom, pinceles, presión tableta — [plan](plans/Fase%20F/MAP-005-draw-studio.md) | Alto | [`maps-design.md` §3bis](maps-design.md) |
 | **MAP-006** | ✅ | Capas internas por archivo de dibujo — [plan](plans/Fase%20F/MAP-006-layers.md) · QA `1781849729654` + fix D13 `1781850121442` | Medio | [`maps-design.md` §4.1](maps-design.md) |
-| **MAP-007** | ⬜ | Dibujo principal: «Desde», terreno base | Medio | [`maps-design.md` §4.2](maps-design.md) |
+| **MAP-007** | ✅ | Dibujo principal: «Desde», terreno base — [plan](plans/Fase%20F/MAP-007-principal-desde.md) · QA `1781851429000-23756` | Medio | [`maps-design.md` §4.2](maps-design.md) |
 | **MAP-008** | ⬜ | Secundarios: parches transparentes, visibilidad temporal, apilar vs `tiempo_fin` | Alto | [`maps-design.md` §4.3](maps-design.md) |
 | **MAP-009** | ⬜ | Compositor + timeline del mapa (scrubber **T**) | Alto | [`maps-design.md` §4.4](maps-design.md) |
 | **MAP-010** | ⬜ | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver | Alto | [`maps-design.md` §5](maps-design.md) |
@@ -206,7 +206,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 22 | MAP-004 | Modos interactivo / edición ✅ |
 | 23 | MAP-005 | Estudio Sketchbook 📋 plan |
 | 24 | MAP-006 | Capas internas |
-| 25 | MAP-007 | Dibujo principal + Desde |
+| 25 | MAP-007 | Dibujo principal + Desde ✅ |
 | 26 | MAP-008 | Secundarios temporales |
 | 27 | MAP-009 | Compositor + timeline T |
 | 28 | MAP-010 | Navegación hotspots |
@@ -279,6 +279,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **MAP-003 ✅ cerrado** crear lienzo + import + expand/crop — QA `1781830041954-20420` |
 | 2026-06-11 | **MAP-004 ✅ cerrado** modos interactivo/edición + viewport — QA `1781831409032-13548` |
 | 2026-06-11 | **MAP-005 📋** estudio dibujo Sketchbook — [`plans/Fase F/MAP-005-draw-studio.md`](plans/Fase%20F/MAP-005-draw-studio.md) |
+| 2026-06-11 | **MAP-006 ✅ cerrado** capas internas — [`MAP-006-layers.md`](plans/Fase%20F/MAP-006-layers.md) · QA `1781849729654` + D13 `1781850121442` |
+| 2026-06-11 | **MAP-007 📋** dibujo principal + «Desde» — [`MAP-007-principal-desde.md`](plans/Fase%20F/MAP-007-principal-desde.md) |
+| 2026-06-11 | **MAP-007 ✅ cerrado** dibujo principal + «Desde» — QA `1781851429000-23756` |
 
 ---
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { invokeCommand } from "@/lib/ipc";
 import { countMapStrokes } from "@/lib/maps/mapDrawingStats";
+import { formatMapDesdeDisplay } from "@/lib/maps/mapDesde";
 import { mapAssetProjectPath } from "@/lib/maps/mapAssetPath";
 import { paintStrokeLayer } from "@/lib/maps/mapStrokeBuffer";
 import { drawMapStrokes } from "@/lib/maps/mapStrokeRender";
@@ -222,10 +223,12 @@ export function useMapViewport({
         stub: false,
         mapId,
         timeT: null,
+        desdeRaw: document.desde,
+        desdeDisplay: formatMapDesdeDisplay(document.desde),
         visibleLayers: drawing.layers.filter((layer) => layer.visible).map((layer) => layer.id),
       });
     },
-    [drawing.layers, mapId, viewMode],
+    [document.desde, drawing.layers, mapId, viewMode],
   );
 
   const redraw = useCallback(() => {
@@ -322,6 +325,8 @@ export function useMapViewport({
         stub: false,
         mapId,
         timeT: null,
+        desdeRaw: document.desde,
+        desdeDisplay: formatMapDesdeDisplay(document.desde),
         visibleLayers,
         strokeCount,
         layerCount: drawing.layers.length,
@@ -335,7 +340,7 @@ export function useMapViewport({
       });
     }, COMPOSITOR_AUDIT_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [activeLayerId, drawing, mapId]);
+  }, [activeLayerId, document.desde, drawing, mapId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

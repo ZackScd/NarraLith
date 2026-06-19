@@ -82,6 +82,24 @@
     "pin": "Pin on open",
     "unpin": "Unpin"
   },
+  "principal": {
+    "badge": "Base terrain"
+  },
+  "desde": {
+    "label": "From",
+    "hint": "Local temporal origin of this map (year 0)",
+    "unset": "Not set",
+    "edit": "Edit…",
+    "suggest": "Use manuscript suggestion",
+    "dialogTitle": "«From» label",
+    "dialogDescription": "Temporal anchor for this map. Does not redefine the project calendar.",
+    "dayLabel": "Day",
+    "monthLabel": "Month",
+    "yearLabel": "Year",
+    "markedDatesLabel": "Manuscript marks",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
   "detail": {
     "id": "ID",
     "canvas": "Canvas",
@@ -167,6 +185,7 @@
     "invalid_image_type": "Unsupported format. Use PNG, JPG, or WebP.",
     "image_too_large": "Image exceeds maximum size (50 MB).",
     "image_dimensions_invalid": "Invalid image dimensions (512–8192 px).",
-    "invalid_dimensions": "Invalid map dimensions (512–8192 px)."
+    "invalid_dimensions": "Invalid map dimensions (512–8192 px).",
+    "invalid_desde": "The «From» label is not a valid date format."
   }
 }

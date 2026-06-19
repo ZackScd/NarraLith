@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { trackAction } from "@/lib/action-audit/trackAction";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
+import {
+  resolveDefaultMapDesde,
+  type MapDesdeDefaultResult,
+} from "@/lib/maps/mapDesde";
 import { mapErrorKey } from "@/lib/maps/mapErrors";
 import type {
   MapCreateDraft,
@@ -11,8 +15,12 @@ import type {
   MapSummaryV2,
   OpenPreference,
 } from "@/lib/types/maps";
+import type { CalendarConfig } from "@/lib/types/calendar";
+import type { TimelineEvent } from "@/lib/types/timeline";
+import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useMapStore } from "@/stores/useMapStore";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { useProjectTimelineStore } from "@/stores/useProjectTimelineStore";
 
 interface SessionSnapshot {
   key: string;
@@ -187,6 +195,95 @@ export function useMapProject() {
     [loadSession],
   );
 
+  const refreshMapSnapshot = useCallback(
+    async (mapId: string) => {
+      const snapshotKey = `${rootPath}:${mapId}`;
+      try {
+        const document = await invokeCommand<MapDocumentV1>("get_map_document_cmd", {
+          mapId,
+        });
+        setActiveSnapshot((prev) => {
+          if (prev?.key !== snapshotKey) return prev;
+          return {
+            ...prev,
+            document,
+            errorKey: null,
+          };
+        });
+      } catch (err) {
+        setActiveSnapshot((prev) => {
+          if (prev?.key !== snapshotKey) return prev;
+          return {
+            ...prev,
+            document: null,
+            errorKey: mapErrorKey(parseAppError(err)),
+          };
+        });
+      }
+    },
+    [rootPath],
+  );
+
+  const updateMapDesde = useCallback(
+    async (mapId: string, desde: string | null) => {
+      const doc = await invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId });
+      const previousDesde = doc.desde;
+      await invokeCommand("save_map_document_cmd", {
+        document: { ...doc, desde },
+      });
+      trackAction("map", "desdeSet", { mapId, desde, previousDesde });
+      await refreshMapSnapshot(mapId);
+      await loadSession();
+    },
+    [loadSession, refreshMapSnapshot],
+  );
+
+  const applyDefaultDesde = useCallback(
+    async (
+      mapId: string,
+      options: {
+        events: TimelineEvent[];
+        config: CalendarConfig;
+        baselineConfig?: CalendarConfig | null;
+        trackAs?: "default" | "suggest";
+      },
+    ): Promise<MapDesdeDefaultResult> => {
+      const result = resolveDefaultMapDesde(
+        options.events,
+        options.config,
+        options.baselineConfig,
+      );
+      if (!result.raw) return result;
+
+      const doc = await invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId });
+      await invokeCommand("save_map_document_cmd", {
+        document: { ...doc, desde: result.raw },
+      });
+      trackAction(
+        "map",
+        options.trackAs === "suggest" ? "desdeSuggest" : "desdeDefault",
+        { mapId, desde: result.raw, source: result.source },
+      );
+      await refreshMapSnapshot(mapId);
+      await loadSession();
+      return result;
+    },
+    [loadSession, refreshMapSnapshot],
+  );
+
+  const ensureTimelineAndCalendar = useCallback(async () => {
+    await useProjectTimelineStore.getState().load();
+    const calendarState = useCalendarStore.getState();
+    if (!calendarState.config) {
+      await calendarState.loadCalendar();
+    }
+    return {
+      events: useProjectTimelineStore.getState().events,
+      config: useCalendarStore.getState().config,
+      baselineConfig: useCalendarStore.getState().baselineConfig,
+    };
+  }, []);
+
   const createMap = useCallback(
     async (draft: MapCreateDraft) => {
       setCreating(true);
@@ -215,13 +312,43 @@ export function useMapProject() {
           mapId: summary.id,
         });
         trackAction("map", "select", { mapId: summary.id, fromMapId });
+
+        const { events, config, baselineConfig } = await ensureTimelineAndCalendar();
+        if (config) {
+          await applyDefaultDesde(summary.id, {
+            events,
+            config,
+            baselineConfig,
+            trackAs: "default",
+          });
+        }
+
         await loadSession();
+        try {
+          const [document, drawing] = await Promise.all([
+            invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId: summary.id }),
+            invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: summary.id }),
+          ]);
+          setActiveSnapshot({
+            key: `${rootPath}:${summary.id}`,
+            document,
+            drawing,
+            errorKey: null,
+          });
+        } catch (err) {
+          setActiveSnapshot({
+            key: `${rootPath}:${summary.id}`,
+            document: null,
+            drawing: null,
+            errorKey: mapErrorKey(parseAppError(err)),
+          });
+        }
         return summary;
       } finally {
         setCreating(false);
       }
     },
-    [loadSession],
+    [applyDefaultDesde, ensureTimelineAndCalendar, loadSession, rootPath],
   );
 
   const expandCanvas = useCallback(
@@ -350,5 +477,8 @@ export function useMapProject() {
     expandCanvas,
     cropCanvas,
     saveDrawing,
+    updateMapDesde,
+    applyDefaultDesde,
+    ensureTimelineAndCalendar,
   };
 }
