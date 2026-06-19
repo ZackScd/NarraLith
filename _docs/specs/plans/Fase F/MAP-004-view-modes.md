@@ -2,7 +2,7 @@
 
 > **Estado:** ✅ **Cerrado** (2026-06-11) · QA sesión `1781831409032-13548`  
 > **Esfuerzo:** Medio–alto · **Riesgo:** Medio  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §8 · **Previo:** [MAP-003 ✅](MAP-003-create-canvas.md) · **Siguiente:** MAP-005
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §8 · **Previo:** [MAP-003 ✅](MAP-003-create-canvas.md) · **Siguiente:** [MAP-005 📋](MAP-005-draw-studio.md)
 
 ---
 
