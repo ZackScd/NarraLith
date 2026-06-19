@@ -4,10 +4,12 @@ use tauri::State;
 
 use crate::error::AppError;
 use crate::fs::maps_store::{
-    create_blank_map, create_map, crop_map_canvas, expand_map_canvas, get_map_document,
-    get_map_drawing, get_maps_session, list_maps, read_project_image_data_url, record_map_viewed,
-    save_map_document, save_map_drawing, set_default_on_open, set_open_preference, MapCreateMode,
-    MapDocumentV1, MapDrawingV2, MapSessionV2, MapSummaryV2, OpenPreference,
+    create_blank_map, create_map, create_map_secondary, crop_map_canvas, delete_map_secondary,
+    expand_map_canvas, get_map_document, get_map_drawing, get_map_secondary, get_maps_session,
+    list_map_secondaries, list_maps, read_project_image_data_url, record_map_viewed,
+    save_map_document, save_map_drawing, save_map_secondary, set_default_on_open,
+    set_open_preference, update_map_secondary_meta, MapCreateMode, MapDocumentV1, MapDrawingV2,
+    MapSecondaryDrawingFileV1, MapSecondaryMetaPatch, MapSessionV2, MapSummaryV2, OpenPreference,
 };
 use crate::state::ProjectState;
 
@@ -136,4 +138,83 @@ pub fn record_map_viewed_cmd(
     map_id: String,
 ) -> Result<(), AppError> {
     state.with_db(|_db, root| record_map_viewed(root, &map_id))
+}
+
+#[tauri::command]
+pub fn list_map_secondaries_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+) -> Result<Vec<crate::fs::maps_store::MapSecondarySummaryV1>, AppError> {
+    state.with_db(|_db, root| list_map_secondaries(root, &map_id))
+}
+
+#[tauri::command]
+pub fn get_map_secondary_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    secondary_id: String,
+) -> Result<MapSecondaryDrawingFileV1, AppError> {
+    state.with_db(|_db, root| get_map_secondary(root, &map_id, &secondary_id))
+}
+
+#[tauri::command]
+pub fn create_map_secondary_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    name: String,
+    tiempo_inicio: String,
+    tiempo_fin: Option<String>,
+) -> Result<MapSecondaryDrawingFileV1, AppError> {
+    state.with_db(|_db, root| {
+        create_map_secondary(
+            root,
+            &map_id,
+            &name,
+            &tiempo_inicio,
+            tiempo_fin.as_deref(),
+        )
+    })
+}
+
+#[tauri::command]
+pub fn save_map_secondary_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    file: MapSecondaryDrawingFileV1,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| save_map_secondary(root, &map_id, &file))
+}
+
+#[tauri::command]
+pub fn update_map_secondary_meta_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    secondary_id: String,
+    name: Option<String>,
+    tiempo_inicio: Option<String>,
+    tiempo_fin: Option<String>,
+    clear_tiempo_fin: Option<bool>,
+) -> Result<crate::fs::maps_store::MapSecondarySummaryV1, AppError> {
+    state.with_db(|_db, root| {
+        update_map_secondary_meta(
+            root,
+            &map_id,
+            &secondary_id,
+            MapSecondaryMetaPatch {
+                name,
+                tiempo_inicio,
+                tiempo_fin,
+                clear_tiempo_fin,
+            },
+        )
+    })
+}
+
+#[tauri::command]
+pub fn delete_map_secondary_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    secondary_id: String,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| delete_map_secondary(root, &map_id, &secondary_id))
 }

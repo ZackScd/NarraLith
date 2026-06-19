@@ -85,6 +85,42 @@
   "principal": {
     "badge": "Terreno base"
   },
+  "previewT": {
+    "label": "Vista en T",
+    "unset": "Sin definir",
+    "edit": "Cambiar…",
+    "dialogTitle": "Vista temporal (T)",
+    "dialogDescription": "Fecha de previsualización para componer parches históricos. No modifica trazos."
+  },
+  "secondary": {
+    "panelTitle": "Parches",
+    "panelAria": "Parches temporales del mapa {{mapId}}",
+    "principalHint": "Lienzo base del mapa",
+    "add": "Añadir parche",
+    "activeBadge": "Parche: {{name}}",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "p. ej. Puerto nuevo",
+    "tiempoInicioLabel": "Activo desde",
+    "tiempoFinLabel": "Cerrar en",
+    "closePatchLabel": "Cerrar parche en fecha",
+    "dateRange": "{{start}} → {{end}}",
+    "createTitle": "Nuevo parche temporal",
+    "createDescription": "Dibuja solo la zona que cambia; el resto del lienzo permanece transparente.",
+    "createSubmit": "Crear parche",
+    "metaTitle": "Propiedades del parche",
+    "metaDescription": "Los cambios de nombre y fechas se guardan al instante.",
+    "metaSave": "Guardar",
+    "editMeta": "Editar propiedades",
+    "delete": "Eliminar parche",
+    "deleteTitle": "Eliminar parche",
+    "deleteMessage": "¿Eliminar «{{name}}»? El terreno base no se verá afectado.",
+    "deleteConfirm": "Eliminar",
+    "cancel": "Cancelar",
+    "noDesdeWarning": "Defina «Desde» para reglas temporales fiables.",
+    "errors": {
+      "name_required": "El nombre del parche es obligatorio."
+    }
+  },
   "desde": {
     "label": "Desde",
     "hint": "Origen temporal local del mapa (año 0)",
@@ -186,6 +222,8 @@
     "image_too_large": "La imagen supera el tamaño máximo (50 MB).",
     "image_dimensions_invalid": "Dimensiones de imagen no válidas (512–8192 px).",
     "invalid_dimensions": "Dimensiones del mapa no válidas (512–8192 px).",
-    "invalid_desde": "La etiqueta «Desde» no tiene un formato de fecha válido."
+    "invalid_desde": "La etiqueta «Desde» no tiene un formato de fecha válido.",
+    "secondary_not_found": "Parche no encontrado.",
+    "secondary_name_required": "El nombre del parche es obligatorio."
   }
 }

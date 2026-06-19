@@ -35,6 +35,8 @@ interface MapDesdeDialogProps {
   events: TimelineEvent[];
   busy: boolean;
   onSave: (desde: string) => Promise<void>;
+  titleKey?: string;
+  descriptionKey?: string;
 }
 
 function draftFromDesde(
@@ -90,6 +92,8 @@ export function MapDesdeDialog({
   events,
   busy,
   onSave,
+  titleKey = "desde.dialogTitle",
+  descriptionKey = "desde.dialogDescription",
 }: MapDesdeDialogProps) {
   const { t } = useTranslation("maps");
   const [draft, setDraft] = useState<MapDesdeDraft>({ day: 1, month: 1, year: 1 });
@@ -131,8 +135,8 @@ export function MapDesdeDialog({
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{t("desde.dialogTitle")}</DialogTitle>
-            <DialogDescription>{t("desde.dialogDescription")}</DialogDescription>
+            <DialogTitle>{t(titleKey)}</DialogTitle>
+            <DialogDescription>{t(descriptionKey)}</DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-3 gap-3 py-4">

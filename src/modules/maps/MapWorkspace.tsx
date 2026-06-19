@@ -1,5 +1,5 @@
 import { Eye, Loader2, Map as MapIcon, Pencil, Plus, Star } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,9 @@ import { useMapSaveShortcut } from "@/hooks/useMapSaveShortcut";
 import { useMapDrawingGuardRegistration, guardMapDrawingNavigation } from "@/hooks/useMapDrawingGuardRegistration";
 import { usePersistMapDrawingDraft } from "@/hooks/usePersistMapDrawingDraft";
 import { trackAction } from "@/lib/action-audit/trackAction";
-import type { MapCreateDraft, OpenPreference } from "@/lib/types/maps";
+import { filterVisibleSecondaries } from "@/lib/maps/mapSecondaryVisibility";
+import type { MapCreateDraft, MapDrawingRef, OpenPreference } from "@/lib/types/maps";
+import { DEFAULT_MAP_DRAWING_REF, drawingRefKey, parseDrawingRefKey } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
 import { CreateMapDialog } from "@/modules/maps/CreateMapDialog";
 import {
@@ -23,6 +25,8 @@ import { useMapStudioShortcuts } from "@/hooks/useMapStudioShortcuts";
 import { MapDesdeField } from "@/modules/maps/MapDesdeField";
 import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
+import { MapPreviewTField } from "@/modules/maps/MapPreviewTField";
+import { MapSecondariesPanel } from "@/modules/maps/MapSecondariesPanel";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
 import { useCalendarStore } from "@/stores/useCalendarStore";
@@ -37,13 +41,22 @@ export function MapWorkspace() {
   const activeMapId = useMapStore((s) => s.activeMapId);
   const viewMode = useMapStore((s) => s.viewMode);
   const setViewMode = useMapStore((s) => s.setViewMode);
+  const activeDrawingRef = useMapStore((s) => s.activeDrawingRef);
+  const setActiveDrawingRef = useMapStore((s) => s.setActiveDrawingRef);
+  const previewTimeTRaw = useMapStore((s) => s.previewTimeTRaw);
+  const setPreviewTimeTRaw = useMapStore((s) => s.setPreviewTimeTRaw);
   const rootPath = useProjectStore((s) => s.activeProject?.rootPath ?? "");
-  const sessionKey = `${rootPath}:${activeMapId ?? ""}`;
+  const activeDrawingRefKey = drawingRefKey(activeDrawingRef);
+  const sessionDrawingRefKeyRef = useRef(activeDrawingRefKey);
+  sessionDrawingRefKeyRef.current = activeDrawingRefKey;
+  const sessionKey = `${rootPath}:${activeMapId ?? ""}:${activeDrawingRefKey}`;
   const {
     maps,
     openPreference,
     document,
     drawing,
+    secondaries,
+    secondaryFiles,
     loading,
     creating,
     canvasBusy,
@@ -52,9 +65,13 @@ export function MapWorkspace() {
     setOpenPreference,
     setDefaultOnOpen,
     createMap,
+    createSecondary,
     expandCanvas,
     cropCanvas,
-    saveDrawing,
+    saveActiveDrawing,
+    loadSecondaryFile,
+    updateSecondaryMeta,
+    deleteSecondary,
     updateMapDesde,
     applyDefaultDesde,
     ensureTimelineAndCalendar,
@@ -68,6 +85,7 @@ export function MapWorkspace() {
   const [createOpen, setCreateOpen] = useState(false);
   const [canvasDialogOpen, setCanvasDialogOpen] = useState(false);
   const [canvasMode, setCanvasMode] = useState<MapCanvasSizeMode>("expand");
+  const [secondaryBusy, setSecondaryBusy] = useState(false);
 
   const activeSummary = maps.find((map) => map.id === activeMapId);
   const isPinned = activeSummary?.defaultOnOpen === true;
@@ -75,17 +93,91 @@ export function MapWorkspace() {
   const isEditMode = viewMode === "edit";
   const mapAutosaveEnabled = useSettingsStore((s) => s.mapAutosaveEnabled);
 
+  const diskSourceDrawing =
+    activeDrawingRef.kind === "principal"
+      ? drawing
+      : secondaryFiles[activeDrawingRef.id]?.drawing ?? null;
+
   const drawingSession = useMapDrawingSession({
     sessionKey,
-    sourceDrawing: drawing,
+    sourceDrawing: diskSourceDrawing,
     mapId: activeMapId,
     projectRoot: rootPath,
+    drawingRefKey: activeDrawingRefKey,
   });
+
+  useEffect(() => {
+    if (!document) return;
+    setPreviewTimeTRaw(document.desde);
+  }, [activeMapId, document?.id, setPreviewTimeTRaw]);
+
+  const previewT =
+    previewTimeTRaw ?? document?.desde ?? null;
+
+  const visibleSecondaries = useMemo(() => {
+    if (!calendar || !previewT) return [];
+    return filterVisibleSecondaries(
+      secondaries,
+      document?.desde ?? null,
+      previewT,
+      calendar,
+    );
+  }, [calendar, document?.desde, previewT, secondaries]);
+
+  const activeSecondaryIds = useMemo(
+    () => visibleSecondaries.map((item) => item.id),
+    [visibleSecondaries],
+  );
+
+  useEffect(() => {
+    if (!activeMapId) return;
+    for (const item of visibleSecondaries) {
+      if (!secondaryFiles[item.id]) {
+        void loadSecondaryFile(item.id);
+      }
+    }
+  }, [activeMapId, loadSecondaryFile, secondaryFiles, visibleSecondaries]);
+
+  useEffect(() => {
+    if (activeDrawingRef.kind !== "secondary") return;
+    void loadSecondaryFile(activeDrawingRef.id);
+  }, [activeDrawingRef, loadSecondaryFile]);
+
+  const overlayDrawings = useMemo(
+    () =>
+      visibleSecondaries
+        .map((item) => {
+          const file = secondaryFiles[item.id];
+          if (!file) return null;
+          const isActiveEditing =
+            isEditMode &&
+            activeDrawingRef.kind === "secondary" &&
+            activeDrawingRef.id === item.id &&
+            drawingSession.drawing;
+          return {
+            drawingRefKey: `secondary:${item.id}`,
+            drawing: isActiveEditing ? drawingSession.drawing! : file.drawing,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null),
+    [activeDrawingRef, drawingSession.drawing, isEditMode, secondaryFiles, visibleSecondaries],
+  );
+
+  const activeSecondarySummary =
+    activeDrawingRef.kind === "secondary"
+      ? secondaries.find((item) => item.id === activeDrawingRef.id)
+      : null;
+
+  const activeBadgeLabel =
+    activeDrawingRef.kind === "principal"
+      ? t("principal.badge")
+      : t("secondary.activeBadge", { name: activeSecondarySummary?.name ?? "…" });
 
   usePersistMapDrawingDraft({
     enabled: isEditMode && Boolean(rootPath) && Boolean(activeMapId),
     projectRoot: rootPath,
     mapId: activeMapId,
+    drawingRefKey: activeDrawingRefKey,
     isDirty: drawingSession.isDirty,
     drawing: drawingSession.drawing,
     undoDepth: drawingSession.undoDepth,
@@ -101,6 +193,10 @@ export function MapWorkspace() {
     onRedo: drawingSession.redo,
   });
 
+  const resolveSessionDrawingRef = useCallback((): MapDrawingRef => {
+    return parseDrawingRefKey(sessionDrawingRefKeyRef.current) ?? DEFAULT_MAP_DRAWING_REF;
+  }, []);
+
   const { flushAutosave } = useMapAutosave({
     enabled: isEditMode && mapAutosaveEnabled,
     mapId: activeMapId,
@@ -109,7 +205,9 @@ export function MapWorkspace() {
     isDirty: drawingSession.isDirty,
     setSaveStatus: drawingSession.setSaveStatus,
     markSaved: drawingSession.markSaved,
-    saveDrawing,
+    getDrawingRef: resolveSessionDrawingRef,
+    saveDrawing: (mapId, drawingToSave) =>
+      saveActiveDrawing(mapId, drawingToSave, resolveSessionDrawingRef()),
   });
 
   useMapSaveShortcut({
@@ -118,19 +216,73 @@ export function MapWorkspace() {
     onSave: () => flushAutosave("manual"),
   });
 
-  const viewportDrawing =
-    isEditMode && drawingSession.drawing ? drawingSession.drawing : drawing;
+  const viewportPrincipalDrawing =
+    isEditMode && activeDrawingRef.kind === "principal" && drawingSession.drawing
+      ? drawingSession.drawing
+      : drawing!;
   const previewStroke = isEditMode ? drawingSession.currentStroke : null;
 
   const handleCreate = async (draft: MapCreateDraft) => {
     await createMap(draft);
   };
 
+  const handleSelectDrawing = useCallback(
+    (ref: MapDrawingRef) => {
+      if (
+        ref.kind === activeDrawingRef.kind &&
+        (ref.kind === "principal" ||
+          (ref.kind === "secondary" &&
+            activeDrawingRef.kind === "secondary" &&
+            ref.id === activeDrawingRef.id))
+      ) {
+        return;
+      }
+      const sourceRef =
+        parseDrawingRefKey(sessionDrawingRefKeyRef.current) ?? DEFAULT_MAP_DRAWING_REF;
+      void guardMapDrawingNavigation(async () => {
+        const previousRef = drawingRefKey(sourceRef);
+        if (ref.kind === "secondary") {
+          await loadSecondaryFile(ref.id);
+        }
+        setActiveDrawingRef(ref);
+        trackAction("map", "secondarySelect", {
+          mapId: activeMapId,
+          drawingRef: drawingRefKey(ref),
+          previousRef,
+        });
+      }, "mapSwitch");
+    },
+    [activeDrawingRef, activeMapId, loadSecondaryFile, setActiveDrawingRef],
+  );
+
+  const handleCreateSecondary = useCallback(
+    async (draft: {
+      name: string;
+      tiempoInicio: string;
+      tiempoFin?: string | null;
+    }) => {
+      setSecondaryBusy(true);
+      try {
+        const file = await createSecondary(draft);
+        setActiveDrawingRef({ kind: "secondary", id: file.id });
+        trackAction("map", "secondarySelect", {
+          mapId: activeMapId,
+          drawingRef: drawingRefKey({ kind: "secondary", id: file.id }),
+          previousRef: drawingRefKey(activeDrawingRef),
+        });
+      } finally {
+        setSecondaryBusy(false);
+      }
+    },
+    [activeDrawingRef, activeMapId, createSecondary, setActiveDrawingRef],
+  );
+
   useMapDrawingGuardRegistration({
     enabled: isEditMode && Boolean(rootPath) && Boolean(activeMapId),
     projectRoot: rootPath,
     mapId: activeMapId,
-    diskDrawing: drawing,
+    drawingRefKey: activeDrawingRefKey,
+    diskDrawing: diskSourceDrawing,
     isDirty: drawingSession.isDirty,
     flushAutosave,
     resetFromSource: drawingSession.resetFromSource,
@@ -210,7 +362,7 @@ export function MapWorkspace() {
                 <h1 className="text-sm font-semibold">{t("title")}</h1>
                 {document ? (
                   <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {t("principal.badge")}
+                    {activeBadgeLabel}
                   </span>
                 ) : null}
               </div>
@@ -306,7 +458,7 @@ export function MapWorkspace() {
       </header>
 
       {activeMapId && document ? (
-        <div className="shrink-0 border-b border-border/60 px-4 py-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-border/60 px-4 py-2">
           <MapDesdeField
             mapId={activeMapId}
             desde={document.desde}
@@ -315,6 +467,14 @@ export function MapWorkspace() {
             events={timelineEvents}
             onUpdate={handleDesdeUpdate}
             onSuggest={handleDesdeSuggest}
+          />
+          <MapPreviewTField
+            mapId={activeMapId}
+            previewT={previewT}
+            calendar={calendar}
+            baselineConfig={baselineConfig}
+            events={timelineEvents}
+            onChange={setPreviewTimeTRaw}
           />
         </div>
       ) : null}
@@ -340,13 +500,53 @@ export function MapWorkspace() {
           </div>
         ) : null}
 
-        {activeMapId && document && viewportDrawing ? (
+        {activeMapId && document && drawing ? (
           <>
             <div className="flex min-h-0 flex-1">
+              {isEditMode ? (
+                <MapSecondariesPanel
+                  mapId={activeMapId}
+                  mapDesde={document.desde}
+                  defaultTiempoInicio={previewT}
+                  calendar={calendar}
+                  secondaries={secondaries}
+                  activeDrawingRef={activeDrawingRef}
+                  busy={secondaryBusy}
+                  onSelectDrawing={handleSelectDrawing}
+                  onCreate={handleCreateSecondary}
+                  onUpdateMeta={async (secondaryId, patch) => {
+                    setSecondaryBusy(true);
+                    try {
+                      await updateSecondaryMeta(secondaryId, patch);
+                    } finally {
+                      setSecondaryBusy(false);
+                    }
+                  }}
+                  onDelete={async (secondaryId) => {
+                    setSecondaryBusy(true);
+                    try {
+                      await deleteSecondary(secondaryId);
+                      if (
+                        activeDrawingRef.kind === "secondary" &&
+                        activeDrawingRef.id === secondaryId
+                      ) {
+                        setActiveDrawingRef({ kind: "principal" });
+                      }
+                    } finally {
+                      setSecondaryBusy(false);
+                    }
+                  }}
+                />
+              ) : null}
               <MapViewport
                 mapId={activeMapId}
                 document={document}
-                drawing={viewportDrawing}
+                principalDrawing={viewportPrincipalDrawing}
+                overlayDrawings={overlayDrawings}
+                activeDrawingRefKey={activeDrawingRefKey}
+                previewTimeTRaw={previewT}
+                activeSecondaryIds={activeSecondaryIds}
+                secondaryCount={secondaries.length}
                 viewMode={viewMode}
                 activeLayerId={isEditMode ? drawingSession.activeLayerId : null}
                 previewStroke={previewStroke}

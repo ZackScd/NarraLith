@@ -15,6 +15,7 @@ interface UsePersistMapDrawingDraftOptions {
   enabled: boolean;
   projectRoot: string;
   mapId: string | null;
+  drawingRefKey?: string;
   isDirty: boolean;
   drawing: MapDrawingV2 | null;
   undoDepth: number;
@@ -27,6 +28,7 @@ export function usePersistMapDrawingDraft({
   enabled,
   projectRoot,
   mapId,
+  drawingRefKey = "principal",
   isDirty,
   drawing,
   undoDepth,
@@ -45,15 +47,15 @@ export function usePersistMapDrawingDraft({
 
     const persistNow = () => {
       if (!isDirty) {
-        clearMapDrawingDraft(projectRoot, mapId);
+        clearMapDrawingDraft(projectRoot, mapId, drawingRefKey);
         return;
       }
       const draft = exportDraftRef.current();
       if (!draft) {
-        clearMapDrawingDraft(projectRoot, mapId);
+        clearMapDrawingDraft(projectRoot, mapId, drawingRefKey);
         return;
       }
-      setMapDrawingDraft(projectRoot, mapId, draft);
+      setMapDrawingDraft(projectRoot, mapId, draft, drawingRefKey);
       trackAction(
         "map",
         "draftPersist",
@@ -83,7 +85,7 @@ export function usePersistMapDrawingDraft({
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-      clearMapDrawingDraft(projectRoot, mapId);
+      clearMapDrawingDraft(projectRoot, mapId, drawingRefKey);
       return;
     }
 
@@ -109,5 +111,5 @@ export function usePersistMapDrawingDraft({
       window.removeEventListener("beforeunload", flushOnHide);
       flushOnHide();
     };
-  }, [drawing, enabled, isDirty, mapId, projectRoot, redoDepth, undoDepth]);
+  }, [drawing, drawingRefKey, enabled, isDirty, mapId, projectRoot, redoDepth, undoDepth]);
 }

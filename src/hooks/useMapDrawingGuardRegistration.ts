@@ -15,6 +15,7 @@ interface UseMapDrawingGuardRegistrationOptions {
   enabled: boolean;
   projectRoot: string;
   mapId: string | null;
+  drawingRefKey?: string;
   diskDrawing: MapDrawingV2 | null;
   isDirty: boolean;
   flushAutosave: (
@@ -28,6 +29,7 @@ export function useMapDrawingGuardRegistration({
   enabled,
   projectRoot,
   mapId,
+  drawingRefKey = "principal",
   diskDrawing,
   isDirty,
   flushAutosave,
@@ -38,10 +40,13 @@ export function useMapDrawingGuardRegistration({
   const mapIdRef = useRef(mapId);
   const projectRootRef = useRef(projectRoot);
 
+  const drawingRefKeyRef = useRef(drawingRefKey);
+
   isDirtyRef.current = isDirty;
   diskDrawingRef.current = diskDrawing;
   mapIdRef.current = mapId;
   projectRootRef.current = projectRoot;
+  drawingRefKeyRef.current = drawingRefKey;
 
   useEffect(() => {
     if (!enabled) {
@@ -58,7 +63,7 @@ export function useMapDrawingGuardRegistration({
         const root = projectRootRef.current;
         const id = mapIdRef.current;
         if (root && id) {
-          clearMapDrawingDraft(root, id);
+          clearMapDrawingDraft(root, id, drawingRefKeyRef.current);
         }
       },
       mapAutosaveEnabled: () => useSettingsStore.getState().mapAutosaveEnabled,

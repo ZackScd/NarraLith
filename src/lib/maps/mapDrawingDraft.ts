@@ -24,7 +24,36 @@ export interface MapDrawingDraft {
   updatedAt: number;
 }
 
-type MapDrawingDraftsStore = Record<string, Record<string, MapDrawingDraft>>;
+type MapDrawingDraftsStore = Record<string, Record<string, Record<string, MapDrawingDraft>>>;
+
+function isDraftRecord(value: unknown): value is MapDrawingDraft {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return typeof record.baselineFingerprint === "string" && record.drawing !== undefined;
+}
+
+function normalizeDraftsForMap(
+  entry: Record<string, MapDrawingDraft> | MapDrawingDraft | undefined,
+): Record<string, MapDrawingDraft> {
+  if (!entry) {
+    return {};
+  }
+  if (isDraftRecord(entry)) {
+    return { principal: entry };
+  }
+  return entry;
+}
+
+function getMapDraftBucket(
+  store: MapDrawingDraftsStore,
+  projectRoot: string,
+  mapId: string,
+): Record<string, MapDrawingDraft> {
+  const root = normalizeRoot(projectRoot);
+  return normalizeDraftsForMap(store[root]?.[mapId] as MapDrawingDraft | Record<string, MapDrawingDraft> | undefined);
+}
 
 function normalizeRoot(projectRoot: string): string {
   return normalizeProjectPath(projectRoot);
@@ -164,9 +193,11 @@ function saveStore(store: MapDrawingDraftsStore): void {
 export function getMapDrawingDraft(
   projectRoot: string,
   mapId: string,
+  drawingRefKey = "principal",
 ): MapDrawingDraft | null {
-  const root = normalizeRoot(projectRoot);
-  const draft = loadStore()[root]?.[mapId];
+  const store = loadStore();
+  const bucket = getMapDraftBucket(store, projectRoot, mapId);
+  const draft = bucket[drawingRefKey];
   if (!draft || typeof draft !== "object") {
     return null;
   }
@@ -177,36 +208,51 @@ export function setMapDrawingDraft(
   projectRoot: string,
   mapId: string,
   draft: MapDrawingDraft,
+  drawingRefKey = "principal",
 ): void {
   const normalized = truncateDraftStacks(draft);
   const root = normalizeRoot(projectRoot);
   const store = loadStore();
-  const projectDrafts = { ...(store[root] ?? {}), [mapId]: normalized };
-  const payload = JSON.stringify({ ...store, [root]: projectDrafts });
+  const projectDrafts = {
+    ...getMapDraftBucket(store, projectRoot, mapId),
+    [drawingRefKey]: normalized,
+  };
+  const payload = JSON.stringify({ ...store, [root]: { ...(store[root] ?? {}), [mapId]: projectDrafts } });
   if (payload.length > MAP_DRAWING_DRAFT_SOFT_SIZE_BYTES) {
     audit.debug("project", "obs.map.draftPersist.large", {
       mapId,
+      drawingRefKey,
       bytes: payload.length,
       limit: MAP_DRAWING_DRAFT_SOFT_SIZE_BYTES,
     });
   }
-  saveStore({ ...store, [root]: projectDrafts });
+  saveStore({ ...store, [root]: { ...(store[root] ?? {}), [mapId]: projectDrafts } });
 }
 
-export function clearMapDrawingDraft(projectRoot: string, mapId: string): void {
+export function clearMapDrawingDraft(
+  projectRoot: string,
+  mapId: string,
+  drawingRefKey = "principal",
+): void {
   const root = normalizeRoot(projectRoot);
   const store = loadStore();
-  const projectDrafts = store[root];
-  if (!projectDrafts?.[mapId]) {
+  const bucket = getMapDraftBucket(store, projectRoot, mapId);
+  if (!bucket[drawingRefKey]) {
     return;
   }
-  const nextProjectDrafts = { ...projectDrafts };
-  delete nextProjectDrafts[mapId];
+  const nextBucket = { ...bucket };
+  delete nextBucket[drawingRefKey];
   const nextStore = { ...store };
-  if (Object.keys(nextProjectDrafts).length === 0) {
-    delete nextStore[root];
+  if (Object.keys(nextBucket).length === 0) {
+    const nextProject = { ...(store[root] ?? {}) };
+    delete nextProject[mapId];
+    if (Object.keys(nextProject).length === 0) {
+      delete nextStore[root];
+    } else {
+      nextStore[root] = nextProject;
+    }
   } else {
-    nextStore[root] = nextProjectDrafts;
+    nextStore[root] = { ...(store[root] ?? {}), [mapId]: nextBucket };
   }
   saveStore(nextStore);
 }

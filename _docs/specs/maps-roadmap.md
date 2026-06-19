@@ -56,7 +56,7 @@ MAP-001 persistencia v2 + purga física legacy
 | **MAP-005** | Estudio Sketchbook: color custom, pinceles, presión; guardado manual (005b) | §3bis · [plan](plans/Fase%20F/MAP-005-draw-studio.md) ✅ · [005b](plans/Fase%20F/MAP-005b-save-undo-persistence.md) ✅ | MAP-004 |
 | **MAP-006** | Capas internas por dibujo | §4.1 · [plan](plans/Fase%20F/MAP-006-layers.md) ✅ | MAP-005 |
 | **MAP-007** | Dibujo principal + etiqueta «Desde» — [plan](plans/Fase%20F/MAP-007-principal-desde.md) ✅ · QA `1781851429000` | §4.2 | MAP-001 · MAP-006 |
-| **MAP-008** | Secundarios: parches transparentes, visibilidad T | §4.3 | MAP-007 |
+| **MAP-008** | Secundarios: parches + visibilidad T — [plan](plans/Fase%20F/MAP-008-secondary-patches.md) 📋 | §4.3 | MAP-007 |
 | **MAP-009** | Compositor + timeline T | §4.4 | MAP-008 |
 | **MAP-010** | Hotspots → dibujo hijo; volver | §5 | MAP-004, MAP-009 |
 | **MAP-011** | Ubicaciones MS → marcas **X** en T (stub) | §4bis.4.1 | MAP-009, manuscrito |
@@ -93,5 +93,6 @@ Resumen — detalle en [`maps-design.md` §9](maps-design.md#9-persistencia-en-d
 |-------|--------|
 | 2026-06-11 | **MAP-007 📋** plan dibujo principal + «Desde» — [`MAP-007-principal-desde.md`](plans/Fase%20F/MAP-007-principal-desde.md) |
 | 2026-06-11 | **MAP-007 ✅ cerrado** — QA `1781851429000-23756` → handoff MAP-008 |
+| 2026-06-11 | **MAP-008 📋** plan secundarios + parches — [`MAP-008-secondary-patches.md`](plans/Fase%20F/MAP-008-secondary-patches.md) |
 
 **Última actualización:** 2026-06-11

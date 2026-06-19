@@ -14,6 +14,18 @@ import type { MapStudioTool } from "@/stores/useMapStudioStore";
 
 import { shouldPanPointer } from "@/lib/maps/mapDrawGesture";
 
+export interface MapViewportComposeLayer {
+  drawingRefKey: string;
+  drawing: MapDrawingV2;
+}
+
+export interface MapViewportPaintOptions {
+  overlayDrawings?: MapViewportComposeLayer[];
+  activeDrawingRefKey?: string;
+  previewStroke?: MapStrokeV2 | null;
+  activeLayerId?: string | null;
+}
+
 export interface MapViewportState {
   zoom: number;
   panX: number;
@@ -30,7 +42,12 @@ const COMPOSITOR_AUDIT_DEBOUNCE_MS = 300;
 interface UseMapViewportOptions {
   mapId: string;
   document: MapDocumentV1;
-  drawing: MapDrawingV2;
+  principalDrawing: MapDrawingV2;
+  overlayDrawings?: MapViewportComposeLayer[];
+  activeDrawingRefKey?: string;
+  previewTimeTRaw?: string | null;
+  activeSecondaryIds?: string[];
+  secondaryCount?: number;
   viewMode: MapViewMode;
   previewStroke?: MapStrokeV2 | null;
   activeLayerId?: string | null;
@@ -124,12 +141,12 @@ export function paintMapViewport(
   size: ContainerSize,
   viewport: MapViewportState,
   document: MapDocumentV1,
-  drawing: MapDrawingV2,
+  principalDrawing: MapDrawingV2,
   baseImage: HTMLImageElement | null,
   mapId: string,
-  previewStroke?: MapStrokeV2 | null,
-  activeLayerId?: string | null,
+  options: MapViewportPaintOptions = {},
 ): void {
+  const activeDrawingRefKey = options.activeDrawingRefKey ?? "principal";
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, size.width, size.height);
@@ -149,10 +166,29 @@ export function paintMapViewport(
     drawGrid(ctx, document.width, document.height);
   }
 
-  const strokeLayer = paintStrokeLayer(mapId, document, (bufferCtx) => {
-    drawMapStrokes(bufferCtx, drawing, previewStroke, activeLayerId);
+  const principalLayer = paintStrokeLayer(mapId, "principal", document, (bufferCtx) => {
+    const isActive = activeDrawingRefKey === "principal";
+    drawMapStrokes(
+      bufferCtx,
+      principalDrawing,
+      isActive ? options.previewStroke : null,
+      isActive ? options.activeLayerId : null,
+    );
   });
-  ctx.drawImage(strokeLayer, 0, 0);
+  ctx.drawImage(principalLayer, 0, 0);
+
+  for (const overlay of options.overlayDrawings ?? []) {
+    const strokeLayer = paintStrokeLayer(mapId, overlay.drawingRefKey, document, (bufferCtx) => {
+      const isActive = activeDrawingRefKey === overlay.drawingRefKey;
+      drawMapStrokes(
+        bufferCtx,
+        overlay.drawing,
+        isActive ? options.previewStroke : null,
+        isActive ? options.activeLayerId : null,
+      );
+    });
+    ctx.drawImage(strokeLayer, 0, 0);
+  }
 
   ctx.restore();
 }
@@ -182,7 +218,12 @@ async function loadBaseImage(
 export function useMapViewport({
   mapId,
   document,
-  drawing,
+  principalDrawing,
+  overlayDrawings = [],
+  activeDrawingRefKey = "principal",
+  previewTimeTRaw = null,
+  activeSecondaryIds = [],
+  secondaryCount = 0,
   viewMode,
   previewStroke = null,
   activeLayerId = null,
@@ -209,6 +250,12 @@ export function useMapViewport({
   } | null>(null);
   const spacePressed = useRef(false);
 
+  const activeEditingDrawing =
+    activeDrawingRefKey === "principal"
+      ? principalDrawing
+      : overlayDrawings.find((layer) => layer.drawingRefKey === activeDrawingRefKey)?.drawing ??
+        principalDrawing;
+
   const emitRenderAudit = useCallback(
     (nextViewport: MapViewportState) => {
       if (!renderAudit.isStandardEnabled()) return;
@@ -222,13 +269,28 @@ export function useMapViewport({
       renderAudit.ui(UI_EVENTS.maps.compositor, {
         stub: false,
         mapId,
-        timeT: null,
+        previewTRaw: previewTimeTRaw,
+        previewTDisplay: formatMapDesdeDisplay(previewTimeTRaw),
         desdeRaw: document.desde,
         desdeDisplay: formatMapDesdeDisplay(document.desde),
-        visibleLayers: drawing.layers.filter((layer) => layer.visible).map((layer) => layer.id),
+        activeDrawingRef: activeDrawingRefKey,
+        activeSecondaryIds,
+        secondaryCount,
+        visibleLayers: activeEditingDrawing.layers
+          .filter((layer) => layer.visible)
+          .map((layer) => layer.id),
       });
     },
-    [document.desde, drawing.layers, mapId, viewMode],
+    [
+      activeDrawingRefKey,
+      activeEditingDrawing.layers,
+      activeSecondaryIds,
+      document.desde,
+      mapId,
+      previewTimeTRaw,
+      secondaryCount,
+      viewMode,
+    ],
   );
 
   const redraw = useCallback(() => {
@@ -241,13 +303,28 @@ export function useMapViewport({
       containerSize,
       viewport,
       document,
-      drawing,
+      principalDrawing,
       baseImage,
       mapId,
-      previewStroke,
-      activeLayerId,
+      {
+        overlayDrawings,
+        activeDrawingRefKey,
+        previewStroke,
+        activeLayerId,
+      },
     );
-  }, [activeLayerId, baseImage, containerSize, document, drawing, mapId, previewStroke, viewport]);
+  }, [
+    activeDrawingRefKey,
+    activeLayerId,
+    baseImage,
+    containerSize,
+    document,
+    mapId,
+    overlayDrawings,
+    previewStroke,
+    principalDrawing,
+    viewport,
+  ]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -318,20 +395,26 @@ export function useMapViewport({
 
   useEffect(() => {
     if (!renderAudit.isStandardEnabled()) return;
-    const strokeCount = countMapStrokes(drawing);
-    const visibleLayers = drawing.layers.filter((layer) => layer.visible).map((layer) => layer.id);
+    const strokeCount = countMapStrokes(activeEditingDrawing);
+    const visibleLayers = activeEditingDrawing.layers
+      .filter((layer) => layer.visible)
+      .map((layer) => layer.id);
     const timer = window.setTimeout(() => {
       renderAudit.ui(UI_EVENTS.maps.compositor, {
         stub: false,
         mapId,
-        timeT: null,
+        previewTRaw: previewTimeTRaw,
+        previewTDisplay: formatMapDesdeDisplay(previewTimeTRaw),
         desdeRaw: document.desde,
         desdeDisplay: formatMapDesdeDisplay(document.desde),
+        activeDrawingRef: activeDrawingRefKey,
+        activeSecondaryIds,
+        secondaryCount,
         visibleLayers,
         strokeCount,
-        layerCount: drawing.layers.length,
+        layerCount: activeEditingDrawing.layers.length,
         activeLayerId,
-        layers: drawing.layers.map((layer) => ({
+        layers: activeEditingDrawing.layers.map((layer) => ({
           id: layer.id,
           visible: layer.visible,
           locked: layer.locked,
@@ -340,7 +423,16 @@ export function useMapViewport({
       });
     }, COMPOSITOR_AUDIT_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [activeLayerId, document.desde, drawing, mapId]);
+  }, [
+    activeDrawingRefKey,
+    activeEditingDrawing,
+    activeLayerId,
+    activeSecondaryIds,
+    document.desde,
+    mapId,
+    previewTimeTRaw,
+    secondaryCount,
+  ]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

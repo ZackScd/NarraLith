@@ -124,3 +124,45 @@ export interface MapHotspotsFileV1 {
   version: 1;
   hotspots: unknown[];
 }
+
+export interface MapSecondarySummaryV1 {
+  id: string;
+  name: string;
+  tiempoInicio: string;
+  tiempoFin?: string | null;
+  updatedAt: string;
+}
+
+export interface MapSecondaryDrawingFileV1 {
+  version: 1;
+  id: string;
+  name: string;
+  tiempoInicio: string;
+  tiempoFin?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  drawing: MapDrawingV2;
+}
+
+export type MapDrawingRef =
+  | { kind: "principal" }
+  | { kind: "secondary"; id: string };
+
+export function drawingRefKey(ref: MapDrawingRef): string {
+  return ref.kind === "principal" ? "principal" : `secondary:${ref.id}`;
+}
+
+export function parseDrawingRefKey(key: string): MapDrawingRef | null {
+  if (key === "principal") {
+    return { kind: "principal" };
+  }
+  if (key.startsWith("secondary:")) {
+    const id = key.slice("secondary:".length);
+    if (id.length > 0) {
+      return { kind: "secondary", id };
+    }
+  }
+  return null;
+}
+
+export const DEFAULT_MAP_DRAWING_REF: MapDrawingRef = { kind: "principal" };

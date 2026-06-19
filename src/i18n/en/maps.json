@@ -85,6 +85,42 @@
   "principal": {
     "badge": "Base terrain"
   },
+  "previewT": {
+    "label": "View at T",
+    "unset": "Not set",
+    "edit": "Change…",
+    "dialogTitle": "Temporal preview (T)",
+    "dialogDescription": "Preview date for composing historical patches. Does not modify strokes."
+  },
+  "secondary": {
+    "panelTitle": "Patches",
+    "panelAria": "Temporal patches for map {{mapId}}",
+    "principalHint": "Base map canvas",
+    "add": "Add patch",
+    "activeBadge": "Patch: {{name}}",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. New harbor",
+    "tiempoInicioLabel": "Active from",
+    "tiempoFinLabel": "Close at",
+    "closePatchLabel": "Close patch on date",
+    "dateRange": "{{start}} → {{end}}",
+    "createTitle": "New temporal patch",
+    "createDescription": "Draw only the changing area; the rest of the canvas stays transparent.",
+    "createSubmit": "Create patch",
+    "metaTitle": "Patch properties",
+    "metaDescription": "Name and date changes save immediately.",
+    "metaSave": "Save",
+    "editMeta": "Edit properties",
+    "delete": "Delete patch",
+    "deleteTitle": "Delete patch",
+    "deleteMessage": "Delete «{{name}}»? The base terrain will not be affected.",
+    "deleteConfirm": "Delete",
+    "cancel": "Cancel",
+    "noDesdeWarning": "Set «From» for reliable temporal rules.",
+    "errors": {
+      "name_required": "Patch name is required."
+    }
+  },
   "desde": {
     "label": "From",
     "hint": "Local temporal origin of this map (year 0)",
@@ -186,6 +222,8 @@
     "image_too_large": "Image exceeds maximum size (50 MB).",
     "image_dimensions_invalid": "Invalid image dimensions (512–8192 px).",
     "invalid_dimensions": "Invalid map dimensions (512–8192 px).",
-    "invalid_desde": "The «From» label is not a valid date format."
+    "invalid_desde": "The «From» label is not a valid date format.",
+    "secondary_not_found": "Patch not found.",
+    "secondary_name_required": "Patch name is required."
   }
 }

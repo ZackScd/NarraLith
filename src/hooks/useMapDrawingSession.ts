@@ -37,6 +37,7 @@ interface UseMapDrawingSessionOptions {
   sourceDrawing: MapDrawingV2 | null;
   mapId?: string | null;
   projectRoot?: string;
+  drawingRefKey?: string;
 }
 
 export function useMapDrawingSession({
@@ -44,6 +45,7 @@ export function useMapDrawingSession({
   sourceDrawing,
   mapId = null,
   projectRoot = "",
+  drawingRefKey = "principal",
 }: UseMapDrawingSessionOptions) {
   const [drawing, setDrawing] = useState<MapDrawingV2 | null>(null);
   const [activeLayerId, setActiveLayerIdState] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export function useMapDrawingSession({
         return;
       }
       if (projectRoot && mapId) {
-        const draft = getMapDrawingDraft(projectRoot, mapId);
+        const draft = getMapDrawingDraft(projectRoot, mapId, drawingRefKey);
         if (draft && validateMapDrawingDraft(draft, disk)) {
           restoreFromDraft(draft);
           return;
@@ -122,7 +124,7 @@ export function useMapDrawingSession({
       }
       resetFromSource(disk);
     },
-    [mapId, projectRoot, resetFromSource, restoreFromDraft],
+    [drawingRefKey, mapId, projectRoot, resetFromSource, restoreFromDraft],
   );
 
   useEffect(() => {

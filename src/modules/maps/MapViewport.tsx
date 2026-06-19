@@ -6,7 +6,10 @@ import {
   getDrawBlockReason,
 } from "@/lib/maps/mapDrawingSession";
 import type { MapDocumentV1, MapDrawingV2, MapStrokeV2 } from "@/lib/types/maps";
-import { useMapViewport } from "@/lib/maps/useMapViewport";
+import {
+  useMapViewport,
+  type MapViewportComposeLayer,
+} from "@/lib/maps/useMapViewport";
 import type { MapViewMode } from "@/stores/useMapStore";
 import {
   useMapStudioStore,
@@ -17,7 +20,12 @@ import { cn } from "@/lib/utils";
 interface MapViewportProps {
   mapId: string;
   document: MapDocumentV1;
-  drawing: MapDrawingV2;
+  principalDrawing: MapDrawingV2;
+  overlayDrawings?: MapViewportComposeLayer[];
+  activeDrawingRefKey?: string;
+  previewTimeTRaw?: string | null;
+  activeSecondaryIds?: string[];
+  secondaryCount?: number;
   viewMode: MapViewMode;
   activeLayerId?: string | null;
   previewStroke?: MapStrokeV2 | null;
@@ -38,7 +46,12 @@ function viewportCursor(viewMode: MapViewMode, tool: MapStudioTool): string {
 export function MapViewport({
   mapId,
   document,
-  drawing,
+  principalDrawing,
+  overlayDrawings = [],
+  activeDrawingRefKey = "principal",
+  previewTimeTRaw = null,
+  activeSecondaryIds = [],
+  secondaryCount = 0,
   viewMode,
   activeLayerId = null,
   previewStroke = null,
@@ -53,7 +66,13 @@ export function MapViewport({
   const baseOpacity = useMapStudioStore((s) => s.baseOpacity);
   const [layerNotice, setLayerNotice] = useState<string | null>(null);
 
-  const drawBlockReason = getDrawBlockReason(drawing, activeLayerId);
+  const activeEditingDrawing =
+    activeDrawingRefKey === "principal"
+      ? principalDrawing
+      : overlayDrawings.find((layer) => layer.drawingRefKey === activeDrawingRefKey)?.drawing ??
+        principalDrawing;
+
+  const drawBlockReason = getDrawBlockReason(activeEditingDrawing, activeLayerId);
   const canDraw = drawBlockReason === null;
 
   const {
@@ -68,7 +87,12 @@ export function MapViewport({
   } = useMapViewport({
     mapId,
     document,
-    drawing,
+    principalDrawing,
+    overlayDrawings,
+    activeDrawingRefKey,
+    previewTimeTRaw,
+    activeSecondaryIds,
+    secondaryCount,
     viewMode,
     previewStroke,
     activeLayerId,

@@ -15,6 +15,7 @@ const INDEX_FILENAME: &str = "index.json";
 const MAP_FILENAME: &str = "map.json";
 const HOTSPOTS_FILENAME: &str = "hotspots.json";
 const PRINCIPAL_DRAWING_REL: &str = "drawings/principal.json";
+const SECONDARY_DRAWINGS_DIR: &str = "drawings/secondary";
 const MAX_IMAGE_BYTES: u64 = 50 * 1024 * 1024;
 const MIN_DIMENSION: u32 = 512;
 const MAX_DIMENSION: u32 = 8192;
@@ -187,6 +188,31 @@ impl MapHotspotsFileV1 {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapSecondarySummaryV1 {
+    pub id: String,
+    pub name: String,
+    pub tiempo_inicio: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tiempo_fin: Option<String>,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapSecondaryDrawingFileV1 {
+    pub version: u32,
+    pub id: String,
+    pub name: String,
+    pub tiempo_inicio: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tiempo_fin: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub drawing: MapDrawingV2,
+}
+
 pub fn maps_root(project_root: &Path) -> PathBuf {
     project_root.join(NARRALITH_DIR).join(MAPS_DIR)
 }
@@ -285,6 +311,187 @@ pub fn save_map_drawing(
     validate_drawing(drawing)?;
     let path = map_dir(project_root, map_id)?.join(PRINCIPAL_DRAWING_REL);
     write_json_atomic(&path, drawing)?;
+    let doc = get_map_document(project_root, map_id)?;
+    let now = timestamp_now();
+    upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
+    Ok(())
+}
+
+pub fn list_map_secondaries(
+    project_root: &Path,
+    map_id: &str,
+) -> Result<Vec<MapSecondarySummaryV1>, AppError> {
+    let dir = map_dir(project_root, map_id)?.join(SECONDARY_DRAWINGS_DIR);
+    if !dir.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut summaries = Vec::new();
+    for entry in fs::read_dir(&dir).map_err(|e| AppError::database(e.to_string()))? {
+        let entry = entry.map_err(|e| AppError::database(e.to_string()))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let file: MapSecondaryDrawingFileV1 = match read_json(&path) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        if file.version != 1 {
+            continue;
+        }
+        summaries.push(MapSecondarySummaryV1 {
+            id: file.id,
+            name: file.name,
+            tiempo_inicio: file.tiempo_inicio,
+            tiempo_fin: file.tiempo_fin,
+            updated_at: file.updated_at,
+        });
+    }
+    summaries.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(summaries)
+}
+
+pub fn get_map_secondary(
+    project_root: &Path,
+    map_id: &str,
+    secondary_id: &str,
+) -> Result<MapSecondaryDrawingFileV1, AppError> {
+    let path = secondary_file_path(project_root, map_id, secondary_id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.secondary_not_found"));
+    }
+    let file: MapSecondaryDrawingFileV1 = read_json(&path)?;
+    validate_secondary_file(&file, project_root, map_id)?;
+    Ok(file)
+}
+
+pub fn create_map_secondary(
+    project_root: &Path,
+    map_id: &str,
+    name: &str,
+    tiempo_inicio: &str,
+    tiempo_fin: Option<&str>,
+) -> Result<MapSecondaryDrawingFileV1, AppError> {
+    let trimmed_name = name.trim();
+    if trimmed_name.is_empty() {
+        return Err(AppError::new("error.maps.secondary_name_required"));
+    }
+    validate_time_tag_format(tiempo_inicio.trim())?;
+    let tiempo_fin_value = match tiempo_fin {
+        None => None,
+        Some(raw) if raw.trim().is_empty() => None,
+        Some(raw) => {
+            validate_time_tag_format(raw.trim())?;
+            Some(raw.trim().to_string())
+        }
+    };
+
+    let doc = get_map_document(project_root, map_id)?;
+    let map_path = map_dir(project_root, map_id)?;
+    fs::create_dir_all(map_path.join(SECONDARY_DRAWINGS_DIR))
+        .map_err(|e| AppError::database(e.to_string()))?;
+
+    let id = generate_secondary_id();
+    let now = timestamp_now();
+    let file = MapSecondaryDrawingFileV1 {
+        version: 1,
+        id: id.clone(),
+        name: trimmed_name.to_string(),
+        tiempo_inicio: tiempo_inicio.trim().to_string(),
+        tiempo_fin: tiempo_fin_value,
+        created_at: now.clone(),
+        updated_at: now,
+        drawing: default_principal_drawing(doc.width, doc.height),
+    };
+    validate_secondary_file(&file, project_root, map_id)?;
+    write_json_atomic(&secondary_file_path(project_root, map_id, &id)?, &file)?;
+    Ok(file)
+}
+
+pub fn save_map_secondary(
+    project_root: &Path,
+    map_id: &str,
+    file: &MapSecondaryDrawingFileV1,
+) -> Result<(), AppError> {
+    let path = secondary_file_path(project_root, map_id, &file.id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.secondary_not_found"));
+    }
+    let mut on_disk: MapSecondaryDrawingFileV1 = read_json(&path)?;
+    if on_disk.id != file.id {
+        return Err(AppError::new("error.maps.invalid_json"));
+    }
+    validate_drawing(&file.drawing)?;
+    let doc = get_map_document(project_root, map_id)?;
+    if file.drawing.width != doc.width || file.drawing.height != doc.height {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    on_disk.drawing = file.drawing.clone();
+    on_disk.updated_at = timestamp_now();
+    validate_secondary_file(&on_disk, project_root, map_id)?;
+    write_json_atomic(&path, &on_disk)?;
+    upsert_index_entry(project_root, map_id, &doc.name, &on_disk.updated_at, None)?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MapSecondaryMetaPatch {
+    pub name: Option<String>,
+    pub tiempo_inicio: Option<String>,
+    pub tiempo_fin: Option<String>,
+    pub clear_tiempo_fin: Option<bool>,
+}
+
+pub fn update_map_secondary_meta(
+    project_root: &Path,
+    map_id: &str,
+    secondary_id: &str,
+    patch: MapSecondaryMetaPatch,
+) -> Result<MapSecondarySummaryV1, AppError> {
+    let path = secondary_file_path(project_root, map_id, secondary_id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.secondary_not_found"));
+    }
+    let mut file: MapSecondaryDrawingFileV1 = read_json(&path)?;
+    if let Some(name) = patch.name {
+        let trimmed = name.trim();
+        if trimmed.is_empty() {
+            return Err(AppError::new("error.maps.secondary_name_required"));
+        }
+        file.name = trimmed.to_string();
+    }
+    if let Some(tiempo_inicio) = patch.tiempo_inicio {
+        validate_time_tag_format(tiempo_inicio.trim())?;
+        file.tiempo_inicio = tiempo_inicio.trim().to_string();
+    }
+    if patch.clear_tiempo_fin == Some(true) {
+        file.tiempo_fin = None;
+    } else if let Some(tiempo_fin) = patch.tiempo_fin {
+        validate_time_tag_format(tiempo_fin.trim())?;
+        file.tiempo_fin = Some(tiempo_fin.trim().to_string());
+    }
+    validate_secondary_file(&file, project_root, map_id)?;
+    file.updated_at = timestamp_now();
+    write_json_atomic(&path, &file)?;
+    Ok(MapSecondarySummaryV1 {
+        id: file.id,
+        name: file.name,
+        tiempo_inicio: file.tiempo_inicio,
+        tiempo_fin: file.tiempo_fin,
+        updated_at: file.updated_at,
+    })
+}
+
+pub fn delete_map_secondary(
+    project_root: &Path,
+    map_id: &str,
+    secondary_id: &str,
+) -> Result<(), AppError> {
+    let path = secondary_file_path(project_root, map_id, secondary_id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.secondary_not_found"));
+    }
+    fs::remove_file(&path).map_err(|e| AppError::database(e.to_string()))?;
     let doc = get_map_document(project_root, map_id)?;
     let now = timestamp_now();
     upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
@@ -442,6 +649,7 @@ pub fn expand_map_canvas(
     doc.updated_at = now.clone();
 
     save_map_drawing(project_root, map_id, &drawing)?;
+    sync_secondary_drawings_dimensions(project_root, map_id, new_width, new_height, false)?;
     save_map_document(project_root, &doc)?;
     Ok(doc)
 }
@@ -468,6 +676,7 @@ pub fn crop_map_canvas(
     doc.updated_at = now;
 
     save_map_drawing(project_root, map_id, &drawing)?;
+    sync_secondary_drawings_dimensions(project_root, map_id, new_width, new_height, true)?;
     save_map_document(project_root, &doc)?;
     Ok(doc)
 }
@@ -699,6 +908,90 @@ fn sync_map_dimensions(doc: &mut MapDocumentV1, drawing: &mut MapDrawingV2, widt
     doc.height = height;
     drawing.width = width;
     drawing.height = height;
+}
+
+fn secondary_file_path(
+    project_root: &Path,
+    map_id: &str,
+    secondary_id: &str,
+) -> Result<PathBuf, AppError> {
+    if secondary_id.trim().is_empty()
+        || secondary_id.contains("..")
+        || secondary_id.contains('/')
+        || secondary_id.contains('\\')
+    {
+        return Err(AppError::new("error.maps.secondary_not_found"));
+    }
+    Ok(map_dir(project_root, map_id)?
+        .join(SECONDARY_DRAWINGS_DIR)
+        .join(format!("{secondary_id}.json")))
+}
+
+fn validate_secondary_file(
+    file: &MapSecondaryDrawingFileV1,
+    project_root: &Path,
+    map_id: &str,
+) -> Result<(), AppError> {
+    if file.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    if file.id.trim().is_empty() {
+        return Err(AppError::new("error.maps.invalid_json"));
+    }
+    if file.name.trim().is_empty() {
+        return Err(AppError::new("error.maps.secondary_name_required"));
+    }
+    validate_time_tag_format(file.tiempo_inicio.trim())?;
+    match &file.tiempo_fin {
+        None => {}
+        Some(raw) if raw.trim().is_empty() => {}
+        Some(raw) => validate_time_tag_format(raw.trim())?,
+    }
+    validate_drawing(&file.drawing)?;
+    let doc = get_map_document(project_root, map_id)?;
+    if file.drawing.width != doc.width || file.drawing.height != doc.height {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    Ok(())
+}
+
+fn sync_secondary_drawings_dimensions(
+    project_root: &Path,
+    map_id: &str,
+    new_width: u32,
+    new_height: u32,
+    crop: bool,
+) -> Result<(), AppError> {
+    let dir = map_dir(project_root, map_id)?.join(SECONDARY_DRAWINGS_DIR);
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(&dir).map_err(|e| AppError::database(e.to_string()))? {
+        let entry = entry.map_err(|e| AppError::database(e.to_string()))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let mut file: MapSecondaryDrawingFileV1 = read_json(&path)?;
+        if crop {
+            clip_drawing_strokes(&mut file.drawing, new_width, new_height);
+        }
+        file.drawing.width = new_width;
+        file.drawing.height = new_height;
+        validate_drawing(&file.drawing)?;
+        if file.drawing.width != new_width || file.drawing.height != new_height {
+            return Err(AppError::new("error.maps.invalid_dimensions"));
+        }
+        file.updated_at = timestamp_now();
+        write_json_atomic(&path, &file)?;
+    }
+    Ok(())
+}
+
+fn generate_secondary_id() -> String {
+    let seed = format!("sec:{}", unix_ms_now());
+    let hash = Sha256::digest(seed.as_bytes());
+    format!("sec-{:08x}", u32::from_be_bytes(hash[..4].try_into().unwrap()))
 }
 
 fn clip_drawing_strokes(drawing: &mut MapDrawingV2, new_width: u32, new_height: u32) {
@@ -1543,5 +1836,143 @@ mod tests {
         save_map_document(root, &doc).unwrap();
         let loaded = get_map_document(root, &summary.id).unwrap();
         assert!(loaded.desde.is_none());
+    }
+
+    #[test]
+    fn secondary_crud_and_expand_crop_sync() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Patches", 1200, 800).unwrap();
+        let sec = create_map_secondary(
+            root,
+            &summary.id,
+            "Puerto",
+            "1.1.2015",
+            None,
+        )
+        .unwrap();
+        assert!(sec.id.starts_with("sec-"));
+        assert_eq!(sec.drawing.width, 1200);
+        assert_eq!(sec.drawing.height, 800);
+
+        let listed = list_map_secondaries(root, &summary.id).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].name, "Puerto");
+
+        let loaded = get_map_secondary(root, &summary.id, &sec.id).unwrap();
+        assert_eq!(loaded.id, sec.id);
+
+        let mut updated = loaded.clone();
+        updated.drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "stroke-1".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pen".to_string(),
+            color: "#000".to_string(),
+            base_size: 2.0,
+            base_opacity: 1.0,
+            points: vec![
+                MapStrokePointV2 {
+                    x: 10.0,
+                    y: 10.0,
+                    pressure: None,
+                },
+                MapStrokePointV2 {
+                    x: 20.0,
+                    y: 20.0,
+                    pressure: None,
+                },
+            ],
+        });
+        save_map_secondary(root, &summary.id, &updated).unwrap();
+
+        let meta = update_map_secondary_meta(
+            root,
+            &summary.id,
+            &sec.id,
+            MapSecondaryMetaPatch {
+                name: Some("Puerto v2".to_string()),
+                tiempo_inicio: None,
+                tiempo_fin: Some("1.1.2028".to_string()),
+                clear_tiempo_fin: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(meta.name, "Puerto v2");
+        assert_eq!(meta.tiempo_fin.as_deref(), Some("1.1.2028"));
+
+        expand_map_canvas(root, &summary.id, 100, 50).unwrap();
+        let doc = get_map_document(root, &summary.id).unwrap();
+        assert_eq!(doc.width, 1300);
+        assert_eq!(doc.height, 850);
+        let principal = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(principal.width, 1300);
+        let sec_after_expand = get_map_secondary(root, &summary.id, &sec.id).unwrap();
+        assert_eq!(sec_after_expand.drawing.width, 1300);
+        assert_eq!(sec_after_expand.drawing.height, 850);
+
+        crop_map_canvas(root, &summary.id, 1000, 700).unwrap();
+        let doc_crop = get_map_document(root, &summary.id).unwrap();
+        assert_eq!(doc_crop.width, 1000);
+        let sec_after_crop = get_map_secondary(root, &summary.id, &sec.id).unwrap();
+        assert_eq!(sec_after_crop.drawing.width, 1000);
+        assert_eq!(sec_after_crop.drawing.height, 700);
+
+        delete_map_secondary(root, &summary.id, &sec.id).unwrap();
+        assert!(list_map_secondaries(root, &summary.id).unwrap().is_empty());
+        assert!(get_map_secondary(root, &summary.id, &sec.id).is_err());
+    }
+
+    #[test]
+    fn save_map_secondary_preserves_metadata_from_disk() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "MetaPreserve", 1200, 800).unwrap();
+        let sec = create_map_secondary(root, &summary.id, "Patch", "1.1.2015", None).unwrap();
+
+        update_map_secondary_meta(
+            root,
+            &summary.id,
+            &sec.id,
+            MapSecondaryMetaPatch {
+                name: Some("Renamed".to_string()),
+                tiempo_inicio: Some("23.10.2025".to_string()),
+                tiempo_fin: None,
+                clear_tiempo_fin: None,
+            },
+        )
+        .unwrap();
+
+        let mut stale = get_map_secondary(root, &summary.id, &sec.id).unwrap();
+        stale.name = sec.name.clone();
+        stale.tiempo_inicio = sec.tiempo_inicio.clone();
+        stale.drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "stroke-meta".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pen".to_string(),
+            color: "#000".to_string(),
+            base_size: 2.0,
+            base_opacity: 1.0,
+            points: vec![MapStrokePointV2 {
+                x: 1.0,
+                y: 2.0,
+                pressure: None,
+            }],
+        });
+
+        save_map_secondary(root, &summary.id, &stale).unwrap();
+
+        let loaded = get_map_secondary(root, &summary.id, &sec.id).unwrap();
+        assert_eq!(loaded.name, "Renamed");
+        assert_eq!(loaded.tiempo_inicio, "23.10.2025");
+        assert_eq!(loaded.drawing.layers[0].strokes.len(), 1);
+    }
+
+    #[test]
+    fn create_map_secondary_rejects_invalid_tiempo() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Bad", 1200, 800).unwrap();
+        let err = create_map_secondary(root, &summary.id, "X", "invalid", None).unwrap_err();
+        assert_eq!(err.key, "error.maps.invalid_desde");
     }
 }

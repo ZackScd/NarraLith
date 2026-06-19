@@ -131,7 +131,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-005** | 📋 | Estudio dibujo: colores custom, pinceles, presión tableta — [plan](plans/Fase%20F/MAP-005-draw-studio.md) | Alto | [`maps-design.md` §3bis](maps-design.md) |
 | **MAP-006** | ✅ | Capas internas por archivo de dibujo — [plan](plans/Fase%20F/MAP-006-layers.md) · QA `1781849729654` + fix D13 `1781850121442` | Medio | [`maps-design.md` §4.1](maps-design.md) |
 | **MAP-007** | ✅ | Dibujo principal: «Desde», terreno base — [plan](plans/Fase%20F/MAP-007-principal-desde.md) · QA `1781851429000-23756` | Medio | [`maps-design.md` §4.2](maps-design.md) |
-| **MAP-008** | ⬜ | Secundarios: parches transparentes, visibilidad temporal, apilar vs `tiempo_fin` | Alto | [`maps-design.md` §4.3](maps-design.md) |
+| **MAP-008** | 📋 | Secundarios: parches transparentes, visibilidad T — [plan](plans/Fase%20F/MAP-008-secondary-patches.md) | Alto | [`maps-design.md` §4.3](maps-design.md) |
 | **MAP-009** | ⬜ | Compositor + timeline del mapa (scrubber **T**) | Alto | [`maps-design.md` §4.4](maps-design.md) |
 | **MAP-010** | ⬜ | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver | Alto | [`maps-design.md` §5](maps-design.md) |
 | **MAP-011** | ⬜ | Ubicaciones desde manuscrito: marcas **X** en T (stub Era III) | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
@@ -282,6 +282,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **MAP-006 ✅ cerrado** capas internas — [`MAP-006-layers.md`](plans/Fase%20F/MAP-006-layers.md) · QA `1781849729654` + D13 `1781850121442` |
 | 2026-06-11 | **MAP-007 📋** dibujo principal + «Desde» — [`MAP-007-principal-desde.md`](plans/Fase%20F/MAP-007-principal-desde.md) |
 | 2026-06-11 | **MAP-007 ✅ cerrado** dibujo principal + «Desde» — QA `1781851429000-23756` |
+| 2026-06-11 | **MAP-008 📋** secundarios + parches temporales — [`MAP-008-secondary-patches.md`](plans/Fase%20F/MAP-008-secondary-patches.md) |
 
 ---
 

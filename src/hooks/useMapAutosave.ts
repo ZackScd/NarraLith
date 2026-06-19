@@ -9,7 +9,8 @@ import {
 import type { MapSaveDrawingObsReason } from "@/lib/maps/mapSaveObs";
 import { resolveMapSaveDrawingObsReason } from "@/lib/maps/mapSaveObs";
 import type { MapDrawingSaveStatus } from "@/lib/maps/mapDrawingSession";
-import type { MapDrawingV2 } from "@/lib/types/maps";
+import type { MapDrawingRef, MapDrawingV2 } from "@/lib/types/maps";
+import { DEFAULT_MAP_DRAWING_REF, drawingRefKey } from "@/lib/types/maps";
 
 interface UseMapAutosaveOptions {
   enabled: boolean;
@@ -20,6 +21,7 @@ interface UseMapAutosaveOptions {
   setSaveStatus: (status: MapDrawingSaveStatus) => void;
   markSaved: () => void;
   saveDrawing: (mapId: string, drawing: MapDrawingV2) => Promise<void>;
+  getDrawingRef?: () => MapDrawingRef;
 }
 
 export function useMapAutosave({
@@ -31,6 +33,7 @@ export function useMapAutosave({
   setSaveStatus,
   markSaved,
   saveDrawing,
+  getDrawingRef,
 }: UseMapAutosaveOptions) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
@@ -38,11 +41,13 @@ export function useMapAutosave({
   const drawingRef = useRef(drawing);
   const activeLayerIdRef = useRef(activeLayerId);
   const isDirtyRef = useRef(isDirty);
+  const getDrawingRefRef = useRef(getDrawingRef);
 
   mapIdRef.current = mapId;
   drawingRef.current = drawing;
   activeLayerIdRef.current = activeLayerId;
   isDirtyRef.current = isDirty;
+  getDrawingRefRef.current = getDrawingRef;
 
   const performSave = useCallback(
     async (
@@ -72,8 +77,10 @@ export function useMapAutosave({
             return true;
           }
           markSaved();
+          const drawingTarget = getDrawingRefRef.current?.() ?? DEFAULT_MAP_DRAWING_REF;
           trackAction("map", "saveDrawing", {
             mapId: mapIdAtStart,
+            drawingRef: drawingRefKey(drawingTarget),
             strokeCount: countMapStrokes(targetDrawing),
             layerCount: targetDrawing.layers.length,
             activeLayerId: activeLayerIdRef.current,
