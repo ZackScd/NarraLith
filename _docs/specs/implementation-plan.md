@@ -127,7 +127,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-001** | ✅ | Persistencia v2 + purga legacy — [plan](plans/Fase%20F/MAP-001-persistence-v2.md) | Alto | [`maps-design.md`](maps-design.md) §9 |
 | **MAP-002** | ✅ | Multi-mundo: selector + apertura fijado/último visto/modificado — [plan](plans/Fase%20F/MAP-002-multi-world.md) · QA cerrado | Medio | [`maps-design.md`](maps-design.md) §3ter |
 | **MAP-003** | ✅ | Crear mapa: diálogo, tamaño libre, aspect ratio, import, expandir/recortar — [plan](plans/Fase%20F/MAP-003-create-canvas.md) · QA cerrado | Medio–alto | [`maps-design.md` §3](maps-design.md) |
-| **MAP-004** | ⬜ | Modos vista: **interactivo por defecto** + edición solo con ✏️ | Medio | [`maps-design.md` §8](maps-design.md) |
+| **MAP-004** | 📋 | Modos vista: **interactivo por defecto** + edición solo con ✏️ — [plan](plans/Fase%20F/MAP-004-view-modes.md) | Medio–alto | [`maps-design.md` §8](maps-design.md) |
 | **MAP-005** | ⬜ | Estudio dibujo: colores custom, pinceles, presión tableta (`pressure` 0–1) | Alto | [`maps-design.md` §3bis](maps-design.md) |
 | **MAP-006** | ⬜ | Capas internas por archivo de dibujo | Medio | [`maps-design.md` §4.1](maps-design.md) |
 | **MAP-007** | ⬜ | Dibujo principal: «Desde», terreno base | Medio | [`maps-design.md` §4.2](maps-design.md) |
@@ -203,7 +203,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 19 | MAP-001 | Persistencia mapas v2 + purga ✅ |
 | 20 | MAP-002 | Multi-mundo + selector ✅ |
 | 21 | MAP-003 | Lienzo crear/import/expandir/recortar ✅ |
-| 22 | MAP-004 | Modos interactivo / edición |
+| 22 | MAP-004 | Modos interactivo / edición 📋 plan |
 | 23 | MAP-005 | Estudio Sketchbook |
 | 24 | MAP-006 | Capas internas |
 | 25 | MAP-007 | Dibujo principal + Desde |
@@ -277,6 +277,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **MAP-001 📋** plan persistencia v2 + purga — [`plans/Fase F/MAP-001-persistence-v2.md`](plans/Fase%20F/MAP-001-persistence-v2.md) |
 | 2026-06-11 | **MAP-002 ✅ cerrado** multi-mundo + selector — QA `1781754152083-26128` |
 | 2026-06-11 | **MAP-003 ✅ cerrado** crear lienzo + import + expand/crop — QA `1781830041954-20420` |
+| 2026-06-11 | **MAP-004 📋** modos interactivo/edición + viewport — [`plans/Fase F/MAP-004-view-modes.md`](plans/Fase%20F/MAP-004-view-modes.md) |
 
 ---
 

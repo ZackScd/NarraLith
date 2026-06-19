@@ -7,7 +7,7 @@
 |-------|--------|
 | **Era** | III (`03-ROADMAP.md`) |
 | **Versión objetivo** | v0.11.x |
-| **Estado** | MAP-001 ✅ · MAP-002 ✅ · MAP-003 ✅ · MAP-004 siguiente |
+| **Estado** | MAP-001 ✅ · MAP-002 ✅ · MAP-003 ✅ · MAP-004 📋 planificado |
 
 ---
 
@@ -52,7 +52,7 @@ MAP-001 persistencia v2 + purga física legacy
 | **MAP-001** | Persistencia v2 + purga legacy + IPC + UI placeholder | §9 · [plan](plans/Fase%20F/MAP-001-persistence-v2.md) ✅ | MAP-000 |
 | **MAP-002** | Selector + apertura (pinned / lastViewed / lastModified) | §3ter · [plan](plans/Fase%20F/MAP-002-multi-world.md) ✅ | MAP-001 |
 | **MAP-003** | Crear mapa: diálogo, tamaño libre, aspect ratio, import, expandir/recortar | §3 · [plan](plans/Fase%20F/MAP-003-create-canvas.md) ✅ | MAP-002 |
-| **MAP-004** | Interactivo por defecto; edición solo ✏️ | §8 | MAP-001 |
+| **MAP-004** | Interactivo por defecto; edición solo ✏️ + viewport canvas | §8 · [plan](plans/Fase%20F/MAP-004-view-modes.md) 📋 | MAP-001 |
 | **MAP-005** | Estudio Sketchbook: color custom, pinceles, presión; autosave | §3bis | MAP-004 |
 | **MAP-006** | Capas internas por dibujo | §4.1 | MAP-005 |
 | **MAP-007** | Dibujo principal + etiqueta «Desde» | §4.2 | MAP-001 |
