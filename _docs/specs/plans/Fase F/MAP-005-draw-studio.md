@@ -1,6 +1,6 @@
 # MAP-005 — Estudio dibujo Sketchbook (captura, presión, autosave)
 
-> **Estado:** 📋 **Planificado** (2026-06-11) · **Revisado implementabilidad** · Sin implementación  
+> **Estado:** 🔨 **En progreso** (2026-06-11) · Fases 1–4 implementadas · Fase 5+ pendiente  
 > **Esfuerzo:** Alto · **Riesgo:** Medio (↓ tras revisión; goma/capas offscreen acotadas)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3bis · **Previo:** [MAP-004 ✅](MAP-004-view-modes.md) · **Siguiente:** MAP-006
 
@@ -611,3 +611,5 @@ MAP-005 debe **no** hardcodear solo `layer-1` en más de un sitio — usar `reso
 |-------|--------|
 | 2026-06-11 | Plan MAP-005 redactado (auditoría post MAP-004 ✅, QA `1781831409032-13548`) |
 | 2026-06-11 | **Revisión implementabilidad** — D12–D16, D10 obligatorio, fases reordenadas |
+| 2026-06-11 | **Fases 1–3** — libs, stores, session, offscreen compositor, presión/goma render |
+| 2026-06-11 | **Fase 4** — `useMapDrawGesture`, pan vs dibujo (D5), preview en vivo |

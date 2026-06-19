@@ -5,11 +5,11 @@
   "genericError": "Error al guardar el mapa.",
   "noMaps": "Aún no hay mapas en este proyecto.",
   "emptyTitle": "Crea tu primer mapa",
-  "emptyDescription": "Pulsa «Nuevo mapa» para abrir el diálogo de creación. El estudio de dibujo y la vista interactiva llegarán en las siguientes fases.",
+  "emptyDescription": "Pulsa «Nuevo mapa» para crear un lienzo vacío o importar una imagen como base.",
   "createMap": "Nuevo mapa",
   "mapNamePlaceholder": "p. ej. Continente de Aetheria",
   "creating": "Creando…",
-  "placeholderHint": "Vista preliminar MAP-004: viewport interactivo y modo edición activos; herramientas de dibujo en MAP-005.",
+  "placeholderHint": "Vista interactiva y estudio de dibujo disponibles en modo edición.",
   "create": {
     "title": "Nuevo mapa",
     "description": "Define el nombre y el tamaño del lienzo, o importa una imagen como base.",
@@ -96,8 +96,30 @@
   "viewport": {
     "ariaLabel": "Vista del mapa {{name}}"
   },
-  "editToolbar": {
-    "placeholder": "Herramientas de dibujo — MAP-005 (próximamente). Expandir y recortar lienzo disponibles abajo."
+  "studio": {
+    "tools": {
+      "group": "Herramientas de dibujo",
+      "pan": "Mano (pan)",
+      "brush": "Pincel",
+      "eraser": "Goma"
+    },
+    "brushLabel": "Pincel",
+    "brushes": {
+      "pen": "Pluma",
+      "pencil": "Lápiz",
+      "marker": "Rotulador"
+    },
+    "sizeLabel": "Tamaño",
+    "opacityLabel": "Opacidad",
+    "undo": "Deshacer",
+    "redo": "Rehacer",
+    "customColor": "Color personalizado",
+    "colorSwatch": "Color {{color}}",
+    "save": {
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "error": "Error al guardar"
+    }
   },
   "errors": {
     "generic": "No se pudo completar la operación del mapa.",

@@ -5,11 +5,11 @@
   "genericError": "Failed to save the map.",
   "noMaps": "No maps in this project yet.",
   "emptyTitle": "Create your first map",
-  "emptyDescription": "Click «New map» to open the creation dialog. Drawing studio and interactive view come in later phases.",
+  "emptyDescription": "Click «New map» to create a blank canvas or import an image as the base.",
   "createMap": "New map",
   "mapNamePlaceholder": "e.g. Continent of Aetheria",
   "creating": "Creating…",
-  "placeholderHint": "MAP-004 preview: interactive viewport and edit mode are active; drawing tools ship in MAP-005.",
+  "placeholderHint": "Interactive view and draw studio available in edit mode.",
   "create": {
     "title": "New map",
     "description": "Set the name and canvas size, or import an image as the base.",
@@ -96,8 +96,30 @@
   "viewport": {
     "ariaLabel": "Map view {{name}}"
   },
-  "editToolbar": {
-    "placeholder": "Drawing tools — MAP-005 (coming soon). Expand and crop canvas available below."
+  "studio": {
+    "tools": {
+      "group": "Drawing tools",
+      "pan": "Hand (pan)",
+      "brush": "Brush",
+      "eraser": "Eraser"
+    },
+    "brushLabel": "Brush",
+    "brushes": {
+      "pen": "Pen",
+      "pencil": "Pencil",
+      "marker": "Marker"
+    },
+    "sizeLabel": "Size",
+    "opacityLabel": "Opacity",
+    "undo": "Undo",
+    "redo": "Redo",
+    "customColor": "Custom color",
+    "colorSwatch": "Color {{color}}",
+    "save": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Save failed"
+    }
   },
   "errors": {
     "generic": "Could not complete the map operation.",

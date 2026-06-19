@@ -143,7 +143,33 @@
     cursor: text !important;
   }
 
-  /* Excepción: divisores redimensionables de paneles laterales */
+  /* Excepción: controles interactivos */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  summary,
+  .cursor-pointer,
+  .cursor-grab,
+  .cursor-grabbing,
+  .cursor-crosshair {
+    cursor: pointer !important;
+  }
+
+  .cursor-grab {
+    cursor: grab !important;
+  }
+
+  .cursor-grabbing,
+  .active\:cursor-grabbing:active {
+    cursor: grabbing !important;
+  }
+
+  .cursor-crosshair {
+    cursor: crosshair !important;
+  }
+
+  .cursor-col-resize,
   .panel-resize-handle {
     cursor: col-resize !important;
   }

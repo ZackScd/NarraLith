@@ -258,6 +258,23 @@ export function useMapProject() {
     [activeKey, activeMapId, activeSnapshot, loadSession, refreshActiveMap],
   );
 
+  const saveDrawing = useCallback(
+    async (mapId: string, drawingToSave: MapDrawingV2) => {
+      await invokeCommand("save_map_drawing_cmd", { mapId, drawing: drawingToSave });
+      const snapshotKey = `${rootPath}:${mapId}`;
+      setActiveSnapshot((prev) => {
+        if (prev?.key !== snapshotKey) return prev;
+        return {
+          ...prev,
+          drawing: structuredClone(drawingToSave),
+          errorKey: null,
+        };
+      });
+      await loadSession();
+    },
+    [loadSession, rootPath],
+  );
+
   const cropCanvas = useCallback(
     async (newWidth: number, newHeight: number) => {
       if (!activeMapId) return null;
@@ -332,5 +349,6 @@ export function useMapProject() {
     createMap,
     expandCanvas,
     cropCanvas,
+    saveDrawing,
   };
 }

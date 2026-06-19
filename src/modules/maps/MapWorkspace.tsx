@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useMapAutosave } from "@/hooks/useMapAutosave";
 import { useMapProject } from "@/hooks/useMapProject";
+import { useMapDrawingSession } from "@/hooks/useMapDrawingSession";
 import { trackAction } from "@/lib/action-audit/trackAction";
 import type { MapCreateDraft, OpenPreference } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
@@ -13,9 +15,11 @@ import {
   MapCanvasSizeDialog,
   type MapCanvasSizeMode,
 } from "@/modules/maps/MapCanvasSizeDialog";
-import { MapEditToolbar } from "@/modules/maps/MapEditToolbar";
+import { useMapStudioShortcuts } from "@/hooks/useMapStudioShortcuts";
+import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
+import { useProjectStore } from "@/stores/useProjectStore";
 
 const SELECT_CLASS =
   "flex h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm";
@@ -25,6 +29,8 @@ export function MapWorkspace() {
   const activeMapId = useMapStore((s) => s.activeMapId);
   const viewMode = useMapStore((s) => s.viewMode);
   const setViewMode = useMapStore((s) => s.setViewMode);
+  const rootPath = useProjectStore((s) => s.activeProject?.rootPath ?? "");
+  const sessionKey = `${rootPath}:${activeMapId ?? ""}`;
   const {
     maps,
     openPreference,
@@ -40,6 +46,7 @@ export function MapWorkspace() {
     createMap,
     expandCanvas,
     cropCanvas,
+    saveDrawing,
   } = useMapProject();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -51,6 +58,34 @@ export function MapWorkspace() {
   const showEmpty = !loading && maps.length === 0;
   const isEditMode = viewMode === "edit";
 
+  const drawingSession = useMapDrawingSession({
+    sessionKey,
+    sourceDrawing: drawing,
+    mapId: activeMapId,
+  });
+
+  useMapStudioShortcuts({
+    viewMode,
+    canUndo: drawingSession.canUndo,
+    canRedo: drawingSession.canRedo,
+    onUndo: drawingSession.undo,
+    onRedo: drawingSession.redo,
+  });
+
+  const { flushAutosave } = useMapAutosave({
+    enabled: isEditMode,
+    mapId: activeMapId,
+    drawing: drawingSession.drawing,
+    isDirty: drawingSession.isDirty,
+    setSaveStatus: drawingSession.setSaveStatus,
+    markSaved: drawingSession.markSaved,
+    saveDrawing,
+  });
+
+  const viewportDrawing =
+    isEditMode && drawingSession.drawing ? drawingSession.drawing : drawing;
+  const previewStroke = isEditMode ? drawingSession.currentStroke : null;
+
   const handleCreate = async (draft: MapCreateDraft) => {
     await createMap(draft);
   };
@@ -61,8 +96,12 @@ export function MapWorkspace() {
   };
 
   const handleMapChange = (mapId: string) => {
-    if (!mapId) return;
-    void selectMap(mapId);
+    if (!mapId || mapId === activeMapId) return;
+    void (async () => {
+      const ok = await flushAutosave("mapSwitch");
+      if (!ok) return;
+      await selectMap(mapId);
+    })();
   };
 
   const handlePreferenceChange = (value: OpenPreference) => {
@@ -83,13 +122,19 @@ export function MapWorkspace() {
 
   const handleExitEdit = () => {
     if (!activeMapId) return;
-    const fromMode = viewMode;
-    setViewMode("interactive");
-    trackAction("map", "setViewMode", {
-      mapId: activeMapId,
-      mode: "interactive",
-      fromMode,
-    });
+    void (async () => {
+      if (drawingSession.isDirty) {
+        const ok = await flushAutosave("exitEdit");
+        if (!ok) return;
+      }
+      const fromMode = viewMode;
+      setViewMode("interactive");
+      trackAction("map", "setViewMode", {
+        mapId: activeMapId,
+        mode: "interactive",
+        fromMode,
+      });
+    })();
   };
 
   return (
@@ -212,17 +257,26 @@ export function MapWorkspace() {
           </div>
         ) : null}
 
-        {activeMapId && document && drawing ? (
+        {activeMapId && document && viewportDrawing ? (
           <>
             <MapViewport
               mapId={activeMapId}
               document={document}
-              drawing={drawing}
+              drawing={viewportDrawing}
               viewMode={viewMode}
+              previewStroke={previewStroke}
+              onPreviewStroke={drawingSession.setPreviewStroke}
+              onCommitStroke={drawingSession.commitStroke}
             />
-            {isEditMode ? (
-              <MapEditToolbar
+            {isEditMode && activeMapId ? (
+              <MapEditStudio
+                mapId={activeMapId}
                 canvasBusy={canvasBusy}
+                saveStatus={drawingSession.saveStatus}
+                canUndo={drawingSession.canUndo}
+                canRedo={drawingSession.canRedo}
+                onUndo={drawingSession.undo}
+                onRedo={drawingSession.redo}
                 onExpand={() => openCanvasDialog("expand")}
                 onCrop={() => openCanvasDialog("crop")}
               />
@@ -254,9 +308,13 @@ export function MapWorkspace() {
           currentHeight={document.height}
           busy={canvasBusy}
           onExpand={async (addRight, addBottom) => {
+            const ok = await flushAutosave("canvasOp");
+            if (!ok) return;
             await expandCanvas(addRight, addBottom);
           }}
           onCrop={async (newWidth, newHeight) => {
+            const ok = await flushAutosave("canvasOp");
+            if (!ok) return;
             await cropCanvas(newWidth, newHeight);
           }}
         />

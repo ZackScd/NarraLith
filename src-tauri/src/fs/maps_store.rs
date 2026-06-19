@@ -275,6 +275,9 @@ pub fn save_map_drawing(
     validate_drawing(drawing)?;
     let path = map_dir(project_root, map_id)?.join(PRINCIPAL_DRAWING_REL);
     write_json_atomic(&path, drawing)?;
+    let doc = get_map_document(project_root, map_id)?;
+    let now = timestamp_now();
+    upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
     Ok(())
 }
 
@@ -1060,6 +1063,48 @@ mod tests {
         let loaded = get_map_drawing(root, &summary.id).unwrap();
         assert_eq!(loaded.layers[0].strokes.len(), 1);
         assert_eq!(loaded.layers[0].strokes[0].points[0].pressure, Some(0.5));
+    }
+
+    #[test]
+    fn save_map_drawing_updates_index_updated_at() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Draw", 1200, 800).unwrap();
+        let mut index = load_index(root).unwrap();
+        let entry = index
+            .maps
+            .iter_mut()
+            .find(|e| e.id == summary.id)
+            .unwrap();
+        entry.updated_at = "100".to_string();
+        save_index(root, &index).unwrap();
+
+        let mut drawing = get_map_drawing(root, &summary.id).unwrap();
+        drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "s1".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pen".to_string(),
+            color: "#000000".to_string(),
+            base_size: 2.0,
+            base_opacity: 1.0,
+            points: vec![MapStrokePointV2 {
+                x: 1.0,
+                y: 2.0,
+                pressure: None,
+            }],
+        });
+        save_map_drawing(root, &summary.id, &drawing).unwrap();
+
+        let index = load_index(root).unwrap();
+        let updated_at = index
+            .maps
+            .iter()
+            .find(|e| e.id == summary.id)
+            .unwrap()
+            .updated_at
+            .clone();
+        assert_ne!(updated_at, "100");
+        assert!(updated_at.parse::<i64>().unwrap() > 100);
     }
 
     #[test]

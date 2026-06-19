@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { invokeCommand } from "@/lib/ipc";
+import { countMapStrokes } from "@/lib/maps/mapDrawingStats";
 import { mapAssetProjectPath } from "@/lib/maps/mapAssetPath";
+import { paintStrokeLayer } from "@/lib/maps/mapStrokeBuffer";
 import { drawMapStrokes } from "@/lib/maps/mapStrokeRender";
 import { renderAudit } from "@/lib/render-audit";
 import { UI_EVENTS } from "@/lib/render-audit/events";
-import type { MapDocumentV1, MapDrawingV2 } from "@/lib/types/maps";
+import type { MapDocumentV1, MapDrawingV2, MapStrokeV2 } from "@/lib/types/maps";
 import type { MapViewMode } from "@/stores/useMapStore";
+import type { MapStudioTool } from "@/stores/useMapStudioStore";
+
+import { shouldPanPointer } from "@/lib/maps/mapDrawGesture";
 
 export interface MapViewportState {
   zoom: number;
@@ -19,12 +24,15 @@ export const MAP_VIEWPORT_MAX_ZOOM = 2;
 
 const GRID_SIZE = 32;
 const MAX_DPR = 2;
+const COMPOSITOR_AUDIT_DEBOUNCE_MS = 300;
 
 interface UseMapViewportOptions {
   mapId: string;
   document: MapDocumentV1;
   drawing: MapDrawingV2;
   viewMode: MapViewMode;
+  previewStroke?: MapStrokeV2 | null;
+  studioTool?: MapStudioTool;
 }
 
 interface ContainerSize {
@@ -116,6 +124,8 @@ export function paintMapViewport(
   document: MapDocumentV1,
   drawing: MapDrawingV2,
   baseImage: HTMLImageElement | null,
+  mapId: string,
+  previewStroke?: MapStrokeV2 | null,
 ): void {
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -136,7 +146,11 @@ export function paintMapViewport(
     drawGrid(ctx, document.width, document.height);
   }
 
-  drawMapStrokes(ctx, drawing);
+  const strokeLayer = paintStrokeLayer(mapId, document, (bufferCtx) => {
+    drawMapStrokes(bufferCtx, drawing, previewStroke);
+  });
+  ctx.drawImage(strokeLayer, 0, 0);
+
   ctx.restore();
 }
 
@@ -167,6 +181,8 @@ export function useMapViewport({
   document,
   drawing,
   viewMode,
+  previewStroke = null,
+  studioTool = "brush",
 }: UseMapViewportOptions) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -214,8 +230,8 @@ export function useMapViewport({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    paintMapViewport(ctx, containerSize, viewport, document, drawing, baseImage);
-  }, [baseImage, containerSize, document, drawing, viewport]);
+    paintMapViewport(ctx, containerSize, viewport, document, drawing, baseImage, mapId, previewStroke);
+  }, [baseImage, containerSize, document, drawing, mapId, previewStroke, viewport]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -285,6 +301,23 @@ export function useMapViewport({
   }, [emitRenderAudit, viewport]);
 
   useEffect(() => {
+    if (!renderAudit.isStandardEnabled()) return;
+    const strokeCount = countMapStrokes(drawing);
+    const visibleLayers = drawing.layers.filter((layer) => layer.visible).map((layer) => layer.id);
+    const timer = window.setTimeout(() => {
+      renderAudit.ui(UI_EVENTS.maps.compositor, {
+        stub: false,
+        mapId,
+        timeT: null,
+        visibleLayers,
+        strokeCount,
+        layerCount: drawing.layers.length,
+      });
+    }, COMPOSITOR_AUDIT_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [drawing, mapId]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.code === "Space") spacePressed.current = true;
     };
@@ -299,13 +332,12 @@ export function useMapViewport({
     };
   }, []);
 
-  const canPan = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
-    return (
-      event.button === 1 ||
-      (event.button === 0 && spacePressed.current) ||
-      event.button === 0
-    );
-  }, []);
+  const canPan = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      return shouldPanPointer(viewMode, studioTool, event.button, spacePressed.current);
+    },
+    [studioTool, viewMode],
+  );
 
   const handleWheel = useCallback(
     (event: React.WheelEvent<HTMLCanvasElement>) => {
@@ -362,5 +394,6 @@ export function useMapViewport({
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
+    isSpacePressed: () => spacePressed.current,
   };
 }

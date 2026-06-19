@@ -9,8 +9,10 @@ import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useEntitySearchStore } from "@/stores/useEntitySearchStore";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
 import { useMapStore } from "@/stores/useMapStore";
+import { useMapStudioStore } from "@/stores/useMapStudioStore";
 import { useProjectTimelineStore } from "@/stores/useProjectTimelineStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { flushMapDrawingAutosave } from "@/lib/maps/mapAutosaveFlush";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 import type { ProjectMeta } from "@/lib/types/models";
 import type { RecentProjectEntry } from "@/lib/types/project";
@@ -92,6 +94,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   createProject: async (parentPath, name, templateId) => {
+    await flushMapDrawingAutosave("projectSwitch");
     set({ isLoading: true, lastErrorKey: null });
     try {
       const locale = useSettingsStore.getState().locale;
@@ -119,6 +122,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   openProject: async (path) => {
+    await flushMapDrawingAutosave("projectSwitch");
     set({ isLoading: true, lastErrorKey: null });
     try {
       const meta = await invokeCommand<ProjectMeta>("open_project", { path });
@@ -151,6 +155,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   closeProject: async () => {
+    await flushMapDrawingAutosave("projectSwitch");
     const projectName = get().activeProject?.name;
     set({ isLoading: true, lastErrorKey: null });
     try {
@@ -162,6 +167,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       useProjectTimelineStore.getState().reset();
       useWorkspaceStore.getState().reset();
       useMapStore.getState().reset();
+      useMapStudioStore.getState().reset();
       set({ activeProject: null });
       audit.info("project", "obs.project.close", { name: projectName ?? null });
       trackAction("project", "close", { name: projectName ?? null });
