@@ -1,6 +1,6 @@
 # MAP-003 — Crear mapa y lienzo (tamaño libre, import, expandir/recortar)
 
-> **Estado:** 📋 **Planificado** (2026-06-11) · **Sin implementación**  
+> **Estado:** ✅ **Cerrado** (2026-06-11) · QA manual §7 validado (`1781830041954-20420`)  
 > **Esfuerzo:** Medio–alto · **Riesgo:** Medio  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §3 · **Previo:** [MAP-002 ✅](MAP-002-multi-world.md) · **Siguiente:** MAP-004
 
@@ -428,3 +428,5 @@ MAP-004 tomará modos interactivo/edición. MAP-003 debe dejar:
 | Fecha | Evento |
 |-------|--------|
 | 2026-06-11 | Plan MAP-003 redactado (auditoría post MAP-002 ✅) |
+| 2026-06-11 | Implementación Fases 1–5: Rust + IPC + diálogos + OBS; 21 tests maps_store; build OK |
+| 2026-06-11 | **QA cerrado** sesión `1781830041954-20420`: create import 2560², crop (×2), expand +250; viewport actualizado |

@@ -58,6 +58,8 @@ pub struct MapDocumentV1 {
     pub width: u32,
     pub height: u32,
     pub desde: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_image_rel: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -92,6 +94,13 @@ pub struct MapSessionV2 {
     pub initial_map_id: Option<String>,
     pub initial_reason: InitialMapReason,
     pub maps: Vec<MapSummaryV2>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum MapCreateMode {
+    Blank,
+    Import,
 }
 
 struct ResolvedInitial {
@@ -297,6 +306,7 @@ pub fn create_blank_map(
         width,
         height,
         desde: None,
+        base_image_rel: None,
         created_at: now.clone(),
         updated_at: now.clone(),
     };
@@ -317,6 +327,136 @@ pub fn create_blank_map(
         updated_at: now,
         default_on_open: None,
     })
+}
+
+pub fn create_map(
+    project_root: &Path,
+    name: &str,
+    mode: MapCreateMode,
+    width: Option<u32>,
+    height: Option<u32>,
+    source_path: Option<&str>,
+) -> Result<MapSummaryV2, AppError> {
+    match mode {
+        MapCreateMode::Blank => {
+            let width = width.ok_or_else(|| AppError::new("error.maps.invalid_dimensions"))?;
+            let height = height.ok_or_else(|| AppError::new("error.maps.invalid_dimensions"))?;
+            create_blank_map(project_root, name, width, height)
+        }
+        MapCreateMode::Import => {
+            let source_path =
+                source_path.ok_or_else(|| AppError::new("error.maps.image_not_found"))?;
+            create_map_from_image(project_root, name, source_path)
+        }
+    }
+}
+
+pub fn create_map_from_image(
+    project_root: &Path,
+    name: &str,
+    source_path: &str,
+) -> Result<MapSummaryV2, AppError> {
+    ensure_maps_dir(project_root)?;
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::new("error.maps.name_required"));
+    }
+
+    let source = resolve_external_image_path(source_path)?;
+    let (raw_width, raw_height) = read_image_dimensions(&source)?;
+    let (width, height) = normalize_image_dimensions(raw_width, raw_height)?;
+
+    let id = generate_map_id(trimmed);
+    let now = timestamp_now();
+    let map_dir = map_dir(project_root, &id)?;
+    fs::create_dir_all(map_dir.join("drawings"))
+        .map_err(|e| AppError::database(e.to_string()))?;
+    fs::create_dir_all(map_dir.join("assets"))
+        .map_err(|e| AppError::database(e.to_string()))?;
+
+    let base_image_rel = copy_import_to_map_assets(&source, &map_dir)?;
+
+    let doc = MapDocumentV1 {
+        version: 1,
+        id: id.clone(),
+        name: trimmed.to_string(),
+        width,
+        height,
+        desde: None,
+        base_image_rel: Some(base_image_rel.clone()),
+        created_at: now.clone(),
+        updated_at: now.clone(),
+    };
+    write_json(&map_dir.join(MAP_FILENAME), &doc)?;
+    write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV1::empty())?;
+
+    let drawing = default_principal_drawing(width, height);
+    write_json_atomic(&map_dir.join(PRINCIPAL_DRAWING_REL), &drawing)?;
+
+    upsert_index_entry(project_root, &id, trimmed, &now, None)?;
+    record_map_viewed(project_root, &id)?;
+
+    Ok(MapSummaryV2 {
+        id,
+        name: trimmed.to_string(),
+        width,
+        height,
+        updated_at: now,
+        default_on_open: None,
+    })
+}
+
+pub fn expand_map_canvas(
+    project_root: &Path,
+    map_id: &str,
+    add_right: u32,
+    add_bottom: u32,
+) -> Result<MapDocumentV1, AppError> {
+    let mut doc = get_map_document(project_root, map_id)?;
+    let new_width = doc
+        .width
+        .checked_add(add_right)
+        .ok_or_else(|| AppError::new("error.maps.invalid_dimensions"))?;
+    let new_height = doc
+        .height
+        .checked_add(add_bottom)
+        .ok_or_else(|| AppError::new("error.maps.invalid_dimensions"))?;
+    validate_dimensions(new_width, new_height)?;
+
+    let mut drawing = get_map_drawing(project_root, map_id)?;
+    sync_map_dimensions(&mut doc, &mut drawing, new_width, new_height);
+    let now = timestamp_now();
+    doc.updated_at = now.clone();
+
+    save_map_drawing(project_root, map_id, &drawing)?;
+    save_map_document(project_root, &doc)?;
+    Ok(doc)
+}
+
+pub fn crop_map_canvas(
+    project_root: &Path,
+    map_id: &str,
+    new_width: u32,
+    new_height: u32,
+) -> Result<MapDocumentV1, AppError> {
+    validate_dimensions(new_width, new_height)?;
+    let mut doc = get_map_document(project_root, map_id)?;
+    if new_width > doc.width || new_height > doc.height {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    if new_width == doc.width && new_height == doc.height {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+
+    let mut drawing = get_map_drawing(project_root, map_id)?;
+    clip_drawing_strokes(&mut drawing, new_width, new_height);
+    sync_map_dimensions(&mut doc, &mut drawing, new_width, new_height);
+    let now = timestamp_now();
+    doc.updated_at = now;
+
+    save_map_drawing(project_root, map_id, &drawing)?;
+    save_map_document(project_root, &doc)?;
+    Ok(doc)
 }
 
 /// Lee una imagen relativa al proyecto y la devuelve como data URL.
@@ -539,6 +679,98 @@ fn find_first(index: &MapsIndexV2, valid: &[String]) -> Option<String> {
         .iter()
         .find(|e| valid.contains(&e.id))
         .map(|e| e.id.clone())
+}
+
+fn sync_map_dimensions(doc: &mut MapDocumentV1, drawing: &mut MapDrawingV2, width: u32, height: u32) {
+    doc.width = width;
+    doc.height = height;
+    drawing.width = width;
+    drawing.height = height;
+}
+
+fn clip_drawing_strokes(drawing: &mut MapDrawingV2, new_width: u32, new_height: u32) {
+    let max_x = new_width as f64;
+    let max_y = new_height as f64;
+    for layer in &mut drawing.layers {
+        layer.strokes.retain_mut(|stroke| {
+            stroke.points.retain(|point| {
+                point.x >= 0.0 && point.x < max_x && point.y >= 0.0 && point.y < max_y
+            });
+            stroke.points.len() >= 2
+        });
+    }
+}
+
+fn normalize_image_dimensions(width: u32, height: u32) -> Result<(u32, u32), AppError> {
+    if width == 0 || height == 0 {
+        return Err(AppError::new("error.maps.image_dimensions_invalid"));
+    }
+    let mut w = width;
+    let mut h = height;
+    if w > MAX_DIMENSION || h > MAX_DIMENSION {
+        let scale = (MAX_DIMENSION as f64 / w as f64).min(MAX_DIMENSION as f64 / h as f64);
+        w = (w as f64 * scale).floor() as u32;
+        h = (h as f64 * scale).floor() as u32;
+    }
+    if w < MIN_DIMENSION || h < MIN_DIMENSION {
+        return Err(AppError::new("error.maps.image_dimensions_invalid"));
+    }
+    Ok((w, h))
+}
+
+fn read_image_dimensions(path: &Path) -> Result<(u32, u32), AppError> {
+    let reader = image::ImageReader::open(path).map_err(|_| AppError::new("error.maps.image_not_found"))?;
+    let (width, height) = reader
+        .into_dimensions()
+        .map_err(|_| AppError::new("error.maps.invalid_image_type"))?;
+    Ok((width, height))
+}
+
+fn resolve_external_image_path(source_path: &str) -> Result<PathBuf, AppError> {
+    let trimmed = source_path.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::new("error.maps.image_not_found"));
+    }
+    let path = PathBuf::from(trimmed);
+    let canonical = path
+        .canonicalize()
+        .map_err(|_| AppError::new("error.maps.image_not_found"))?;
+    if !canonical.is_file() {
+        return Err(AppError::new("error.maps.image_not_found"));
+    }
+    validate_image_file(&canonical)?;
+    Ok(canonical)
+}
+
+fn validate_image_file(path: &Path) -> Result<(), AppError> {
+    let meta = fs::metadata(path).map_err(|_| AppError::new("error.maps.image_not_found"))?;
+    if meta.len() > MAX_IMAGE_BYTES {
+        return Err(AppError::new("error.maps.image_too_large"));
+    }
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") | Some("jpg") | Some("jpeg") | Some("webp") => Ok(()),
+        _ => Err(AppError::new("error.maps.invalid_image_type")),
+    }
+}
+
+fn copy_import_to_map_assets(source: &Path, map_dir: &Path) -> Result<String, AppError> {
+    validate_image_file(source)?;
+    let ext = source
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_else(|| "png".to_string());
+    let ext = if ext == "jpeg" { "jpg".to_string() } else { ext };
+    let assets_dir = map_dir.join("assets");
+    fs::create_dir_all(&assets_dir).map_err(|e| AppError::database(e.to_string()))?;
+    let dest = assets_dir.join(format!("base.{ext}"));
+    fs::copy(source, &dest).map_err(|e| AppError::database(e.to_string()))?;
+    Ok(format!("assets/base.{ext}"))
 }
 
 fn default_principal_drawing(width: u32, height: u32) -> MapDrawingV2 {
@@ -951,5 +1183,178 @@ mod tests {
         let index = load_index(root).unwrap();
         assert_eq!(index.last_viewed_map_id, Some(b.id));
         let _ = a;
+    }
+
+    fn write_test_png(path: &Path, width: u32, height: u32) {
+        use image::{ImageBuffer, Rgba};
+        let img = ImageBuffer::from_fn(width, height, |_, _| Rgba([0u8, 0, 0, 255]));
+        img.save(path).unwrap();
+    }
+
+    #[test]
+    fn create_custom_dimensions() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Custom", 1200, 800).unwrap();
+        let doc = get_map_document(root, &summary.id).unwrap();
+        let drawing = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(doc.width, 1200);
+        assert_eq!(doc.height, 800);
+        assert_eq!(drawing.width, 1200);
+        assert_eq!(drawing.height, 800);
+    }
+
+    #[test]
+    fn create_import_sets_base_image() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let png_path = tmp.path().join("import.png");
+        write_test_png(&png_path, 800, 600);
+        let summary = create_map_from_image(root, "Import", png_path.to_str().unwrap()).unwrap();
+        let doc = get_map_document(root, &summary.id).unwrap();
+        assert_eq!(doc.width, 800);
+        assert_eq!(doc.height, 600);
+        assert_eq!(doc.base_image_rel.as_deref(), Some("assets/base.png"));
+        assert!(maps_root(root)
+            .join(&summary.id)
+            .join("assets/base.png")
+            .is_file());
+    }
+
+    #[test]
+    fn import_rejects_tiny_image() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let png_path = tmp.path().join("tiny.png");
+        write_test_png(&png_path, 100, 100);
+        let err = create_map_from_image(root, "Tiny", png_path.to_str().unwrap()).unwrap_err();
+        assert_eq!(err.key, "error.maps.image_dimensions_invalid");
+    }
+
+    #[test]
+    fn import_scales_oversized() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let png_path = tmp.path().join("huge.png");
+        write_test_png(&png_path, 10000, 5000);
+        let summary = create_map_from_image(root, "Huge", png_path.to_str().unwrap()).unwrap();
+        assert!(summary.width <= MAX_DIMENSION);
+        assert!(summary.height <= MAX_DIMENSION);
+        assert!(summary.width >= MIN_DIMENSION);
+        assert!(summary.height >= MIN_DIMENSION);
+    }
+
+    #[test]
+    fn expand_adds_space() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Expand", 1200, 800).unwrap();
+        let mut drawing = get_map_drawing(root, &summary.id).unwrap();
+        drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "s1".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pencil".to_string(),
+            color: "#000000".to_string(),
+            base_size: 2.0,
+            base_opacity: 0.8,
+            points: vec![
+                MapStrokePointV2 {
+                    x: 10.0,
+                    y: 10.0,
+                    pressure: None,
+                },
+                MapStrokePointV2 {
+                    x: 20.0,
+                    y: 20.0,
+                    pressure: None,
+                },
+            ],
+        });
+        save_map_drawing(root, &summary.id, &drawing).unwrap();
+
+        let doc = expand_map_canvas(root, &summary.id, 100, 50).unwrap();
+        assert_eq!(doc.width, 1300);
+        assert_eq!(doc.height, 850);
+        let loaded = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(loaded.layers[0].strokes[0].points[0].x, 10.0);
+        assert_eq!(loaded.layers[0].strokes[0].points[0].y, 10.0);
+    }
+
+    #[test]
+    fn expand_rejects_over_max() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Max", 8000, 8000).unwrap();
+        let err = expand_map_canvas(root, &summary.id, 200, 0).unwrap_err();
+        assert_eq!(err.key, "error.maps.invalid_dimensions");
+    }
+
+    #[test]
+    fn crop_clips_strokes() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "Crop", 1200, 800).unwrap();
+        let mut drawing = get_map_drawing(root, &summary.id).unwrap();
+        drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "inside".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pencil".to_string(),
+            color: "#000000".to_string(),
+            base_size: 2.0,
+            base_opacity: 0.8,
+            points: vec![
+                MapStrokePointV2 {
+                    x: 10.0,
+                    y: 10.0,
+                    pressure: None,
+                },
+                MapStrokePointV2 {
+                    x: 20.0,
+                    y: 20.0,
+                    pressure: None,
+                },
+            ],
+        });
+        drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "outside".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pencil".to_string(),
+            color: "#000000".to_string(),
+            base_size: 2.0,
+            base_opacity: 0.8,
+            points: vec![
+                MapStrokePointV2 {
+                    x: 1100.0,
+                    y: 10.0,
+                    pressure: None,
+                },
+                MapStrokePointV2 {
+                    x: 1150.0,
+                    y: 20.0,
+                    pressure: None,
+                },
+            ],
+        });
+        save_map_drawing(root, &summary.id, &drawing).unwrap();
+
+        crop_map_canvas(root, &summary.id, 1000, 700).unwrap();
+        let loaded = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(loaded.width, 1000);
+        assert_eq!(loaded.height, 700);
+        assert_eq!(loaded.layers[0].strokes.len(), 1);
+        assert_eq!(loaded.layers[0].strokes[0].id, "inside");
+    }
+
+    #[test]
+    fn crop_updates_dimensions() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "CropDims", 1200, 800).unwrap();
+        let doc = crop_map_canvas(root, &summary.id, 1000, 700).unwrap();
+        let drawing = get_map_drawing(root, &summary.id).unwrap();
+        assert_eq!(doc.width, 1000);
+        assert_eq!(doc.height, 700);
+        assert_eq!(drawing.width, 1000);
+        assert_eq!(drawing.height, 700);
     }
 }

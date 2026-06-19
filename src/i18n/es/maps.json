@@ -5,11 +5,68 @@
   "genericError": "Error al guardar el mapa.",
   "noMaps": "Aún no hay mapas en este proyecto.",
   "emptyTitle": "Crea tu primer mapa",
-  "emptyDescription": "Asigna un nombre y pulsa «Nuevo mapa» para crear un lienzo vacío. El estudio de dibujo y la vista interactiva llegarán en las siguientes fases.",
+  "emptyDescription": "Pulsa «Nuevo mapa» para abrir el diálogo de creación. El estudio de dibujo y la vista interactiva llegarán en las siguientes fases.",
   "createMap": "Nuevo mapa",
   "mapNamePlaceholder": "p. ej. Continente de Aetheria",
   "creating": "Creando…",
-  "placeholderHint": "Vista preliminar MAP-002: navegación multi-mapa activa; canvas y compositor en fases posteriores.",
+  "placeholderHint": "Vista preliminar MAP-003: creación de lienzo e import activos; canvas y compositor en fases posteriores.",
+  "create": {
+    "title": "Nuevo mapa",
+    "description": "Define el nombre y el tamaño del lienzo, o importa una imagen como base.",
+    "nameLabel": "Nombre",
+    "modeLabel": "Origen",
+    "modeBlank": "Lienzo vacío",
+    "modeImport": "Importar imagen",
+    "presetLabel": "Tamaño",
+    "presetDefault": "Predeterminado (2400×1600)",
+    "presetHd": "HD (1920×1080)",
+    "presetSquare": "Cuadrado (2048×2048)",
+    "presetA4ish": "Vertical A4 aprox. (2480×3508)",
+    "presetCustom": "Personalizado",
+    "widthLabel": "Ancho (px)",
+    "heightLabel": "Alto (px)",
+    "aspectLabel": "Relación de aspecto",
+    "aspectNone": "Libre",
+    "aspect169": "16:9",
+    "aspect43": "4:3",
+    "aspect11": "1:1",
+    "aspectCustom": "Personalizada",
+    "customAspectW": "Proporción ancho",
+    "customAspectH": "Proporción alto",
+    "importLabel": "Imagen",
+    "importPlaceholder": "Ningún archivo seleccionado",
+    "importBrowse": "Examinar…",
+    "importFilter": "Imágenes",
+    "importHint": "La imagen define el tamaño del lienzo (512–8192 px). Se copiará a assets del mapa.",
+    "cancel": "Cancelar",
+    "submit": "Crear mapa",
+    "errors": {
+      "import_required": "Selecciona una imagen para importar."
+    }
+  },
+  "canvas": {
+    "expandAction": "Expandir lienzo…",
+    "cropAction": "Recortar lienzo…",
+    "expandTitle": "Expandir lienzo",
+    "cropTitle": "Recortar lienzo",
+    "expandDescription": "Añade espacio dibujable a la derecha y abajo sin escalar el contenido existente.",
+    "cropDescription": "Reduce el área de trabajo. Los trazos fuera del nuevo borde se eliminarán.",
+    "currentSize": "Tamaño actual: {{width}} × {{height}} px",
+    "addWidthLabel": "Añadir ancho (px)",
+    "addHeightLabel": "Añadir alto (px)",
+    "resultSize": "Nuevo tamaño: {{width}} × {{height}} px",
+    "newWidthLabel": "Nuevo ancho (px)",
+    "newHeightLabel": "Nuevo alto (px)",
+    "cropConfirm": "Entiendo que se eliminarán trazos fuera del nuevo lienzo",
+    "cancel": "Cancelar",
+    "expandSubmit": "Expandir",
+    "cropSubmit": "Recortar",
+    "errors": {
+      "expand_zero": "Indica cuántos píxeles añadir en ancho o alto.",
+      "crop_not_smaller": "El recorte debe reducir al menos una dimensión.",
+      "crop_confirm_required": "Confirma que aceptas eliminar trazos fuera del área."
+    }
+  },
   "selector": {
     "label": "Mapa activo",
     "option": "{{name}} ({{width}}×{{height}})"
@@ -28,6 +85,7 @@
   "detail": {
     "id": "ID",
     "canvas": "Lienzo",
+    "baseImage": "Imagen base",
     "layers": "Capas internas",
     "strokes": "Trazos"
   },
@@ -41,6 +99,7 @@
     "image_not_found": "No se encontró la imagen.",
     "invalid_image_type": "Formato no admitido. Usa PNG, JPG o WebP.",
     "image_too_large": "La imagen supera el tamaño máximo (50 MB).",
+    "image_dimensions_invalid": "Dimensiones de imagen no válidas (512–8192 px).",
     "invalid_dimensions": "Dimensiones del mapa no válidas (512–8192 px)."
   }
 }

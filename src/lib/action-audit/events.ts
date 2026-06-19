@@ -51,6 +51,9 @@ export const ACTION_EVENTS = {
     select: "obs.action.map.select",
     setOpenPreference: "obs.action.map.setOpenPreference",
     setDefaultOnOpen: "obs.action.map.setDefaultOnOpen",
+    create: "obs.action.map.create",
+    expandCanvas: "obs.action.map.expandCanvas",
+    cropCanvas: "obs.action.map.cropCanvas",
   },
   graph: {
     nodeOpen: "obs.action.graph.nodeOpen",

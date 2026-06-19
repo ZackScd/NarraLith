@@ -4,6 +4,7 @@ import { trackAction } from "@/lib/action-audit/trackAction";
 import { invokeCommand, parseAppError } from "@/lib/ipc";
 import { mapErrorKey } from "@/lib/maps/mapErrors";
 import type {
+  MapCreateDraft,
   MapDocumentV1,
   MapDrawingV2,
   MapSessionV2,
@@ -33,6 +34,7 @@ export function useMapProject() {
   const [sessionSnapshot, setSessionSnapshot] = useState<SessionSnapshot | null>(null);
   const [activeSnapshot, setActiveSnapshot] = useState<ActiveSnapshot | null>(null);
   const [creating, setCreating] = useState(false);
+  const [canvasBusy, setCanvasBusy] = useState(false);
 
   const sessionKey = rootPath;
   const activeKey = `${rootPath}:${activeMapId ?? ""}`;
@@ -76,6 +78,29 @@ export function useMapProject() {
     },
     [rootPath, sessionKey],
   );
+
+  const refreshActiveMap = useCallback(async () => {
+    if (!activeMapId || !rootPath) return;
+    try {
+      const [document, drawing] = await Promise.all([
+        invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId: activeMapId }),
+        invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: activeMapId }),
+      ]);
+      setActiveSnapshot({
+        key: activeKey,
+        document,
+        drawing,
+        errorKey: null,
+      });
+    } catch (err) {
+      setActiveSnapshot({
+        key: activeKey,
+        document: null,
+        drawing: null,
+        errorKey: mapErrorKey(parseAppError(err)),
+      });
+    }
+  }, [activeKey, activeMapId, rootPath]);
 
   useEffect(() => {
     if (!rootPath) {
@@ -154,17 +179,26 @@ export function useMapProject() {
     [loadSession],
   );
 
-  const createBlankMap = useCallback(
-    async (name: string, width: number, height: number) => {
+  const createMap = useCallback(
+    async (draft: MapCreateDraft) => {
       setCreating(true);
       try {
-        const summary = await invokeCommand<MapSummaryV2>("create_blank_map_cmd", {
-          name,
-          width,
-          height,
+        const fromMapId = useMapStore.getState().activeMapId;
+        const summary = await invokeCommand<MapSummaryV2>("create_map_cmd", {
+          name: draft.name,
+          mode: draft.mode,
+          width: draft.mode === "blank" ? draft.width : null,
+          height: draft.mode === "blank" ? draft.height : null,
+          sourcePath: draft.mode === "import" ? draft.importPath : null,
         });
         useMapStore.getState().setActiveMap(summary.id);
-        trackAction("map", "select", { mapId: summary.id, fromMapId: null });
+        trackAction("map", "create", {
+          mode: draft.mode,
+          width: summary.width,
+          height: summary.height,
+          mapId: summary.id,
+        });
+        trackAction("map", "select", { mapId: summary.id, fromMapId });
         await loadSession();
         return summary;
       } finally {
@@ -172,6 +206,79 @@ export function useMapProject() {
       }
     },
     [loadSession],
+  );
+
+  const expandCanvas = useCallback(
+    async (addRight: number, addBottom: number) => {
+      if (!activeMapId) return null;
+      const strokesBefore =
+        activeSnapshot?.key === activeKey
+          ? activeSnapshot.drawing?.layers.reduce(
+              (n, layer) => n + layer.strokes.length,
+              0,
+            ) ?? 0
+          : 0;
+      setCanvasBusy(true);
+      try {
+        const document = await invokeCommand<MapDocumentV1>("expand_map_canvas_cmd", {
+          mapId: activeMapId,
+          addRight,
+          addBottom,
+        });
+        trackAction("map", "expandCanvas", {
+          mapId: activeMapId,
+          addRight,
+          addBottom,
+          newWidth: document.width,
+          newHeight: document.height,
+        });
+        await loadSession();
+        await refreshActiveMap();
+        return { document, strokesBefore };
+      } finally {
+        setCanvasBusy(false);
+      }
+    },
+    [activeKey, activeMapId, activeSnapshot, loadSession, refreshActiveMap],
+  );
+
+  const cropCanvas = useCallback(
+    async (newWidth: number, newHeight: number) => {
+      if (!activeMapId) return null;
+      const strokesBefore =
+        activeSnapshot?.key === activeKey
+          ? activeSnapshot.drawing?.layers.reduce(
+              (n, layer) => n + layer.strokes.length,
+              0,
+            ) ?? 0
+          : 0;
+      setCanvasBusy(true);
+      try {
+        const document = await invokeCommand<MapDocumentV1>("crop_map_canvas_cmd", {
+          mapId: activeMapId,
+          newWidth,
+          newHeight,
+        });
+        await refreshActiveMap();
+        const strokesAfter =
+          useMapStore.getState().activeMapId === activeMapId
+            ? (await invokeCommand<MapDrawingV2>("get_map_drawing_cmd", {
+                mapId: activeMapId,
+              })).layers.reduce((n, layer) => n + layer.strokes.length, 0)
+            : strokesBefore;
+        trackAction("map", "cropCanvas", {
+          mapId: activeMapId,
+          newWidth: document.width,
+          newHeight: document.height,
+          strokesRemoved: Math.max(0, strokesBefore - strokesAfter),
+        });
+        await loadSession();
+        return document;
+      } finally {
+        setCanvasBusy(false);
+      }
+    },
+    [activeKey, activeMapId, activeSnapshot, loadSession, refreshActiveMap],
   );
 
   const session =
@@ -199,11 +306,15 @@ export function useMapProject() {
     drawing,
     loading: loadingSession || loadingActive,
     creating,
+    canvasBusy,
     errorKey,
     loadSession,
+    refreshActiveMap,
     selectMap,
     setOpenPreference,
     setDefaultOnOpen,
-    createBlankMap,
+    createMap,
+    expandCanvas,
+    cropCanvas,
   };
 }

@@ -3,16 +3,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMapProject } from "@/hooks/useMapProject";
-import {
-  MAP_CREATE_DEFAULT_HEIGHT,
-  MAP_CREATE_DEFAULT_WIDTH,
-  type OpenPreference,
-} from "@/lib/types/maps";
-import { useMapStore } from "@/stores/useMapStore";
+import type { MapCreateDraft, OpenPreference } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
+import { CreateMapDialog } from "@/modules/maps/CreateMapDialog";
+import {
+  MapCanvasSizeDialog,
+  type MapCanvasSizeMode,
+} from "@/modules/maps/MapCanvasSizeDialog";
+import { useMapStore } from "@/stores/useMapStore";
 
 const SELECT_CLASS =
   "flex h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm";
@@ -27,33 +27,31 @@ export function MapWorkspace() {
     drawing,
     loading,
     creating,
+    canvasBusy,
     errorKey,
     selectMap,
     setOpenPreference,
     setDefaultOnOpen,
-    createBlankMap,
+    createMap,
+    expandCanvas,
+    cropCanvas,
   } = useMapProject();
 
-  const [newName, setNewName] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [canvasDialogOpen, setCanvasDialogOpen] = useState(false);
+  const [canvasMode, setCanvasMode] = useState<MapCanvasSizeMode>("expand");
 
   const activeSummary = maps.find((map) => map.id === activeMapId);
   const isPinned = activeSummary?.defaultOnOpen === true;
   const showEmpty = !loading && maps.length === 0;
 
-  const handleCreate = async () => {
-    const trimmed = newName.trim();
-    if (!trimmed) {
-      setCreateError(t("errors.name_required"));
-      return;
-    }
-    setCreateError(null);
-    try {
-      await createBlankMap(trimmed, MAP_CREATE_DEFAULT_WIDTH, MAP_CREATE_DEFAULT_HEIGHT);
-      setNewName("");
-    } catch {
-      setCreateError(t("errors.generic"));
-    }
+  const handleCreate = async (draft: MapCreateDraft) => {
+    await createMap(draft);
+  };
+
+  const openCanvasDialog = (mode: MapCanvasSizeMode) => {
+    setCanvasMode(mode);
+    setCanvasDialogOpen(true);
   };
 
   const handleMapChange = (mapId: string) => {
@@ -78,29 +76,14 @@ export function MapWorkspace() {
             <MapIcon className="size-5 text-muted-foreground" />
             <h1 className="text-sm font-semibold">{t("title")}</h1>
           </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <Input
-              className="max-w-[220px]"
-              placeholder={t("mapNamePlaceholder")}
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void handleCreate();
-              }}
-            />
-            <Button
-              size="sm"
-              disabled={creating}
-              onClick={() => void handleCreate()}
-            >
-              {creating ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Plus className="size-4" />
-              )}
-              {t("createMap")}
-            </Button>
-          </div>
+          <Button size="sm" disabled={creating} onClick={() => setCreateOpen(true)}>
+            {creating ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            {t("createMap")}
+          </Button>
         </div>
 
         {maps.length > 0 ? (
@@ -176,15 +159,12 @@ export function MapWorkspace() {
           <p className="mb-4 text-sm text-destructive">{t(errorKey)}</p>
         ) : null}
 
-        {createError ? (
-          <p className="mb-4 text-sm text-destructive">{createError}</p>
-        ) : null}
-
         {showEmpty ? (
           <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
             <MapIcon className="size-10 text-muted-foreground/60" />
             <h2 className="text-lg font-medium">{t("emptyTitle")}</h2>
             <p className="text-sm text-muted-foreground">{t("emptyDescription")}</p>
+            <Button onClick={() => setCreateOpen(true)}>{t("createMap")}</Button>
           </div>
         ) : null}
 
@@ -202,6 +182,12 @@ export function MapWorkspace() {
                   {document.width} × {document.height}
                 </dd>
               </div>
+              {document.baseImageRel ? (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs uppercase tracking-wide">{t("detail.baseImage")}</dt>
+                  <dd className="font-mono text-xs text-foreground">{document.baseImageRel}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-xs uppercase tracking-wide">{t("detail.layers")}</dt>
                 <dd>{drawing.layers.length}</dd>
@@ -213,10 +199,56 @@ export function MapWorkspace() {
                 </dd>
               </div>
             </dl>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={canvasBusy}
+                onClick={() => openCanvasDialog("expand")}
+              >
+                {t("canvas.expandAction")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={canvasBusy}
+                onClick={() => openCanvasDialog("crop")}
+              >
+                {t("canvas.cropAction")}
+              </Button>
+            </div>
+
             <p className="mt-4 text-xs text-muted-foreground">{t("placeholderHint")}</p>
           </section>
         ) : null}
       </div>
+
+      <CreateMapDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        creating={creating}
+        onCreate={handleCreate}
+      />
+
+      {document ? (
+        <MapCanvasSizeDialog
+          open={canvasDialogOpen}
+          onOpenChange={setCanvasDialogOpen}
+          mode={canvasMode}
+          currentWidth={document.width}
+          currentHeight={document.height}
+          busy={canvasBusy}
+          onExpand={async (addRight, addBottom) => {
+            await expandCanvas(addRight, addBottom);
+          }}
+          onCrop={async (newWidth, newHeight) => {
+            await cropCanvas(newWidth, newHeight);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

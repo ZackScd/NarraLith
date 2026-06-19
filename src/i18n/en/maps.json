@@ -5,11 +5,68 @@
   "genericError": "Failed to save the map.",
   "noMaps": "No maps in this project yet.",
   "emptyTitle": "Create your first map",
-  "emptyDescription": "Enter a name and click «New map» to create a blank canvas. Drawing studio and interactive view come in later phases.",
+  "emptyDescription": "Click «New map» to open the creation dialog. Drawing studio and interactive view come in later phases.",
   "createMap": "New map",
   "mapNamePlaceholder": "e.g. Continent of Aetheria",
   "creating": "Creating…",
-  "placeholderHint": "MAP-002 preview: multi-map navigation is active; canvas and compositor ship in later phases.",
+  "placeholderHint": "MAP-003 preview: canvas creation and import are active; canvas and compositor ship in later phases.",
+  "create": {
+    "title": "New map",
+    "description": "Set the name and canvas size, or import an image as the base.",
+    "nameLabel": "Name",
+    "modeLabel": "Source",
+    "modeBlank": "Blank canvas",
+    "modeImport": "Import image",
+    "presetLabel": "Size",
+    "presetDefault": "Default (2400×1600)",
+    "presetHd": "HD (1920×1080)",
+    "presetSquare": "Square (2048×2048)",
+    "presetA4ish": "A4-ish portrait (2480×3508)",
+    "presetCustom": "Custom",
+    "widthLabel": "Width (px)",
+    "heightLabel": "Height (px)",
+    "aspectLabel": "Aspect ratio",
+    "aspectNone": "Free",
+    "aspect169": "16:9",
+    "aspect43": "4:3",
+    "aspect11": "1:1",
+    "aspectCustom": "Custom",
+    "customAspectW": "Ratio width",
+    "customAspectH": "Ratio height",
+    "importLabel": "Image",
+    "importPlaceholder": "No file selected",
+    "importBrowse": "Browse…",
+    "importFilter": "Images",
+    "importHint": "The image sets the canvas size (512–8192 px). It will be copied into the map assets folder.",
+    "cancel": "Cancel",
+    "submit": "Create map",
+    "errors": {
+      "import_required": "Select an image to import."
+    }
+  },
+  "canvas": {
+    "expandAction": "Expand canvas…",
+    "cropAction": "Crop canvas…",
+    "expandTitle": "Expand canvas",
+    "cropTitle": "Crop canvas",
+    "expandDescription": "Add drawable space to the right and bottom without scaling existing content.",
+    "cropDescription": "Reduce the work area. Strokes outside the new bounds will be removed.",
+    "currentSize": "Current size: {{width}} × {{height}} px",
+    "addWidthLabel": "Add width (px)",
+    "addHeightLabel": "Add height (px)",
+    "resultSize": "New size: {{width}} × {{height}} px",
+    "newWidthLabel": "New width (px)",
+    "newHeightLabel": "New height (px)",
+    "cropConfirm": "I understand strokes outside the new canvas will be deleted",
+    "cancel": "Cancel",
+    "expandSubmit": "Expand",
+    "cropSubmit": "Crop",
+    "errors": {
+      "expand_zero": "Enter how many pixels to add in width or height.",
+      "crop_not_smaller": "Crop must reduce at least one dimension.",
+      "crop_confirm_required": "Confirm that you accept deleting strokes outside the area."
+    }
+  },
   "selector": {
     "label": "Active map",
     "option": "{{name}} ({{width}}×{{height}})"
@@ -28,6 +85,7 @@
   "detail": {
     "id": "ID",
     "canvas": "Canvas",
+    "baseImage": "Base image",
     "layers": "Internal layers",
     "strokes": "Strokes"
   },
@@ -41,6 +99,7 @@
     "image_not_found": "Image not found.",
     "invalid_image_type": "Unsupported format. Use PNG, JPG, or WebP.",
     "image_too_large": "Image exceeds maximum size (50 MB).",
+    "image_dimensions_invalid": "Invalid image dimensions (512–8192 px).",
     "invalid_dimensions": "Invalid map dimensions (512–8192 px)."
   }
 }

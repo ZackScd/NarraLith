@@ -4,10 +4,10 @@ use tauri::State;
 
 use crate::error::AppError;
 use crate::fs::maps_store::{
-    create_blank_map, get_map_document, get_map_drawing, get_maps_session, list_maps,
-    read_project_image_data_url, record_map_viewed, save_map_document, save_map_drawing,
-    set_default_on_open, set_open_preference, MapDocumentV1, MapDrawingV2, MapSessionV2,
-    MapSummaryV2, OpenPreference,
+    create_blank_map, create_map, crop_map_canvas, expand_map_canvas, get_map_document,
+    get_map_drawing, get_maps_session, list_maps, read_project_image_data_url, record_map_viewed,
+    save_map_document, save_map_drawing, set_default_on_open, set_open_preference, MapCreateMode,
+    MapDocumentV1, MapDrawingV2, MapSessionV2, MapSummaryV2, OpenPreference,
 };
 use crate::state::ProjectState;
 
@@ -57,6 +57,47 @@ pub fn create_blank_map_cmd(
     height: u32,
 ) -> Result<MapSummaryV2, AppError> {
     state.with_db(|_db, root| create_blank_map(root, &name, width, height))
+}
+
+#[tauri::command]
+pub fn create_map_cmd(
+    state: State<'_, ProjectState>,
+    name: String,
+    mode: MapCreateMode,
+    width: Option<u32>,
+    height: Option<u32>,
+    source_path: Option<String>,
+) -> Result<MapSummaryV2, AppError> {
+    state.with_db(|_db, root| {
+        create_map(
+            root,
+            &name,
+            mode,
+            width,
+            height,
+            source_path.as_deref(),
+        )
+    })
+}
+
+#[tauri::command]
+pub fn expand_map_canvas_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    add_right: u32,
+    add_bottom: u32,
+) -> Result<MapDocumentV1, AppError> {
+    state.with_db(|_db, root| expand_map_canvas(root, &map_id, add_right, add_bottom))
+}
+
+#[tauri::command]
+pub fn crop_map_canvas_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    new_width: u32,
+    new_height: u32,
+) -> Result<MapDocumentV1, AppError> {
+    state.with_db(|_db, root| crop_map_canvas(root, &map_id, new_width, new_height))
 }
 
 #[tauri::command]
