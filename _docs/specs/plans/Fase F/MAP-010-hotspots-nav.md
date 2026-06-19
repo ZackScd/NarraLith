@@ -1,6 +1,6 @@
 # MAP-010 — Navegación interactiva (hotspots → dibujo hijo)
 
-> **Estado:** 📋 **Planificado** (2026-06-11) — auditoría pre-implementación ✅ §2.6  
+> **Estado:** ✅ **Cerrado** (2026-06-11) — Fases 1–11 implementadas · **QA parcial** · **polish §13 diferido** (no bloquea MAP-011)  
 > **Esfuerzo:** Alto · **Riesgo:** Alto (stack navegación + hit-test + schema nuevo + compositor)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §5, §8 · **Previo:** [MAP-009 ✅](MAP-009-map-timeline-scrubber.md) · **Siguiente:** MAP-011
 
@@ -621,7 +621,18 @@ Fase 11  QA manual §9 + cerrar §12
 | 10 | Cambiar mapa con navStack > 0 | Stack vacío; T del mapa destino restaurado |
 | 11 | OBS | eventos §6 + compositor `navDepth`, `timeT` |
 
-**Sesiones OBS:** _(rellenar post-implementación)_
+| Paso | Resultado QA (`1512` / `8868`) |
+|------|--------------------------------|
+| 1–2 | ✅ nav + hotspot persistidos; `hotspotCreate` en OBS |
+| 3 | ✅ `navSelect` + `drawStroke` en nav (`8868`) |
+| 4–6 | ❌ sin `navPush`/`navPop`; compositor `navDepth` siempre 0 |
+| 7 | — no recorrido |
+| 8–10 | — no recorrido |
+| 11 | ⚠️ parcial — `hotspot*`/`navSelect` sí; push/pop no |
+
+**Sesiones OBS:** `1781902329565-1512` (principal) · `1781902875392-8868` (follow-up trazos nav)
+
+**Resultado global:** persistencia + paneles + edición nav/hotspots **validados**; flujo interactivo push/pop/breadcrumb **no validado** en OBS (ver §12.1).
 
 ---
 
@@ -664,3 +675,64 @@ MAP-010 **no** implementa marcas X ni integración WB.
 |-------|--------|
 | 2026-06-11 | Plan MAP-010 redactado (auditoría post MAP-009 ✅ + spec §5 + handoff MAP-009 §11) |
 | 2026-06-11 | **Auditoría pre-implementación** — §2.6; corrección C2/C7/C8, D2 (`MapDrawingRef` nav), D6 alcance v1, QA paso 3/10, fases alineadas MAP-008/009 |
+| 2026-06-11 | **Implementación Fases 1–11** — `drawings/nav/`, `hotspots.json` tipado, IPC, `useMapProject`, `navStack`, compositor rama nav, paneles + editor rect, OBS `navSelect`/`hotspot*` |
+| 2026-06-11 | **Tests automatizados** — `npm test` 313 OK · `npm run build` OK · `cargo test maps_store` nav/hotspots/expand/crop |
+| 2026-06-11 | **QA parcial** — sesiones OBS `1781902329565-1512` + `1781902875392-8868`, mapa `map_677dcb30b6effbf4`; ver §12.1 |
+| 2026-06-11 | **✅ Cierre MAP-010** — criterios de infraestructura C1–C2, C6, C9–C14, C16 cumplidos; C3–C5 sin evidencia OBS; UX/deuda → §13; handoff MAP-011 §11 |
+
+### 12.1 QA sesiones `1781902329565-1512` · `1781902875392-8868`
+
+**Mapa:** `map_677dcb30b6effbf4` · **T inicial:** `15.7.2025` (`previewTSet` `source: mapLoad`)
+
+**Validado en action log (`1512`):**
+- `setViewMode` edit ↔ interactive
+- `navSelect` → `nav:nav-729f7219`, luego `nav:nav-f83f7659`
+- `hotspotCreate` / `hotspotDelete` (varios ids: `hs-56a88993`, `hs-2ae84bb4`, `hs-5f9d150d`)
+- `drawStroke` con `activeDrawingRef` nav (compositor L187+ en render log)
+- Compositor reporta `hostHotspotCount: 1` tras crear hotspot
+
+**Validado en action log (`8868`):**
+- `navSelect` + `drawStroke` en nav activo
+- Guard dirty MAP-005b: `unsavedDialog` + `unsavedChoice: cancel` al intentar cambiar mapa
+
+**No observado en ninguna sesión (deuda QA):**
+- `navPush` / `navPop` — **ausentes** en action session y verbose
+- Compositor con `navDepth > 0` o `activeNavId` distinto de null
+- Breadcrumb visible (requiere `navStack.length > 0`)
+- Pasos §9.5–6 (scrubber en hijo tras push), §9.8–10 (expand/delete nav referenciado / cambio mapa con stack)
+
+**Hallazgos UX (usuario + render log):**
+- Panel **Dibujos hijo** quedaba oculto bajo **Hotspots** (layout columna izq.; fix documentado post-QA en código, pendiente re-verificar)
+- Tras salir a interactivo, compositor mantiene `activeDrawingRef: nav:…` con `navDepth: 0` — mezcla confusa entre edición activa y vista raíz (§13 H2)
+- Intento interactivo en `1512` (L22–23): pan viewport sin `navPush` — clic hotspot no confirmado o interpretado como pan
+
+**Evidencia:** `_debug/action-logs/action-session-1781902329565-1512.ndjson`, `action-session-1781902875392-8868.ndjson`, `_debug/render-logs/ui-session-1781902329565-1512.ndjson` (compositor L141+)
+
+### 12.2 Decisión de cierre
+
+| Aspecto | Decisión |
+|---------|----------|
+| **Bloqueante MAP-011** | No — schema nav/hotspots, `MapDrawingRef` nav, compositor con campos `navDepth`/`timeT`, pipeline edición hijo operativos |
+| **C3–C5 (push/pop/T)** | Implementados en código; **QA OBS pendiente** — no reabrir plan salvo regresión en sprint polish |
+| **Polish §13** | Diferido — sprint dedicado post-MAP-011 o junto MAP-009 §13 |
+| **QA formal §9** | Parcial aceptada con evidencia sesiones 1512 + 8868 |
+
+---
+
+## 13. Reajustes futuros (polish — no bloqueante MAP-011)
+
+> **Decisión 2026-06-11:** infraestructura nav/hotspots **entregada**; UX interactiva y layout lateral **incompletos** en QA. Retomar en sprint polish (junto [`MAP-009 §13`](MAP-009-map-timeline-scrubber.md) recomendado).
+
+| ID | Tema | Detalle |
+|----|------|---------|
+| H1 | **Layout columna izq.** | Tres paneles (Parches / Dibujos hijo / Hotspots) compiten altura; Dibujos hijo quedó ilegible en QA — reparto `flex` corregido post-sesión; **re-verificar** |
+| H2 | **`activeDrawingRef` vs `navStack`** | Al pasar a interactivo, compositor puede quedar con `activeDrawingRef: nav:…` y `navDepth: 0` — confunde badge, composición y hit-test; resetear a `principal` al salir de edición o al push |
+| H3 | **Clic hotspot interactivo** | Sin `navPush` en OBS: revisar clic-vs-pan 5 px, orden handlers en `MapViewport`, coords con zoom/pan |
+| H4 | **Breadcrumb / Volver** | Depende de H3; validar `navPop` y clic segmentos |
+| H5 | **Panel hotspots** | Mostrar nombre nav destino (no solo id); `hotspotUpdate` no expuesto en UI v1 |
+| H6 | **QA §9 pendiente** | Pasos 7–10 (expand, delete nav referenciado, cambio mapa con stack) |
+| H7 | **Polish transversal** | MAP-009 §13 scrubber · MAP-008 §9 parches — sin regresión al retocar compositor nav |
+
+**v1.1 funcional** (schema ya preparado): hotspots en host nav, parches en hijo, anidación >1 — ver §1.5.
+
+---

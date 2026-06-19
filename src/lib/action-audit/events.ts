@@ -81,6 +81,12 @@ export const ACTION_EVENTS = {
     secondarySelect: "obs.action.map.secondarySelect",
     secondaryMetaSet: "obs.action.map.secondaryMetaSet",
     previewTSet: "obs.action.map.previewTSet",
+    navPush: "obs.action.map.navPush",
+    navPop: "obs.action.map.navPop",
+    navSelect: "obs.action.map.navSelect",
+    hotspotCreate: "obs.action.map.hotspotCreate",
+    hotspotUpdate: "obs.action.map.hotspotUpdate",
+    hotspotDelete: "obs.action.map.hotspotDelete",
   },
   graph: {
     nodeOpen: "obs.action.graph.nodeOpen",

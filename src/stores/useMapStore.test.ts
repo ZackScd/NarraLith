@@ -37,6 +37,49 @@ describe("useMapStore viewMode", () => {
   });
 });
 
+describe("useMapStore navStack", () => {
+  it("navPush y navPop", () => {
+    useMapStore.getState().reset();
+    useMapStore.getState().navPush({
+      navId: "nav-abc",
+      name: "Ciudad",
+      hostDrawingRef: { kind: "principal" },
+    });
+    expect(useMapStore.getState().navStack).toHaveLength(1);
+    useMapStore.getState().navPop();
+    expect(useMapStore.getState().navStack).toHaveLength(0);
+  });
+
+  it("setActiveMap resetea navStack al cambiar mapa", () => {
+    useMapStore.getState().reset();
+    useMapStore.getState().setActiveMap("map-a");
+    useMapStore.getState().navPush({
+      navId: "nav-abc",
+      name: "Ciudad",
+      hostDrawingRef: { kind: "principal" },
+    });
+    useMapStore.getState().setActiveMap("map-b");
+    expect(useMapStore.getState().navStack).toEqual([]);
+  });
+
+  it("navPop toDepth recorta stack", () => {
+    useMapStore.getState().reset();
+    useMapStore.getState().navPush({
+      navId: "nav-a",
+      name: "A",
+      hostDrawingRef: { kind: "principal" },
+    });
+    useMapStore.getState().navPush({
+      navId: "nav-b",
+      name: "B",
+      hostDrawingRef: { kind: "principal" },
+    });
+    useMapStore.getState().navPop(1);
+    expect(useMapStore.getState().navStack).toHaveLength(1);
+    expect(useMapStore.getState().navStack[0].navId).toBe("nav-a");
+  });
+});
+
 describe("useMapStore previewTimeTRaw", () => {
   it("memoriza T por mapId al cambiar de mapa", () => {
     useMapStore.getState().reset();

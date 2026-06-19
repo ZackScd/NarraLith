@@ -12,6 +12,9 @@ import type {
   MapDocumentV1,
   MapDrawingRef,
   MapDrawingV2,
+  MapHotspotV1,
+  MapNavDrawingFileV1,
+  MapNavSummaryV1,
   MapSecondaryDrawingFileV1,
   MapSecondarySummaryV1,
   MapSessionV2,
@@ -37,7 +40,17 @@ interface ActiveSnapshot {
   drawing: MapDrawingV2 | null;
   secondaries: MapSecondarySummaryV1[];
   secondaryFiles: Record<string, MapSecondaryDrawingFileV1>;
+  navDrawings: MapNavSummaryV1[];
+  navFiles: Record<string, MapNavDrawingFileV1>;
+  hotspots: MapHotspotV1[];
   errorKey: string | null;
+}
+
+function emptyActiveSnapshotFields() {
+  return {
+    secondaryFiles: {} as Record<string, MapSecondaryDrawingFileV1>,
+    navFiles: {} as Record<string, MapNavDrawingFileV1>,
+  };
 }
 
 export function useMapProject() {
@@ -95,17 +108,23 @@ export function useMapProject() {
   const refreshActiveMap = useCallback(async () => {
     if (!activeMapId || !rootPath) return;
     try {
-      const [document, drawing, secondaries] = await Promise.all([
+      const [document, drawing, secondaries, navDrawings, hotspotsFile] = await Promise.all([
         invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId: activeMapId }),
         invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: activeMapId }),
         invokeCommand<MapSecondarySummaryV1[]>("list_map_secondaries_cmd", { mapId: activeMapId }),
+        invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", { mapId: activeMapId }),
+        invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>("get_map_hotspots_cmd", {
+          mapId: activeMapId,
+        }),
       ]);
       setActiveSnapshot({
         key: activeKey,
         document,
         drawing,
         secondaries,
-        secondaryFiles: {},
+        navDrawings,
+        hotspots: hotspotsFile.hotspots,
+        ...emptyActiveSnapshotFields(),
         errorKey: null,
       });
     } catch (err) {
@@ -114,7 +133,9 @@ export function useMapProject() {
         document: null,
         drawing: null,
         secondaries: [],
-        secondaryFiles: {},
+        navDrawings: [],
+        hotspots: [],
+        ...emptyActiveSnapshotFields(),
         errorKey: mapErrorKey(parseAppError(err)),
       });
     }
@@ -137,10 +158,14 @@ export function useMapProject() {
     let cancelled = false;
     void (async () => {
       try {
-        const [document, drawing, secondaries] = await Promise.all([
+        const [document, drawing, secondaries, navDrawings, hotspotsFile] = await Promise.all([
           invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId: activeMapId }),
           invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: activeMapId }),
           invokeCommand<MapSecondarySummaryV1[]>("list_map_secondaries_cmd", {
+            mapId: activeMapId,
+          }),
+          invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", { mapId: activeMapId }),
+          invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>("get_map_hotspots_cmd", {
             mapId: activeMapId,
           }),
         ]);
@@ -150,7 +175,9 @@ export function useMapProject() {
             document,
             drawing,
             secondaries,
-            secondaryFiles: {},
+            navDrawings,
+            hotspots: hotspotsFile.hotspots,
+            ...emptyActiveSnapshotFields(),
             errorKey: null,
           });
         }
@@ -161,7 +188,9 @@ export function useMapProject() {
             document: null,
             drawing: null,
             secondaries: [],
-            secondaryFiles: {},
+            navDrawings: [],
+            hotspots: [],
+            ...emptyActiveSnapshotFields(),
             errorKey: mapErrorKey(parseAppError(err)),
           });
         }
@@ -342,10 +371,14 @@ export function useMapProject() {
 
         await loadSession();
         try {
-          const [document, drawing, secondaries] = await Promise.all([
+          const [document, drawing, secondaries, navDrawings, hotspotsFile] = await Promise.all([
             invokeCommand<MapDocumentV1>("get_map_document_cmd", { mapId: summary.id }),
             invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: summary.id }),
             invokeCommand<MapSecondarySummaryV1[]>("list_map_secondaries_cmd", {
+              mapId: summary.id,
+            }),
+            invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", { mapId: summary.id }),
+            invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>("get_map_hotspots_cmd", {
               mapId: summary.id,
             }),
           ]);
@@ -354,7 +387,9 @@ export function useMapProject() {
             document,
             drawing,
             secondaries,
-            secondaryFiles: {},
+            navDrawings,
+            hotspots: hotspotsFile.hotspots,
+            ...emptyActiveSnapshotFields(),
             errorKey: null,
           });
         } catch (err) {
@@ -363,7 +398,9 @@ export function useMapProject() {
             document: null,
             drawing: null,
             secondaries: [],
-            secondaryFiles: {},
+            navDrawings: [],
+            hotspots: [],
+            ...emptyActiveSnapshotFields(),
             errorKey: mapErrorKey(parseAppError(err)),
           });
         }
@@ -559,6 +596,127 @@ export function useMapProject() {
     [activeKey, activeMapId, activeSnapshot?.secondaryFiles, loadSession],
   );
 
+  const loadNavDrawings = useCallback(async () => {
+    if (!activeMapId || !rootPath) return [];
+    const navDrawings = await invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", {
+      mapId: activeMapId,
+    });
+    setActiveSnapshot((prev) => {
+      if (prev?.key !== activeKey) return prev;
+      return { ...prev, navDrawings, errorKey: null };
+    });
+    return navDrawings;
+  }, [activeKey, activeMapId, rootPath]);
+
+  const loadNavFile = useCallback(
+    async (
+      navId: string,
+      options?: { force?: boolean },
+    ): Promise<MapNavDrawingFileV1 | null> => {
+      if (!activeMapId) return null;
+      if (!options?.force) {
+        const cached =
+          activeSnapshot?.key === activeKey ? activeSnapshot.navFiles[navId] : undefined;
+        if (cached) return cached;
+      }
+
+      const file = await invokeCommand<MapNavDrawingFileV1>("get_map_nav_cmd", {
+        mapId: activeMapId,
+        navId,
+      });
+      setActiveSnapshot((prev) => {
+        if (prev?.key !== activeKey) return prev;
+        return {
+          ...prev,
+          navFiles: { ...prev.navFiles, [navId]: file },
+          errorKey: null,
+        };
+      });
+      return file;
+    },
+    [activeKey, activeMapId, activeSnapshot],
+  );
+
+  const createNav = useCallback(
+    async (name: string): Promise<MapNavDrawingFileV1> => {
+      if (!activeMapId) {
+        throw new Error("no_active_map");
+      }
+      const file = await invokeCommand<MapNavDrawingFileV1>("create_map_nav_cmd", {
+        mapId: activeMapId,
+        name,
+      });
+      await loadNavDrawings();
+      setActiveSnapshot((prev) => {
+        if (prev?.key !== activeKey) return prev;
+        return {
+          ...prev,
+          navFiles: { ...prev.navFiles, [file.id]: file },
+        };
+      });
+      await loadSession();
+      return file;
+    },
+    [activeKey, activeMapId, loadNavDrawings, loadSession],
+  );
+
+  const saveNav = useCallback(
+    async (file: MapNavDrawingFileV1) => {
+      if (!activeMapId) return;
+      await invokeCommand("save_map_nav_cmd", { mapId: activeMapId, file });
+      await loadNavFile(file.id, { force: true });
+      await loadNavDrawings();
+      await loadSession();
+    },
+    [activeMapId, loadNavDrawings, loadNavFile, loadSession],
+  );
+
+  const deleteNav = useCallback(
+    async (navId: string) => {
+      if (!activeMapId) return;
+      await invokeCommand("delete_map_nav_cmd", { mapId: activeMapId, navId });
+      setActiveSnapshot((prev) => {
+        if (prev?.key !== activeKey) return prev;
+        const nextFiles = { ...prev.navFiles };
+        delete nextFiles[navId];
+        return {
+          ...prev,
+          navDrawings: prev.navDrawings.filter((item) => item.id !== navId),
+          navFiles: nextFiles,
+          hotspots: prev.hotspots.filter((item) => item.targetNavId !== navId),
+        };
+      });
+      await loadSession();
+    },
+    [activeKey, activeMapId, loadSession],
+  );
+
+  const loadHotspots = useCallback(async () => {
+    if (!activeMapId) return [];
+    const file = await invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>(
+      "get_map_hotspots_cmd",
+      { mapId: activeMapId },
+    );
+    setActiveSnapshot((prev) => {
+      if (prev?.key !== activeKey) return prev;
+      return { ...prev, hotspots: file.hotspots, errorKey: null };
+    });
+    return file.hotspots;
+  }, [activeKey, activeMapId]);
+
+  const saveHotspots = useCallback(
+    async (hotspots: MapHotspotV1[]) => {
+      if (!activeMapId) return;
+      await invokeCommand("save_map_hotspots_cmd", {
+        mapId: activeMapId,
+        file: { version: 1, hotspots },
+      });
+      await loadHotspots();
+      await loadSession();
+    },
+    [activeMapId, loadHotspots, loadSession],
+  );
+
   const saveDrawing = useCallback(
     async (mapId: string, drawingToSave: MapDrawingV2) => {
       await invokeCommand("save_map_drawing_cmd", { mapId, drawing: drawingToSave });
@@ -582,6 +740,23 @@ export function useMapProject() {
         await saveDrawing(mapId, drawingToSave);
         return;
       }
+      if (ref.kind === "nav") {
+        let cached =
+          activeSnapshot?.key === `${rootPath}:${mapId}`
+            ? activeSnapshot.navFiles[ref.id]
+            : null;
+        if (!cached) {
+          cached = await loadNavFile(ref.id);
+        }
+        if (!cached) {
+          throw new Error("nav_not_loaded");
+        }
+        await saveNav({
+          ...cached,
+          drawing: structuredClone(drawingToSave),
+        });
+        return;
+      }
       let cached =
         activeSnapshot?.key === `${rootPath}:${mapId}`
           ? activeSnapshot.secondaryFiles[ref.id]
@@ -597,7 +772,7 @@ export function useMapProject() {
         drawing: structuredClone(drawingToSave),
       });
     },
-    [activeSnapshot, loadSecondaryFile, rootPath, saveDrawing, saveSecondary],
+    [activeSnapshot, loadNavFile, loadSecondaryFile, rootPath, saveDrawing, saveNav, saveSecondary],
   );
 
   const cropCanvas = useCallback(
@@ -653,6 +828,9 @@ export function useMapProject() {
     activeSnapshot?.key === activeKey ? activeSnapshot.secondaries : [];
   const secondaryFiles =
     activeSnapshot?.key === activeKey ? activeSnapshot.secondaryFiles : {};
+  const navDrawings = activeSnapshot?.key === activeKey ? activeSnapshot.navDrawings : [];
+  const navFiles = activeSnapshot?.key === activeKey ? activeSnapshot.navFiles : {};
+  const hotspots = activeSnapshot?.key === activeKey ? activeSnapshot.hotspots : [];
 
   const errorKey =
     sessionSnapshot?.key === sessionKey
@@ -668,6 +846,9 @@ export function useMapProject() {
     drawing,
     secondaries,
     secondaryFiles,
+    navDrawings,
+    navFiles,
+    hotspots,
     loading: loadingSession || loadingActive,
     creating,
     canvasBusy,
@@ -688,6 +869,13 @@ export function useMapProject() {
     saveSecondary,
     updateSecondaryMeta,
     deleteSecondary,
+    loadNavDrawings,
+    loadNavFile,
+    createNav,
+    saveNav,
+    deleteNav,
+    loadHotspots,
+    saveHotspots,
     updateMapDesde,
     applyDefaultDesde,
     ensureTimelineAndCalendar,

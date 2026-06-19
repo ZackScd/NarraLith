@@ -2,10 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMapDrawGesture } from "@/hooks/useMapDrawGesture";
-import {
-  getDrawBlockReason,
-} from "@/lib/maps/mapDrawingSession";
-import type { MapDocumentV1, MapDrawingV2, MapStrokeV2 } from "@/lib/types/maps";
+import { useMapHotspotRectGesture } from "@/hooks/useMapHotspotRectGesture";
+import { getDrawBlockReason } from "@/lib/maps/mapDrawingSession";
+import type {
+  MapDocumentV1,
+  MapDrawingV2,
+  MapHotspotBoundsV1,
+  MapHotspotV1,
+  MapStrokeV2,
+} from "@/lib/types/maps";
 import {
   useMapViewport,
   type MapViewportComposeLayer,
@@ -26,16 +31,33 @@ interface MapViewportProps {
   previewTimeTRaw?: string | null;
   activeSecondaryIds?: string[];
   secondaryCount?: number;
+  navDepth?: number;
+  activeNavId?: string | null;
+  navStackIds?: string[];
+  hostHotspotCount?: number;
+  composeNavDrawing?: MapDrawingV2 | null;
+  composeNavDrawingRefKey?: string;
+  hotspotOverlays?: MapHotspotV1[];
+  hotspotDrawMode?: boolean;
   viewMode: MapViewMode;
   activeLayerId?: string | null;
   previewStroke?: MapStrokeV2 | null;
   onPreviewStroke: (stroke: MapStrokeV2 | null) => void;
   onCommitStroke: (stroke: MapStrokeV2) => void;
+  onInteractiveClick?: (worldX: number, worldY: number) => boolean;
+  onHotspotRectComplete?: (bounds: MapHotspotBoundsV1) => void;
 }
 
-function viewportCursor(viewMode: MapViewMode, tool: MapStudioTool): string {
+function viewportCursor(
+  viewMode: MapViewMode,
+  tool: MapStudioTool,
+  hotspotDrawMode: boolean,
+): string {
   if (viewMode !== "edit") {
     return "cursor-grab active:cursor-grabbing";
+  }
+  if (hotspotDrawMode) {
+    return "cursor-crosshair";
   }
   if (tool === "pan") {
     return "cursor-grab active:cursor-grabbing";
@@ -52,11 +74,21 @@ export function MapViewport({
   previewTimeTRaw = null,
   activeSecondaryIds = [],
   secondaryCount = 0,
+  navDepth = 0,
+  activeNavId = null,
+  navStackIds = [],
+  hostHotspotCount = 0,
+  composeNavDrawing = null,
+  composeNavDrawingRefKey,
+  hotspotOverlays = [],
+  hotspotDrawMode = false,
   viewMode,
   activeLayerId = null,
   previewStroke = null,
   onPreviewStroke,
   onCommitStroke,
+  onInteractiveClick,
+  onHotspotRectComplete,
 }: MapViewportProps) {
   const { t } = useTranslation("maps");
   const tool = useMapStudioStore((s) => s.tool);
@@ -65,15 +97,17 @@ export function MapViewport({
   const baseSize = useMapStudioStore((s) => s.baseSize);
   const baseOpacity = useMapStudioStore((s) => s.baseOpacity);
   const [layerNotice, setLayerNotice] = useState<string | null>(null);
+  const [hotspotDraftBounds, setHotspotDraftBounds] = useState<MapHotspotBoundsV1 | null>(null);
 
   const activeEditingDrawing =
-    activeDrawingRefKey === "principal"
+    composeNavDrawing ??
+    (activeDrawingRefKey === "principal"
       ? principalDrawing
       : overlayDrawings.find((layer) => layer.drawingRefKey === activeDrawingRefKey)?.drawing ??
-        principalDrawing;
+        principalDrawing);
 
   const drawBlockReason = getDrawBlockReason(activeEditingDrawing, activeLayerId);
-  const canDraw = drawBlockReason === null;
+  const canDraw = drawBlockReason === null && !hotspotDrawMode;
 
   const {
     containerRef,
@@ -93,11 +127,39 @@ export function MapViewport({
     previewTimeTRaw,
     activeSecondaryIds,
     secondaryCount,
+    navDepth,
+    activeNavId,
+    navStackIds,
+    hostHotspotCount,
+    composeNavDrawing,
+    composeNavDrawingRefKey,
     viewMode,
     previewStroke,
     activeLayerId,
     studioTool: tool,
+    hotspotOverlays,
+    hotspotDraftBounds,
+    onInteractiveClick:
+      viewMode === "interactive" && navDepth === 0 ? onInteractiveClick : undefined,
   });
+
+  const hotspotRect = useMapHotspotRectGesture({
+    enabled: viewMode === "edit" && hotspotDrawMode && navDepth === 0,
+    viewport,
+    canvasWidth: document.width,
+    canvasHeight: document.height,
+    onDraftChange: setHotspotDraftBounds,
+    onComplete: (bounds) => {
+      setHotspotDraftBounds(null);
+      onHotspotRectComplete?.(bounds);
+    },
+  });
+
+  useEffect(() => {
+    if (!hotspotDrawMode) {
+      setHotspotDraftBounds(null);
+    }
+  }, [hotspotDrawMode]);
 
   const handleDrawBlocked = useCallback(
     (reason: "locked" | "no_layer") => {
@@ -122,7 +184,7 @@ export function MapViewport({
     handlePointerUp: handleDrawUp,
     handlePointerCancel: handleDrawCancel,
   } = useMapDrawGesture({
-    enabled: viewMode === "edit",
+    enabled: viewMode === "edit" && !hotspotDrawMode,
     viewMode,
     tool,
     brushId,
@@ -140,34 +202,38 @@ export function MapViewport({
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (hotspotRect.handlePointerDown(event)) return;
       if (handleDrawDown(event)) return;
       handlePanDown(event);
     },
-    [handleDrawDown, handlePanDown],
+    [handleDrawDown, handlePanDown, hotspotRect],
   );
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (hotspotRect.handlePointerMove(event)) return;
       if (handleDrawMove(event)) return;
       handlePanMove(event);
     },
-    [handleDrawMove, handlePanMove],
+    [handleDrawMove, handlePanMove, hotspotRect],
   );
 
   const handlePointerUp = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (hotspotRect.handlePointerUp(event)) return;
       if (handleDrawUp(event)) return;
       handlePanUp(event);
     },
-    [handleDrawUp, handlePanUp],
+    [handleDrawUp, handlePanUp, hotspotRect],
   );
 
   const handlePointerCancel = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (hotspotRect.handlePointerCancel(event)) return;
       if (handleDrawCancel(event)) return;
       handlePanUp(event);
     },
-    [handleDrawCancel, handlePanUp],
+    [handleDrawCancel, handlePanUp, hotspotRect],
   );
 
   return (
@@ -184,9 +250,17 @@ export function MapViewport({
           {layerNotice}
         </p>
       ) : null}
+      {hotspotDrawMode ? (
+        <p className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-md bg-primary/90 px-3 py-1.5 text-xs text-primary-foreground shadow-sm">
+          {t("hotspot.drawHint")}
+        </p>
+      ) : null}
       <canvas
         ref={canvasRef}
-        className={cn("block h-full w-full touch-none", viewportCursor(viewMode, tool))}
+        className={cn(
+          "block h-full w-full touch-none",
+          viewportCursor(viewMode, tool, hotspotDrawMode),
+        )}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

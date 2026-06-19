@@ -120,9 +120,51 @@ export interface MapDrawingV2 {
   layers: MapDrawingLayerV2[];
 }
 
+/** Host del hotspot — v1 UI solo crea `principal`; `nav` reservado v1.1 */
+export type MapHostDrawingRef =
+  | { kind: "principal" }
+  | { kind: "nav"; id: string };
+
+export interface MapHotspotBoundsV1 {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface MapHotspotV1 {
+  id: string;
+  label?: string;
+  hostDrawingRef: MapHostDrawingRef;
+  bounds: MapHotspotBoundsV1;
+  targetNavId: string;
+}
+
 export interface MapHotspotsFileV1 {
   version: 1;
-  hotspots: unknown[];
+  hotspots: MapHotspotV1[];
+}
+
+export interface MapNavSummaryV1 {
+  id: string;
+  name: string;
+  updatedAt: string;
+}
+
+export interface MapNavDrawingFileV1 {
+  version: 1;
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  drawing: MapDrawingV2;
+}
+
+/** Frame del stack interactivo (vista hijo) — MAP-010 Fase 4+ */
+export interface MapNavFrame {
+  navId: string;
+  name: string;
+  hostDrawingRef: MapHostDrawingRef;
 }
 
 export interface MapSecondarySummaryV1 {
@@ -146,10 +188,13 @@ export interface MapSecondaryDrawingFileV1 {
 
 export type MapDrawingRef =
   | { kind: "principal" }
-  | { kind: "secondary"; id: string };
+  | { kind: "secondary"; id: string }
+  | { kind: "nav"; id: string };
 
 export function drawingRefKey(ref: MapDrawingRef): string {
-  return ref.kind === "principal" ? "principal" : `secondary:${ref.id}`;
+  if (ref.kind === "principal") return "principal";
+  if (ref.kind === "secondary") return `secondary:${ref.id}`;
+  return `nav:${ref.id}`;
 }
 
 export function parseDrawingRefKey(key: string): MapDrawingRef | null {
@@ -160,6 +205,12 @@ export function parseDrawingRefKey(key: string): MapDrawingRef | null {
     const id = key.slice("secondary:".length);
     if (id.length > 0) {
       return { kind: "secondary", id };
+    }
+  }
+  if (key.startsWith("nav:")) {
+    const id = key.slice("nav:".length);
+    if (id.length > 0) {
+      return { kind: "nav", id };
     }
   }
   return null;

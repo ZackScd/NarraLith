@@ -4,12 +4,14 @@ use tauri::State;
 
 use crate::error::AppError;
 use crate::fs::maps_store::{
-    create_blank_map, create_map, create_map_secondary, crop_map_canvas, delete_map_secondary,
-    expand_map_canvas, get_map_document, get_map_drawing, get_map_secondary, get_maps_session,
+    create_blank_map, create_map, create_map_nav, create_map_secondary, crop_map_canvas,
+    delete_map_nav, delete_map_secondary, expand_map_canvas, get_map_document, get_map_drawing,
+    get_map_hotspots, get_map_nav, get_map_secondary, get_maps_session, list_map_nav,
     list_map_secondaries, list_maps, read_project_image_data_url, record_map_viewed,
-    save_map_document, save_map_drawing, save_map_secondary, set_default_on_open,
-    set_open_preference, update_map_secondary_meta, MapCreateMode, MapDocumentV1, MapDrawingV2,
-    MapSecondaryDrawingFileV1, MapSecondaryMetaPatch, MapSessionV2, MapSummaryV2, OpenPreference,
+    save_map_document, save_map_drawing, save_map_hotspots, save_map_nav, save_map_secondary,
+    set_default_on_open, set_open_preference, update_map_secondary_meta, MapCreateMode,
+    MapDocumentV1, MapDrawingV2, MapHotspotsFileV1, MapNavDrawingFileV1, MapSecondaryDrawingFileV1,
+    MapSecondaryMetaPatch, MapSessionV2, MapSummaryV2, OpenPreference,
 };
 use crate::state::ProjectState;
 
@@ -217,4 +219,65 @@ pub fn delete_map_secondary_cmd(
     secondary_id: String,
 ) -> Result<(), AppError> {
     state.with_db(|_db, root| delete_map_secondary(root, &map_id, &secondary_id))
+}
+
+#[tauri::command]
+pub fn list_map_nav_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+) -> Result<Vec<crate::fs::maps_store::MapNavSummaryV1>, AppError> {
+    state.with_db(|_db, root| list_map_nav(root, &map_id))
+}
+
+#[tauri::command]
+pub fn get_map_nav_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    nav_id: String,
+) -> Result<MapNavDrawingFileV1, AppError> {
+    state.with_db(|_db, root| get_map_nav(root, &map_id, &nav_id))
+}
+
+#[tauri::command]
+pub fn create_map_nav_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    name: String,
+) -> Result<MapNavDrawingFileV1, AppError> {
+    state.with_db(|_db, root| create_map_nav(root, &map_id, &name))
+}
+
+#[tauri::command]
+pub fn save_map_nav_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    file: MapNavDrawingFileV1,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| save_map_nav(root, &map_id, &file))
+}
+
+#[tauri::command]
+pub fn delete_map_nav_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    nav_id: String,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| delete_map_nav(root, &map_id, &nav_id))
+}
+
+#[tauri::command]
+pub fn get_map_hotspots_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+) -> Result<MapHotspotsFileV1, AppError> {
+    state.with_db(|_db, root| get_map_hotspots(root, &map_id))
+}
+
+#[tauri::command]
+pub fn save_map_hotspots_cmd(
+    state: State<'_, ProjectState>,
+    map_id: String,
+    file: MapHotspotsFileV1,
+) -> Result<(), AppError> {
+    state.with_db(|_db, root| save_map_hotspots(root, &map_id, &file))
 }

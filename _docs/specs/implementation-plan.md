@@ -133,7 +133,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-007** | ✅ | Dibujo principal: «Desde», terreno base — [plan](plans/Fase%20F/MAP-007-principal-desde.md) · QA `1781851429000-23756` | Medio | [`maps-design.md` §4.2](maps-design.md) |
 | **MAP-008** | ✅ | Secundarios: parches transparentes, visibilidad T — [plan](plans/Fase%20F/MAP-008-secondary-patches.md) · QA parcial | Alto | [`maps-design.md` §4.3](maps-design.md) |
 | **MAP-009** | ✅ | Compositor + timeline del mapa (scrubber **T**) — [plan](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) · QA `1781899299029-15084` · polish §13 diferido | Alto | [`maps-design.md` §4.4](maps-design.md) |
-| **MAP-010** | 📋 | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) | Alto | [`maps-design.md` §5](maps-design.md) |
+| **MAP-010** | ✅ | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 diferido | Alto | [`maps-design.md` §5](maps-design.md) |
 | **MAP-011** | ⬜ | Ubicaciones desde manuscrito: marcas **X** en T (stub Era III) | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
 | **MAP-012** | ⬜ | Smoke Era III + purga código mapas legacy | Medio | [`maps-design.md`](maps-design.md) · [`06-ARCHITECTURE.md`](archive/retired-cadence/06-ARCHITECTURE.md) |
 
@@ -209,7 +209,7 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 25 | MAP-007 | Dibujo principal + Desde ✅ |
 | 26 | MAP-008 | Secundarios temporales ✅ |
 | 27 | MAP-009 | Compositor + timeline T ✅ |
-| 28 | MAP-010 | Navegación hotspots 📋 |
+| 28 | MAP-010 | Navegación hotspots ✅ |
 | 29 | MAP-011 | Marcas X ubicación (stub) |
 | 30 | MAP-012 | Smoke + purga legacy mapas |
 | — | WB-* | Post-WB (aplazado) |
@@ -283,7 +283,8 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **MAP-007 📋** dibujo principal + «Desde» — [`MAP-007-principal-desde.md`](plans/Fase%20F/MAP-007-principal-desde.md) |
 | 2026-06-11 | **MAP-007 ✅ cerrado** dibujo principal + «Desde» — QA `1781851429000-23756` |
 | 2026-06-11 | **MAP-008 📋** secundarios + parches temporales — [`MAP-008-secondary-patches.md`](plans/Fase%20F/MAP-008-secondary-patches.md) |
+| 2026-06-11 | **MAP-010 ✅ cerrado** — nav/hotspots + compositor; QA `1781902329565-1512` + `1781902875392-8868`; polish §13 diferido → [`MAP-010-hotspots-nav.md`](plans/Fase%20F/MAP-010-hotspots-nav.md) |
 
 ---
 
-**Última actualización:** 2026-06-11
+**Última actualización:** 2026-06-11 (MAP-010 cerrado)

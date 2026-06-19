@@ -131,6 +131,46 @@
       "name_required": "Patch name is required."
     }
   },
+  "nav": {
+    "back": "Back",
+    "breadcrumbRoot": "Base terrain",
+    "breadcrumbAria": "Map navigation",
+    "activeBadge": "Nav: {{name}}",
+    "panelTitle": "Child drawings",
+    "panelAria": "Navigation drawings for map {{mapId}}",
+    "add": "New child drawing",
+    "empty": "No child drawings yet. Create one to link from hotspots.",
+    "delete": "Delete child drawing",
+    "deleteTitle": "Delete child drawing",
+    "deleteMessage": "Delete «{{name}}»? Hotspots pointing to it will become invalid.",
+    "deleteConfirm": "Delete",
+    "cancel": "Cancel",
+    "createTitle": "New child drawing",
+    "createDescription": "Editable layer linked from base-terrain hotspots.",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Inner city",
+    "createSubmit": "Create"
+  },
+  "hotspot": {
+    "panelTitle": "Hotspots",
+    "panelAria": "Hotspots for map {{mapId}}",
+    "drawZone": "Draw clickable zone",
+    "drawHint": "Drag on the canvas to define the area. Base terrain only.",
+    "empty": "No hotspots. Draw a zone and pick a child drawing target.",
+    "delete": "Delete hotspot",
+    "deleteTitle": "Delete hotspot",
+    "deleteMessage": "Delete «{{name}}»?",
+    "deleteConfirm": "Delete",
+    "cancel": "Cancel",
+    "targetTitle": "Hotspot target",
+    "targetDescription": "Zone {{width}}×{{height}} px on base terrain.",
+    "targetLabel": "Target child drawing",
+    "noNavDrawings": "Create a child drawing first",
+    "labelOptional": "Label (optional)",
+    "labelPlaceholder": "e.g. Temple entrance",
+    "createNavInline": "Create child drawing…",
+    "save": "Save hotspot"
+  },
   "desde": {
     "label": "From",
     "hint": "Local temporal origin of this map (year 0)",
@@ -234,6 +274,11 @@
     "invalid_dimensions": "Invalid map dimensions (512–8192 px).",
     "invalid_desde": "The «From» label is not a valid date format.",
     "secondary_not_found": "Patch not found.",
-    "secondary_name_required": "Patch name is required."
+    "secondary_name_required": "Patch name is required.",
+    "nav_not_found": "Navigation drawing not found.",
+    "nav_name_required": "Child drawing name is required.",
+    "nav_referenced_by_hotspot": "Cannot delete: a hotspot points to this drawing.",
+    "hotspot_invalid_bounds": "Hotspot area extends outside the canvas.",
+    "invalid_hotspot": "Invalid hotspot."
   }
 }

@@ -7,7 +7,7 @@
 |-------|--------|
 | **Era** | III (`03-ROADMAP.md`) |
 | **Versión objetivo** | v0.11.x |
-| **Estado** | MAP-001 ✅ … MAP-007 ✅ · MAP-008 ✅ · MAP-009 ✅ |
+| **Estado** | MAP-001 ✅ … MAP-009 ✅ · MAP-010 ✅ (polish §13 diferido) |
 
 ---
 
@@ -58,8 +58,8 @@ MAP-001 persistencia v2 + purga física legacy
 | **MAP-007** | Dibujo principal + etiqueta «Desde» — [plan](plans/Fase%20F/MAP-007-principal-desde.md) ✅ · QA `1781851429000` | §4.2 | MAP-001 · MAP-006 |
 | **MAP-008** | Secundarios: parches + visibilidad T — [plan](plans/Fase%20F/MAP-008-secondary-patches.md) ✅ · QA parcial | §4.3 | MAP-007 |
 | **MAP-009** | Compositor + timeline T — [plan](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) ✅ · QA `1781899299029-15084` | §4.4 | MAP-008 |
-| **MAP-010** | Hotspots → dibujo hijo; volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) 📋 | §5 | MAP-004, MAP-009 |
-| **MAP-011** | Ubicaciones MS → marcas **X** en T (stub) | §4bis.4.1 | MAP-009, manuscrito |
+| **MAP-010** | Hotspots → dibujo hijo; volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) ✅ · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 | §5 | MAP-004, MAP-009 |
+| **MAP-011** | Ubicaciones MS → marcas **X** en T (stub) | §4bis.4.1 | MAP-009, MAP-010, manuscrito |
 | **MAP-012** | Smoke QA + quitar Leaflet/Excalidraw + grep restos | §2 | todo lo anterior |
 
 ---
@@ -97,5 +97,6 @@ Resumen — detalle en [`maps-design.md` §9](maps-design.md#9-persistencia-en-d
 | 2026-06-11 | **MAP-008 ✅ cerrado** — QA parcial + bugfixes §12.1 → handoff MAP-009 |
 | 2026-06-11 | **MAP-009 ✅ cerrado** — scrubber + memoria T; QA `1781899299029-15084`; polish §13 diferido → [`MAP-009-map-timeline-scrubber.md`](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) |
 | 2026-06-11 | **MAP-010 📋** plan hotspots + navegación hijo — [`MAP-010-hotspots-nav.md`](plans/Fase%20F/MAP-010-hotspots-nav.md) |
+| 2026-06-11 | **MAP-010 ✅ cerrado** — nav/hotspots + compositor; QA parcial `1781902329565-1512` + `1781902875392-8868`; push/pop sin evidencia OBS; polish §13 → [`MAP-010-hotspots-nav.md`](plans/Fase%20F/MAP-010-hotspots-nav.md) |
 
-**Última actualización:** 2026-06-11
+**Última actualización:** 2026-06-11 (MAP-010 cerrado)

@@ -70,8 +70,8 @@ export function MapSecondariesPanel({
   };
 
   return (
-    <aside
-      className="flex w-56 shrink-0 flex-col border-r border-border/60 bg-background"
+    <section
+      className="flex min-h-0 flex-1 basis-0 flex-col border-b border-border/60 bg-background"
       aria-label={t("secondary.panelAria", { mapId })}
     >
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
@@ -202,6 +202,6 @@ export function MapSecondariesPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </aside>
+    </section>
   );
 }

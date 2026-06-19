@@ -2,7 +2,7 @@
 
 > **Estado:** ✅ **Cerrado** (2026-06-11) — Fases 1–9 implementadas · QA funcional OK · **polish §13 diferido** (no bloquea MAP-010)  
 > **Esfuerzo:** Medio–alto · **Riesgo:** Medio (UX timeline + acoplamiento calendario; compositor ya operativo)  
-> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §4.4, §8 · **Previo:** [MAP-008 ✅](MAP-008-secondary-patches.md) · **Siguiente:** MAP-010
+> **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §4.4, §8 · **Previo:** [MAP-008 ✅](MAP-008-secondary-patches.md) · **Siguiente:** MAP-011 _(MAP-010 ✅)_
 
 ---
 

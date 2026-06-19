@@ -8,11 +8,12 @@ import { paintStrokeLayer } from "@/lib/maps/mapStrokeBuffer";
 import { drawMapStrokes } from "@/lib/maps/mapStrokeRender";
 import { renderAudit } from "@/lib/render-audit";
 import { UI_EVENTS } from "@/lib/render-audit/events";
-import type { MapDocumentV1, MapDrawingV2, MapStrokeV2 } from "@/lib/types/maps";
+import type { MapDocumentV1, MapDrawingV2, MapHotspotBoundsV1, MapHotspotV1, MapStrokeV2 } from "@/lib/types/maps";
 import type { MapViewMode } from "@/stores/useMapStore";
 import type { MapStudioTool } from "@/stores/useMapStudioStore";
 
 import { shouldPanPointer } from "@/lib/maps/mapDrawGesture";
+import { documentDistance, screenToDocument } from "@/lib/maps/mapDrawCoords";
 
 export interface MapViewportComposeLayer {
   drawingRefKey: string;
@@ -24,6 +25,11 @@ export interface MapViewportPaintOptions {
   activeDrawingRefKey?: string;
   previewStroke?: MapStrokeV2 | null;
   activeLayerId?: string | null;
+  /** Sustituye principal + overlays por dibujo nav (MAP-010). */
+  composeNavDrawing?: MapDrawingV2 | null;
+  composeNavDrawingRefKey?: string;
+  hotspotOverlays?: MapHotspotV1[];
+  hotspotDraftBounds?: MapHotspotBoundsV1 | null;
 }
 
 export interface MapViewportState {
@@ -38,6 +44,7 @@ export const MAP_VIEWPORT_MAX_ZOOM = 2;
 const GRID_SIZE = 32;
 const MAX_DPR = 2;
 const COMPOSITOR_AUDIT_DEBOUNCE_MS = 150;
+const INTERACTIVE_CLICK_MOVE_PX = 5;
 
 interface UseMapViewportOptions {
   mapId: string;
@@ -48,10 +55,20 @@ interface UseMapViewportOptions {
   previewTimeTRaw?: string | null;
   activeSecondaryIds?: string[];
   secondaryCount?: number;
+  navDepth?: number;
+  activeNavId?: string | null;
+  navStackIds?: string[];
+  hostHotspotCount?: number;
+  composeNavDrawing?: MapDrawingV2 | null;
+  composeNavDrawingRefKey?: string;
   viewMode: MapViewMode;
   previewStroke?: MapStrokeV2 | null;
   activeLayerId?: string | null;
   studioTool?: MapStudioTool;
+  /** Clic en interactivo (coords documento). true = consumido (p. ej. hotspot). */
+  onInteractiveClick?: (worldX: number, worldY: number) => boolean;
+  hotspotOverlays?: MapHotspotV1[];
+  hotspotDraftBounds?: MapHotspotBoundsV1 | null;
 }
 
 interface ContainerSize {
@@ -136,6 +153,27 @@ function drawGrid(
   }
 }
 
+function drawHotspotOverlays(
+  ctx: CanvasRenderingContext2D,
+  hotspots: MapHotspotV1[],
+  draftBounds: MapHotspotBoundsV1 | null | undefined,
+): void {
+  const drawRect = (bounds: MapHotspotBoundsV1, stroke: string, fill: string) => {
+    ctx.fillStyle = fill;
+    ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bounds.x + 0.5, bounds.y + 0.5, bounds.width - 1, bounds.height - 1);
+  };
+
+  for (const hotspot of hotspots) {
+    drawRect(hotspot.bounds, "rgba(59, 130, 246, 0.95)", "rgba(59, 130, 246, 0.18)");
+  }
+  if (draftBounds && draftBounds.width > 0 && draftBounds.height > 0) {
+    drawRect(draftBounds, "rgba(234, 179, 8, 0.95)", "rgba(234, 179, 8, 0.2)");
+  }
+}
+
 export function paintMapViewport(
   ctx: CanvasRenderingContext2D,
   size: ContainerSize,
@@ -166,6 +204,28 @@ export function paintMapViewport(
     drawGrid(ctx, document.width, document.height);
   }
 
+  const navDrawing = options.composeNavDrawing;
+  if (navDrawing) {
+    const navRefKey = options.composeNavDrawingRefKey ?? "nav:unknown";
+    const navLayer = paintStrokeLayer(mapId, navRefKey, document, (bufferCtx) => {
+      const isActive = activeDrawingRefKey === navRefKey;
+      drawMapStrokes(
+        bufferCtx,
+        navDrawing,
+        isActive ? options.previewStroke : null,
+        isActive ? options.activeLayerId : null,
+      );
+    });
+    ctx.drawImage(navLayer, 0, 0);
+    drawHotspotOverlays(
+      ctx,
+      options.hotspotOverlays ?? [],
+      options.hotspotDraftBounds,
+    );
+    ctx.restore();
+    return;
+  }
+
   const principalLayer = paintStrokeLayer(mapId, "principal", document, (bufferCtx) => {
     const isActive = activeDrawingRefKey === "principal";
     drawMapStrokes(
@@ -189,6 +249,12 @@ export function paintMapViewport(
     });
     ctx.drawImage(strokeLayer, 0, 0);
   }
+
+  drawHotspotOverlays(
+    ctx,
+    options.hotspotOverlays ?? [],
+    options.hotspotDraftBounds,
+  );
 
   ctx.restore();
 }
@@ -224,10 +290,19 @@ export function useMapViewport({
   previewTimeTRaw = null,
   activeSecondaryIds = [],
   secondaryCount = 0,
+  navDepth = 0,
+  activeNavId = null,
+  navStackIds = [],
+  hostHotspotCount = 0,
+  composeNavDrawing = null,
+  composeNavDrawingRefKey,
   viewMode,
   previewStroke = null,
   activeLayerId = null,
   studioTool = "brush",
+  onInteractiveClick,
+  hotspotOverlays = [],
+  hotspotDraftBounds = null,
 }: UseMapViewportOptions) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -248,10 +323,16 @@ export function useMapViewport({
     originPanX: number;
     originPanY: number;
   } | null>(null);
+  const deferredClick = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+  } | null>(null);
   const spacePressed = useRef(false);
 
-  const activeEditingDrawing =
-    activeDrawingRefKey === "principal"
+  const activeEditingDrawing = composeNavDrawing
+    ? composeNavDrawing
+    : activeDrawingRefKey === "principal"
       ? principalDrawing
       : overlayDrawings.find((layer) => layer.drawingRefKey === activeDrawingRefKey)?.drawing ??
         principalDrawing;
@@ -277,6 +358,10 @@ export function useMapViewport({
         activeDrawingRef: activeDrawingRefKey,
         activeSecondaryIds,
         secondaryCount,
+        navDepth,
+        activeNavId,
+        navStackIds,
+        hostHotspotCount,
         visibleLayers: activeEditingDrawing.layers
           .filter((layer) => layer.visible)
           .map((layer) => layer.id),
@@ -285,9 +370,13 @@ export function useMapViewport({
     [
       activeDrawingRefKey,
       activeEditingDrawing.layers,
+      activeNavId,
       activeSecondaryIds,
       document.desde,
+      hostHotspotCount,
       mapId,
+      navDepth,
+      navStackIds,
       previewTimeTRaw,
       secondaryCount,
       viewMode,
@@ -312,14 +401,22 @@ export function useMapViewport({
         activeDrawingRefKey,
         previewStroke,
         activeLayerId,
+        composeNavDrawing,
+        composeNavDrawingRefKey,
+        hotspotOverlays,
+        hotspotDraftBounds,
       },
     );
   }, [
     activeDrawingRefKey,
     activeLayerId,
     baseImage,
+    composeNavDrawing,
+    composeNavDrawingRefKey,
     containerSize,
     document,
+    hotspotDraftBounds,
+    hotspotOverlays,
     mapId,
     overlayDrawings,
     previewStroke,
@@ -412,6 +509,10 @@ export function useMapViewport({
         activeDrawingRef: activeDrawingRefKey,
         activeSecondaryIds,
         secondaryCount,
+        navDepth,
+        activeNavId,
+        navStackIds,
+        hostHotspotCount,
         visibleLayers,
         strokeCount,
         layerCount: activeEditingDrawing.layers.length,
@@ -429,9 +530,13 @@ export function useMapViewport({
     activeDrawingRefKey,
     activeEditingDrawing,
     activeLayerId,
+    activeNavId,
     activeSecondaryIds,
     document.desde,
+    hostHotspotCount,
     mapId,
+    navDepth,
+    navStackIds,
     previewTimeTRaw,
     secondaryCount,
   ]);
@@ -471,6 +576,20 @@ export function useMapViewport({
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (
+        viewMode === "interactive" &&
+        onInteractiveClick &&
+        event.button === 0 &&
+        !spacePressed.current
+      ) {
+        deferredClick.current = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+        return;
+      }
       if (!canPan(event)) return;
       panSession.current = {
         pointerId: event.pointerId,
@@ -481,29 +600,67 @@ export function useMapViewport({
       };
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [canPan, viewport.panX, viewport.panY],
+    [canPan, onInteractiveClick, viewMode, viewport.panX, viewport.panY],
   );
 
-  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
-    const session = panSession.current;
-    if (!session || session.pointerId !== event.pointerId) return;
-    const dx = event.clientX - session.startX;
-    const dy = event.clientY - session.startY;
-    setViewport((prev) => ({
-      ...prev,
-      panX: session.originPanX + dx,
-      panY: session.originPanY + dy,
-    }));
-  }, []);
+  const handlePointerMove = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      const pendingClick = deferredClick.current;
+      if (pendingClick && pendingClick.pointerId === event.pointerId) {
+        const moved = documentDistance(
+          { x: pendingClick.startX, y: pendingClick.startY },
+          { x: event.clientX, y: event.clientY },
+        );
+        if (moved >= INTERACTIVE_CLICK_MOVE_PX) {
+          deferredClick.current = null;
+          panSession.current = {
+            pointerId: event.pointerId,
+            startX: pendingClick.startX,
+            startY: pendingClick.startY,
+            originPanX: viewport.panX,
+            originPanY: viewport.panY,
+          };
+        } else {
+          return;
+        }
+      }
 
-  const handlePointerUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
-    const session = panSession.current;
-    if (!session || session.pointerId !== event.pointerId) return;
-    panSession.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }, []);
+      const session = panSession.current;
+      if (!session || session.pointerId !== event.pointerId) return;
+      const dx = event.clientX - session.startX;
+      const dy = event.clientY - session.startY;
+      setViewport((prev) => ({
+        ...prev,
+        panX: session.originPanX + dx,
+        panY: session.originPanY + dy,
+      }));
+    },
+    [viewport.panX, viewport.panY],
+  );
+
+  const handlePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      const pendingClick = deferredClick.current;
+      if (pendingClick && pendingClick.pointerId === event.pointerId) {
+        deferredClick.current = null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        const rect = event.currentTarget.getBoundingClientRect();
+        const { x, y } = screenToDocument(event.clientX, event.clientY, rect, viewport);
+        onInteractiveClick?.(x, y);
+        return;
+      }
+
+      const session = panSession.current;
+      if (!session || session.pointerId !== event.pointerId) return;
+      panSession.current = null;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    },
+    [onInteractiveClick, viewport],
+  );
 
   return {
     containerRef,

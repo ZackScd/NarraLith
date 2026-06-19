@@ -16,6 +16,7 @@ const MAP_FILENAME: &str = "map.json";
 const HOTSPOTS_FILENAME: &str = "hotspots.json";
 const PRINCIPAL_DRAWING_REL: &str = "drawings/principal.json";
 const SECONDARY_DRAWINGS_DIR: &str = "drawings/secondary";
+const NAV_DRAWINGS_DIR: &str = "drawings/nav";
 const MAX_IMAGE_BYTES: u64 = 50 * 1024 * 1024;
 const MIN_DIMENSION: u32 = 512;
 const MAX_DIMENSION: u32 = 8192;
@@ -158,10 +159,37 @@ pub struct MapStrokePointV2 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum MapHostDrawingRef {
+    Principal,
+    Nav { id: String },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapHotspotBoundsV1 {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapHotspotV1 {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    pub host_drawing_ref: MapHostDrawingRef,
+    pub bounds: MapHotspotBoundsV1,
+    pub target_nav_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MapHotspotsFileV1 {
     pub version: u32,
-    pub hotspots: Vec<serde_json::Value>,
+    pub hotspots: Vec<MapHotspotV1>,
 }
 
 fn default_open_preference() -> OpenPreference {
@@ -208,6 +236,25 @@ pub struct MapSecondaryDrawingFileV1 {
     pub tiempo_inicio: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tiempo_fin: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub drawing: MapDrawingV2,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapNavSummaryV1 {
+    pub id: String,
+    pub name: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapNavDrawingFileV1 {
+    pub version: u32,
+    pub id: String,
+    pub name: String,
     pub created_at: String,
     pub updated_at: String,
     pub drawing: MapDrawingV2,
@@ -498,6 +545,155 @@ pub fn delete_map_secondary(
     Ok(())
 }
 
+pub fn list_map_nav(
+    project_root: &Path,
+    map_id: &str,
+) -> Result<Vec<MapNavSummaryV1>, AppError> {
+    let dir = map_dir(project_root, map_id)?.join(NAV_DRAWINGS_DIR);
+    if !dir.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut summaries = Vec::new();
+    for entry in fs::read_dir(&dir).map_err(|e| AppError::database(e.to_string()))? {
+        let entry = entry.map_err(|e| AppError::database(e.to_string()))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let file: MapNavDrawingFileV1 = match read_json(&path) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        if file.version != 1 {
+            continue;
+        }
+        summaries.push(MapNavSummaryV1 {
+            id: file.id,
+            name: file.name,
+            updated_at: file.updated_at,
+        });
+    }
+    summaries.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(summaries)
+}
+
+pub fn get_map_nav(
+    project_root: &Path,
+    map_id: &str,
+    nav_id: &str,
+) -> Result<MapNavDrawingFileV1, AppError> {
+    let path = nav_file_path(project_root, map_id, nav_id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.nav_not_found"));
+    }
+    let file: MapNavDrawingFileV1 = read_json(&path)?;
+    validate_nav_file(&file, project_root, map_id)?;
+    Ok(file)
+}
+
+pub fn create_map_nav(
+    project_root: &Path,
+    map_id: &str,
+    name: &str,
+) -> Result<MapNavDrawingFileV1, AppError> {
+    let trimmed_name = name.trim();
+    if trimmed_name.is_empty() {
+        return Err(AppError::new("error.maps.nav_name_required"));
+    }
+
+    let doc = get_map_document(project_root, map_id)?;
+    let map_path = map_dir(project_root, map_id)?;
+    fs::create_dir_all(map_path.join(NAV_DRAWINGS_DIR))
+        .map_err(|e| AppError::database(e.to_string()))?;
+
+    let id = generate_nav_id();
+    let now = timestamp_now();
+    let file = MapNavDrawingFileV1 {
+        version: 1,
+        id: id.clone(),
+        name: trimmed_name.to_string(),
+        created_at: now.clone(),
+        updated_at: now,
+        drawing: default_principal_drawing(doc.width, doc.height),
+    };
+    validate_nav_file(&file, project_root, map_id)?;
+    write_json_atomic(&nav_file_path(project_root, map_id, &id)?, &file)?;
+    Ok(file)
+}
+
+pub fn save_map_nav(
+    project_root: &Path,
+    map_id: &str,
+    file: &MapNavDrawingFileV1,
+) -> Result<(), AppError> {
+    let path = nav_file_path(project_root, map_id, &file.id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.nav_not_found"));
+    }
+    let mut on_disk: MapNavDrawingFileV1 = read_json(&path)?;
+    if on_disk.id != file.id {
+        return Err(AppError::new("error.maps.invalid_json"));
+    }
+    validate_drawing(&file.drawing)?;
+    let doc = get_map_document(project_root, map_id)?;
+    if file.drawing.width != doc.width || file.drawing.height != doc.height {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    on_disk.drawing = file.drawing.clone();
+    on_disk.updated_at = timestamp_now();
+    validate_nav_file(&on_disk, project_root, map_id)?;
+    write_json_atomic(&path, &on_disk)?;
+    upsert_index_entry(project_root, map_id, &doc.name, &on_disk.updated_at, None)?;
+    Ok(())
+}
+
+pub fn delete_map_nav(project_root: &Path, map_id: &str, nav_id: &str) -> Result<(), AppError> {
+    let path = nav_file_path(project_root, map_id, nav_id)?;
+    if !path.is_file() {
+        return Err(AppError::new("error.maps.nav_not_found"));
+    }
+    let hotspots = get_map_hotspots(project_root, map_id)?;
+    if hotspots
+        .hotspots
+        .iter()
+        .any(|hotspot| hotspot.target_nav_id == nav_id)
+    {
+        return Err(AppError::new("error.maps.nav_referenced_by_hotspot"));
+    }
+    fs::remove_file(&path).map_err(|e| AppError::database(e.to_string()))?;
+    let doc = get_map_document(project_root, map_id)?;
+    let now = timestamp_now();
+    upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
+    Ok(())
+}
+
+pub fn get_map_hotspots(project_root: &Path, map_id: &str) -> Result<MapHotspotsFileV1, AppError> {
+    let path = map_dir(project_root, map_id)?.join(HOTSPOTS_FILENAME);
+    if !path.is_file() {
+        return Ok(MapHotspotsFileV1::empty());
+    }
+    let file: MapHotspotsFileV1 = read_json(&path)?;
+    validate_hotspots_file(&file, project_root, map_id)?;
+    Ok(file)
+}
+
+pub fn save_map_hotspots(
+    project_root: &Path,
+    map_id: &str,
+    file: &MapHotspotsFileV1,
+) -> Result<(), AppError> {
+    if file.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    validate_hotspots_file(file, project_root, map_id)?;
+    let path = map_dir(project_root, map_id)?.join(HOTSPOTS_FILENAME);
+    write_json_atomic(&path, file)?;
+    let doc = get_map_document(project_root, map_id)?;
+    let now = timestamp_now();
+    upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
+    Ok(())
+}
+
 pub fn create_blank_map(
     project_root: &Path,
     name: &str,
@@ -650,6 +846,7 @@ pub fn expand_map_canvas(
 
     save_map_drawing(project_root, map_id, &drawing)?;
     sync_secondary_drawings_dimensions(project_root, map_id, new_width, new_height, false)?;
+    sync_nav_drawings_dimensions(project_root, map_id, new_width, new_height, false)?;
     save_map_document(project_root, &doc)?;
     Ok(doc)
 }
@@ -677,6 +874,7 @@ pub fn crop_map_canvas(
 
     save_map_drawing(project_root, map_id, &drawing)?;
     sync_secondary_drawings_dimensions(project_root, map_id, new_width, new_height, true)?;
+    sync_nav_drawings_dimensions(project_root, map_id, new_width, new_height, true)?;
     save_map_document(project_root, &doc)?;
     Ok(doc)
 }
@@ -986,6 +1184,124 @@ fn sync_secondary_drawings_dimensions(
         write_json_atomic(&path, &file)?;
     }
     Ok(())
+}
+
+fn sync_nav_drawings_dimensions(
+    project_root: &Path,
+    map_id: &str,
+    new_width: u32,
+    new_height: u32,
+    crop: bool,
+) -> Result<(), AppError> {
+    let dir = map_dir(project_root, map_id)?.join(NAV_DRAWINGS_DIR);
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(&dir).map_err(|e| AppError::database(e.to_string()))? {
+        let entry = entry.map_err(|e| AppError::database(e.to_string()))?;
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let mut file: MapNavDrawingFileV1 = read_json(&path)?;
+        if crop {
+            clip_drawing_strokes(&mut file.drawing, new_width, new_height);
+        }
+        file.drawing.width = new_width;
+        file.drawing.height = new_height;
+        validate_drawing(&file.drawing)?;
+        if file.drawing.width != new_width || file.drawing.height != new_height {
+            return Err(AppError::new("error.maps.invalid_dimensions"));
+        }
+        file.updated_at = timestamp_now();
+        write_json_atomic(&path, &file)?;
+    }
+    Ok(())
+}
+
+fn nav_file_path(project_root: &Path, map_id: &str, nav_id: &str) -> Result<PathBuf, AppError> {
+    if nav_id.trim().is_empty()
+        || nav_id.contains("..")
+        || nav_id.contains('/')
+        || nav_id.contains('\\')
+    {
+        return Err(AppError::new("error.maps.nav_not_found"));
+    }
+    Ok(map_dir(project_root, map_id)?
+        .join(NAV_DRAWINGS_DIR)
+        .join(format!("{nav_id}.json")))
+}
+
+fn validate_nav_file(
+    file: &MapNavDrawingFileV1,
+    project_root: &Path,
+    map_id: &str,
+) -> Result<(), AppError> {
+    if file.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    if file.id.trim().is_empty() {
+        return Err(AppError::new("error.maps.invalid_json"));
+    }
+    if file.name.trim().is_empty() {
+        return Err(AppError::new("error.maps.nav_name_required"));
+    }
+    validate_drawing(&file.drawing)?;
+    let doc = get_map_document(project_root, map_id)?;
+    if file.drawing.width != doc.width || file.drawing.height != doc.height {
+        return Err(AppError::new("error.maps.invalid_dimensions"));
+    }
+    Ok(())
+}
+
+fn validate_hotspots_file(
+    file: &MapHotspotsFileV1,
+    project_root: &Path,
+    map_id: &str,
+) -> Result<(), AppError> {
+    if file.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    let doc = get_map_document(project_root, map_id)?;
+    let max_x = doc.width as f64;
+    let max_y = doc.height as f64;
+    for hotspot in &file.hotspots {
+        if hotspot.id.trim().is_empty() {
+            return Err(AppError::new("error.maps.invalid_hotspot"));
+        }
+        if hotspot.target_nav_id.trim().is_empty() {
+            return Err(AppError::new("error.maps.invalid_hotspot"));
+        }
+        let nav_path = nav_file_path(project_root, map_id, &hotspot.target_nav_id)?;
+        if !nav_path.is_file() {
+            return Err(AppError::new("error.maps.nav_not_found"));
+        }
+        validate_hotspot_bounds(&hotspot.bounds, max_x, max_y)?;
+    }
+    Ok(())
+}
+
+fn validate_hotspot_bounds(
+    bounds: &MapHotspotBoundsV1,
+    max_x: f64,
+    max_y: f64,
+) -> Result<(), AppError> {
+    if bounds.width <= 0.0 || bounds.height <= 0.0 {
+        return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+    }
+    if bounds.x < 0.0 || bounds.y < 0.0 {
+        return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+    }
+    if bounds.x + bounds.width > max_x || bounds.y + bounds.height > max_y {
+        return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+    }
+    Ok(())
+}
+
+fn generate_nav_id() -> String {
+    let seed = format!("nav:{}", unix_ms_now());
+    let hash = Sha256::digest(seed.as_bytes());
+    format!("nav-{:08x}", u32::from_be_bytes(hash[..4].try_into().unwrap()))
 }
 
 fn generate_secondary_id() -> String {
@@ -1974,5 +2290,132 @@ mod tests {
         let summary = create_blank_map(root, "Bad", 1200, 800).unwrap();
         let err = create_map_secondary(root, &summary.id, "X", "invalid", None).unwrap_err();
         assert_eq!(err.key, "error.maps.invalid_desde");
+    }
+
+    #[test]
+    fn nav_crud_hotspots_and_expand_crop_sync() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "NavMap", 1200, 800).unwrap();
+        let nav = create_map_nav(root, &summary.id, "Ciudad").unwrap();
+        assert!(nav.id.starts_with("nav-"));
+        assert_eq!(nav.drawing.width, 1200);
+
+        let listed = list_map_nav(root, &summary.id).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].name, "Ciudad");
+
+        let hotspots = MapHotspotsFileV1 {
+            version: 1,
+            hotspots: vec![MapHotspotV1 {
+                id: "hs-test".to_string(),
+                label: Some("Entrada".to_string()),
+                host_drawing_ref: MapHostDrawingRef::Principal,
+                bounds: MapHotspotBoundsV1 {
+                    x: 10.0,
+                    y: 20.0,
+                    width: 100.0,
+                    height: 50.0,
+                },
+                target_nav_id: nav.id.clone(),
+            }],
+        };
+        save_map_hotspots(root, &summary.id, &hotspots).unwrap();
+        let loaded_hotspots = get_map_hotspots(root, &summary.id).unwrap();
+        assert_eq!(loaded_hotspots.hotspots.len(), 1);
+
+        let err = delete_map_nav(root, &summary.id, &nav.id).unwrap_err();
+        assert_eq!(err.key, "error.maps.nav_referenced_by_hotspot");
+
+        let mut updated = get_map_nav(root, &summary.id, &nav.id).unwrap();
+        updated.drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "stroke-nav".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pen".to_string(),
+            color: "#000".to_string(),
+            base_size: 2.0,
+            base_opacity: 1.0,
+            points: vec![
+                MapStrokePointV2 {
+                    x: 5.0,
+                    y: 5.0,
+                    pressure: None,
+                },
+                MapStrokePointV2 {
+                    x: 15.0,
+                    y: 15.0,
+                    pressure: None,
+                },
+            ],
+        });
+        save_map_nav(root, &summary.id, &updated).unwrap();
+
+        expand_map_canvas(root, &summary.id, 100, 50).unwrap();
+        let nav_after_expand = get_map_nav(root, &summary.id, &nav.id).unwrap();
+        assert_eq!(nav_after_expand.drawing.width, 1300);
+        assert_eq!(nav_after_expand.drawing.height, 850);
+
+        crop_map_canvas(root, &summary.id, 1000, 700).unwrap();
+        let nav_after_crop = get_map_nav(root, &summary.id, &nav.id).unwrap();
+        assert_eq!(nav_after_crop.drawing.width, 1000);
+        assert_eq!(nav_after_crop.drawing.height, 700);
+
+        save_map_hotspots(root, &summary.id, &MapHotspotsFileV1::empty()).unwrap();
+        delete_map_nav(root, &summary.id, &nav.id).unwrap();
+        assert!(list_map_nav(root, &summary.id).unwrap().is_empty());
+    }
+
+    #[test]
+    fn save_map_nav_preserves_metadata_from_disk() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "NavMeta", 1200, 800).unwrap();
+        let nav = create_map_nav(root, &summary.id, "Original").unwrap();
+
+        let mut stale = get_map_nav(root, &summary.id, &nav.id).unwrap();
+        stale.name = "StaleName".to_string();
+        stale.drawing.layers[0].strokes.push(MapStrokeV2 {
+            id: "stroke-nav-meta".to_string(),
+            tool: MapStrokeTool::Brush,
+            brush: "pen".to_string(),
+            color: "#000".to_string(),
+            base_size: 2.0,
+            base_opacity: 1.0,
+            points: vec![MapStrokePointV2 {
+                x: 1.0,
+                y: 2.0,
+                pressure: None,
+            }],
+        });
+        save_map_nav(root, &summary.id, &stale).unwrap();
+
+        let loaded = get_map_nav(root, &summary.id, &nav.id).unwrap();
+        assert_eq!(loaded.name, "Original");
+        assert_eq!(loaded.drawing.layers[0].strokes.len(), 1);
+    }
+
+    #[test]
+    fn save_map_hotspots_rejects_bounds_outside_canvas() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "HotspotBounds", 1200, 800).unwrap();
+        let nav = create_map_nav(root, &summary.id, "Target").unwrap();
+        let hotspots = MapHotspotsFileV1 {
+            version: 1,
+            hotspots: vec![MapHotspotV1 {
+                id: "hs-bad".to_string(),
+                label: None,
+                host_drawing_ref: MapHostDrawingRef::Principal,
+                bounds: MapHotspotBoundsV1 {
+                    x: 1100.0,
+                    y: 0.0,
+                    width: 200.0,
+                    height: 50.0,
+                },
+                target_nav_id: nav.id,
+            }],
+        };
+        let err = save_map_hotspots(root, &summary.id, &hotspots).unwrap_err();
+        assert_eq!(err.key, "error.maps.hotspot_invalid_bounds");
     }
 }

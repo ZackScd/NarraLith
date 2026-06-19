@@ -131,6 +131,46 @@
       "name_required": "El nombre del parche es obligatorio."
     }
   },
+  "nav": {
+    "back": "Volver",
+    "breadcrumbRoot": "Terreno base",
+    "breadcrumbAria": "Navegación del mapa",
+    "activeBadge": "Nav: {{name}}",
+    "panelTitle": "Dibujos hijo",
+    "panelAria": "Dibujos de navegación del mapa {{mapId}}",
+    "add": "Nuevo dibujo hijo",
+    "empty": "Sin dibujos hijo. Créalos para enlazar desde hotspots.",
+    "delete": "Eliminar dibujo hijo",
+    "deleteTitle": "Eliminar dibujo hijo",
+    "deleteMessage": "¿Eliminar «{{name}}»? Los hotspots que apunten a él dejarán de ser válidos.",
+    "deleteConfirm": "Eliminar",
+    "cancel": "Cancelar",
+    "createTitle": "Nuevo dibujo hijo",
+    "createDescription": "Capa editable enlazada desde hotspots del terreno base.",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Ej. Ciudad interior",
+    "createSubmit": "Crear"
+  },
+  "hotspot": {
+    "panelTitle": "Hotspots",
+    "panelAria": "Hotspots del mapa {{mapId}}",
+    "drawZone": "Dibujar zona clickable",
+    "drawHint": "Arrastra en el lienzo para definir el área. Solo en el terreno base.",
+    "empty": "Sin hotspots. Dibuja una zona y elige un dibujo hijo destino.",
+    "delete": "Eliminar hotspot",
+    "deleteTitle": "Eliminar hotspot",
+    "deleteMessage": "¿Eliminar «{{name}}»?",
+    "deleteConfirm": "Eliminar",
+    "cancel": "Cancelar",
+    "targetTitle": "Destino del hotspot",
+    "targetDescription": "Zona {{width}}×{{height}} px en el terreno base.",
+    "targetLabel": "Dibujo hijo destino",
+    "noNavDrawings": "Crea un dibujo hijo primero",
+    "labelOptional": "Etiqueta (opcional)",
+    "labelPlaceholder": "Ej. Entrada al templo",
+    "createNavInline": "Crear dibujo hijo…",
+    "save": "Guardar hotspot"
+  },
   "desde": {
     "label": "Desde",
     "hint": "Origen temporal local del mapa (año 0)",
@@ -234,6 +274,11 @@
     "invalid_dimensions": "Dimensiones del mapa no válidas (512–8192 px).",
     "invalid_desde": "La etiqueta «Desde» no tiene un formato de fecha válido.",
     "secondary_not_found": "Parche no encontrado.",
-    "secondary_name_required": "El nombre del parche es obligatorio."
+    "secondary_name_required": "El nombre del parche es obligatorio.",
+    "nav_not_found": "Dibujo de navegación no encontrado.",
+    "nav_name_required": "El nombre del dibujo hijo es obligatorio.",
+    "nav_referenced_by_hotspot": "No se puede eliminar: un hotspot apunta a este dibujo.",
+    "hotspot_invalid_bounds": "La zona del hotspot queda fuera del lienzo.",
+    "invalid_hotspot": "Hotspot no válido."
   }
 }
