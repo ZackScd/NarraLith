@@ -39,30 +39,139 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 | Zona | Síntoma |
 |------|---------|
-| **Cabecera** | Título + badge + selector mapa + «Al abrir» + pin ⭐ en dos filas |
-| **Barra temporal** | «Desde» + «Vista en T» + botones Editar/Cambiar — duplica concepto con scrubber inferior |
-| **Columna izq.** | PARCHES + DIBUJOS HIJO (+ Hotspots + Ubicaciones más abajo, scroll) — mucha altura mínima por panel |
-| **Columna der.** | CAPAS con opacidad por capa |
-| **Centro** | Lienzo + grid |
-| **Pie** | Scrubber 2000–2029 + barra estudio completa (herramientas, 10 colores, tamaño, opacidad, undo, expandir/recortar) |
+| **Columna izq.** | PARCHES + DIBUJOS HIJO (+ Hotspots, Ubicaciones) — **→ migrar a panel derecho §2bis** |
+| **Columna der.** | CAPAS — **→ sección rail Capas §2bis**; rediseño contenido §7 |
+| **Cabecera** | Selector + «Al abrir» + pin — **→ sección rail Mapas §2bis** |
+| **Barra amarilla** | «Desde» + «Vista en T» separados — **→ fusionar Desde con timeline abajo §2bis.3** |
+| **Pie rojo** | Estudio dibujo — **→ sección rail Estudio §2bis** |
 
 **Conclusión:** no falta funcionalidad; falta **jerarquía visual**, **agrupación** y **coherencia** entre modos interactivo / edición.
 
 ---
 
+## 2bis. Arquitectura UI — panel derecho tipo manuscrito (2026-06-11)
+
+> **Decisión usuario:** todo lo enmarcado en **rojo** en captura pasa al **panel derecho** en modo edición, con **barra de iconos** siempre visible (patrón `EditorSidePanel` manuscrito).  
+> **Objetivo v1:** reducir ruido — cabecera y columnas laterales actuales desaparecen como bloques permanentes.
+
+### 2bis.1 Qué sale de la pantalla principal (modo edición)
+
+| Zona actual (rojo) | Destino |
+|--------------------|---------|
+| Cabecera: selector mapa, «Al abrir», pin ⭐ | Sección **Mapas** del panel derecho |
+| Columna **izq.**: PARCHES, DIBUJOS HIJO (+ Hotspots, Ubicaciones hoy) | Secciones del panel derecho (una por icono) |
+| Barra **inferior** estudio: herramientas, colores, tamaño, opacidad pincel, undo | Sección **Estudio** del panel derecho (o sub-panel) |
+| Botones expandir/recortar lienzo (pie) | Sección **Mapa / lienzo** o dentro de Mapas — **afinar luego** |
+
+**Permanece en layout principal (no rojo):**
+
+| Zona | Notas |
+|------|-------|
+| Lienzo central | Máximo espacio posible |
+| Cabecera mínima | Título mapa + «Ver mapa interactivo» / salir edición — **sin** selector ni preferencias |
+| **Timeline + Desde** | Pie fijo — ver §2bis.3 |
+
+### 2bis.2 Barra de navegación (rail) — siempre visible en edición
+
+Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticales + panel expandible).
+
+```text
+┌──┐ ┌──────────────────────────┐
+│ ≡│ │  Contenido sección       │
+│🗺│ │  activa (una a la vez)   │
+│▦ │ │                          │
+│📅│ │                          │
+│… │ │                          │
+└──┘ └──────────────────────────┘
+ rail      panel opciones (colapsable)
+```
+
+| # | Icono (orientativo) | Sección al pulsar | Contenido (v1) |
+|---|---------------------|-------------------|----------------|
+| **0** | Expandir / contraer | — | Toggle ancho panel (como `PanelRightOpen/Close`) |
+| **1** | Mapas | **Mapas** | Lista/selector mapas, «Al abrir», pin, + nuevo mapa |
+| **2** | Capas | **Capas** | `MapLayersPanel` rediseñado §7 (Sketchbook) |
+| **3** | Parches | **Parches** | `MapSecondariesPanel` (secundarios temporales) |
+| **4** | Nav | **Dibujos hijo** | `MapNavDrawingsPanel` |
+| **5** | Hotspots | **Hotspots** | `MapHotspotsPanel` |
+| **6** | Ubicaciones | **Ubicaciones** | `MapLocationsPanel` |
+| **7** | Estudio | **Herramientas** | Barra dibujo actual (`MapEditStudio`): pinceles, colores, undo |
+
+**Comportamiento:**
+
+- **Una sección activa** a la vez (click icono → muestra su panel; re-click o icono otro → cambia).
+- Rail **siempre visible** en modo edición (incluso panel contenido contraído).
+- Modo **interactivo:** rail **oculto** o mínimo (solo breadcrumb nav + scrubber) — **definir en impl.**
+- Reutilizar stores/patrón `useLayoutStore` (`rightPanelCollapsed`) si encaja.
+
+**Referencia código:** `src/modules/editor/EditorSidePanel.tsx`.
+
+### 2bis.3 «Desde» + timeline (amarillo) — fusionar abajo
+
+| Antes | Después |
+|-------|---------|
+| Barra bajo cabecera: «Desde … Editar» + «Vista en T … Cambiar» | **Eliminar** barra separada |
+| Scrubber inferior solo con «Vista en T» | **Una sola franja temporal** en el pie |
+
+**Pie del mapa (edición + interactivo):**
+
+```text
+[ Desde: 2025-07-15  Editar ]  ····· scrubber T ·····  [ Vista en T: … ]
+         ↑ integrado en MapTimelineBar / barra única
+```
+
+- **Desde** = metadato del mapa, editable inline o dialog en la **misma barra** que el scrubber (no duplicar `MapPreviewTField` arriba).
+- **Vista en T** = thumb del scrubber (fuente única de preview T).
+- Relacionado: cierra **M13-UX-02** con decisión concreta del usuario.
+
+### 2bis.4 Wireframe objetivo (edición)
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Mapas · a (2400×1600)              [ Ver mapa interactivo ] │  ← cabecera mínima
+├──────────────────────────────────────────────┬──┬─────────┤
+│                                              │🗺│ Mapas   │
+│              LIENZO                          │▦ │ Capas   │
+│                                              │📅│ Parches │
+│                                              │… │ …       │
+├──────────────────────────────────────────────┴──┴─────────┤
+│ Desde 2025-07-15 [Editar]  ═══ scrubber 2000–2029 ═══  T  │  ← única barra tiempo
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 2bis.5 Backlog — shell panel derecho
+
+| ID | Prioridad | Entregable | Notas | Estado |
+|----|-----------|------------|-------|--------|
+| M13-SHELL-01 | **P0** | `MapEditSidePanel` — rail + panel colapsable (patrón manuscrito) | Nuevo componente; solo modo edición | ⬜ |
+| M13-SHELL-02 | **P0** | Mover selector mapa + «Al abrir» + pin → sección **Mapas** | Quita bloque rojo cabecera | ⬜ |
+| M13-SHELL-03 | **P0** | Eliminar columna **izq.** fija; paneles → secciones rail | Parches, Nav, Hotspots, Ubicaciones | ⬜ |
+| M13-SHELL-04 | **P1** | Mover `MapEditStudio` (barra dibujo) → sección **Estudio** rail | Quita bloque rojo inferior | ⬜ |
+| M13-SHELL-05 | **P1** | Cabecera mínima: título + toggle interactivo/edición | Sin selector ni preferencias | ⬜ |
+| M13-SHELL-06 | **P0** | **Desde** integrado en `MapTimelineBar` (§2bis.3) | Elimina barra amarilla; cierra UX-02 | ⬜ |
+| M13-SHELL-07 | **P2** | Expandir/recortar lienzo — ubicación final (Mapas vs menú ⋮) | Usuario afinará después | ⬜ |
+| M13-SHELL-08 | **P2** | Modo interactivo: rail oculto; solo lienzo + breadcrumb + timeline | Contraste MAP-004 | ⬜ |
+| M13-SHELL-09 | **P3** | Persistir sección rail activa + collapsed en sesión mapa | Opcional UX | ⬜ |
+
+**Archivos probables:** nuevo `MapEditSidePanel.tsx`, refactor `MapWorkspace.tsx` layout, `MapTimelineBar.tsx` + `MapDesdeField`, `useLayoutStore` o `useMapStudioStore`.
+
+---
+
 ## 3. Backlog — UX e información (layout)
+
+> **Actualizado 2026-06-11:** reorganización estructural en **§2bis** (`M13-SHELL-*`). Ítems aquí = refinamientos dentro del nuevo shell.
 
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
-| M13-UX-01 | **P0** | Cabecera con demasiados controles permanentes (selector, preferencia apertura, pin) | Mover preferencia/pin a menú ⚙️ o fila colapsable; selector más compacto | Captura · MAP-002 §3ter | ⬜ |
-| M13-UX-02 | **P1** | «Desde» y «Vista en T» en barra superior **más** scrubber inferior — triple representación del tiempo | Unificar: scrubber = T en ambos modos; «Desde» solo edición metadatos; quitar o fusionar `MapPreviewTField` en edición | Captura · MAP-007/009 | ⬜ |
-| M13-UX-03 | **P1** | Columna izq. apila 4–5 paneles (Parches, Nav, Hotspots, Ubicaciones) — ilegible sin scroll largo | Tabs acordeón **una** sección expandida; o sub-nav «Tiempo · Nav · Ubicaciones»; alturas mínimas revisadas | MAP-010 §13 H1 · captura | ⬜ |
-| M13-UX-04 | **P1** | Barra inferior = timeline + estudio dibujo — ocupa ~30% vertical en pantallas normales | Estudio en barra flotante/colapsable; timeline siempre visible pero más delgada; expandir estudio bajo demanda | Captura · usuario | ⬜ |
-| M13-UX-05 | **P2** | Badge «TERRENO BASE» / ref activa no explica si estás en principal, parche o nav | Copy + icono según `activeDrawingRef`; breadcrumb también en edición si nav activo | MAP-010 H2 | ⬜ |
-| M13-UX-06 | **P2** | Capas a la derecha compiten con lienzo en anchura | Capas colapsables / drawer; o integrar capa activa en barra estudio | MAP-006 | ⬜ |
-| M13-UX-07 | **P2** | Opacidad en capa **y** opacidad en herramienta — redundante/confuso | Documentar diferencia en UI o unificar según spec §3bis | Captura | ⬜ |
-| M13-UX-08 | **P3** | Botón «+ Nuevo mapa» mismo peso visual que salir de edición | Jerarquía: primario = modo vista; secundario = crear mapa | Captura | ⬜ |
-| M13-UX-09 | **P2** | Selector mapas crudo (`<select>`) — poco escaneable con muchos mapas | Lista con miniatura / búsqueda (§3ter.1 spec) | MAP-009 §13 · spec §3ter | ⬜ |
+| M13-UX-01 | ~~P0~~ **→ SHELL** | Cabecera saturada | M13-SHELL-02 + SHELL-05 | Captura | 🔄 → §2bis |
+| M13-UX-02 | **P0** | Triple tiempo (Desde arriba + scrubber) | Desde + scrubber **una barra** abajo — M13-SHELL-06 | Usuario | ⬜ |
+| M13-UX-03 | ~~P1~~ **→ SHELL** | Columna izq. apilada | Rail derecho M13-SHELL-03 | MAP-010 H1 | 🔄 → §2bis |
+| M13-UX-04 | ~~P1~~ **→ SHELL** | Pie timeline + estudio | SHELL-04 + SHELL-06 | Usuario | 🔄 → §2bis |
+| M13-UX-05 | **P2** | Badge «TERRENO BASE» poco claro | Copy según sección rail + `activeDrawingRef` | MAP-010 H2 | ⬜ |
+| M13-UX-06 | **P1** | Contenido CAPAS denso | §7 Sketchbook **dentro** sección rail Capas | Usuario · §7 | ⬜ |
+| M13-UX-07 | **P2** | Opacidad capa vs pincel | Tooltip Capas vs Estudio en rail | Captura | ⬜ |
+| M13-UX-08 | **P3** | «+ Nuevo mapa» | Dentro sección Mapas del rail | Captura | ⬜ |
+| M13-UX-09 | **P2** | Selector `<select>` | Lista/miniatura en sección Mapas | spec §3ter | ⬜ |
 
 ---
 
@@ -99,7 +208,7 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
 | M13-LOC-01 | **P1** | Atajo editor → mapa (`SideLocationMapSection`) es **placeholder**, no flujo deseado | Rediseñar handoff: ¿abrir mapa en T del evento? ¿panel split? | Usuario · MAP-011 | ⬜ |
-| M13-LOC-02 | **P1** | Panel Ubicaciones enterrado bajo otros paneles | Subir prioridad visual o tab dedicado | Captura | ⬜ |
+| M13-LOC-02 | ~~P1~~ **→ SHELL** | Panel Ubicaciones enterrado | Sección rail **Ubicaciones** (icono 6) — M13-SHELL-03 | Captura | 🔄 → §2bis |
 | M13-LOC-03 | **P2** | Marcas X visibles también en **edición** (spec C5: solo interactivo) | Ocultar `locationMarkers` salvo ghost colocación | MAP-011 C5 · MAP-012 §2.8 | ⬜ |
 | M13-LOC-04 | **P2** | Anclar pin: flujo poco guiado (lista ocurrencias @ T vs unpinned) | Wizard corto o click-to-place más obvio | Usuario | ⬜ |
 | M13-LOC-05 | **P2** | Tras crop, pins fuera de bounds — verificar feedback UI | Toast + panel refresh (Rust ya sincroniza) | MAP-011 · MAP-012 §8.1 | ⬜ |
@@ -107,18 +216,108 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 ---
 
-## 7. Backlog — Estudio dibujo (MAP-005/006)
+## 7. Panel CAPAS — rediseño estilo Sketchbook
 
-| ID | Prioridad | Problema | Dirección | Origen | Estado |
-|----|-----------|----------|-----------|--------|--------|
-| M13-DRAW-01 | **P2** | Barra estudio muy ancha (10 colores + sliders) | Paleta colapsable; favoritos; último color | Captura | ⬜ |
-| M13-DRAW-02 | **P2** | Herramientas pan vs dibujo vs hotspot vs pin — muchos modos | Modo único exclusivo con indicador claro | Usuario | ⬜ |
-| M13-DRAW-03 | **P3** | Presión tableta / pinceles avanzados MAP-005 | Revisar spec §3bis vs entregado | MAP-005 plan | ⏸ |
-| M13-DRAW-04 | **P2** | Expandir / recortar lienzo en barra inferior — acción poco frecuente, mucho peso | Mover a menú mapa o diálogo | Captura | ⬜ |
+> **Contenedor:** sección **Capas** del rail §2bis (icono 2) — no panel fijo columna derecha actual.  
+> **Origen:** usuario 2026-06-11 · referencia visual Sketchbook (capturas + boceto wireframe).
+
+### 7.1 Visión
+
+El panel CAPAS debe sentirse como una **app de dibujo** (Sketchbook), no como formularios apilados:
+
+- Filas **más bajas** verticalmente.
+- **Miniatura** del contenido dibujado en cada capa (no contador «N trazos»).
+- **Opacidad en barra vertical** a la **derecha** de la fila (no slider horizontal debajo).
+- **Reordenar arrastrando** con icono **≡** (tres líneas) — sin flechas arriba/abajo.
+- **Grupos** (carpetas) con visibilidad y opacidad de grupo que **afectan a todas las capas hijas**.
+
+### 7.2 Layout objetivo por fila (capa)
+
+Boceto acordado (izq → der):
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ [👁][🔒]  MINIATURA   NOMBRE              │ ▌ │  ≡   │
+│            (preview)   (editable)          │ ▌ │ drag │
+│                                            │ ▌ │      │
+│                                            │ ▌ │      │
+└─────────────────────────────────────────────────────────┘
+     ↑ controles      ↑ zoom a contenido      ↑ opacidad  ↑ handle DnD
+       visibilidad       dibujado en capa        vertical
+       bloqueo
+```
+
+| Zona | Comportamiento |
+|------|----------------|
+| **Izq.** | Icono ojo (visible) + candado (bloqueo) — compactos, misma fila que miniatura |
+| **Centro** | Miniatura + nombre capa; clic fila = seleccionar capa activa; doble clic / botón = renombrar |
+| **Der. centro** | **Slider opacidad vertical** (0–100 %), siempre visible en la fila |
+| **Der. extremo** | Icono **≡** — única zona para iniciar **drag-and-drop** reorden |
+
+**Quitar del diseño actual:**
+
+- Flechas ↑ / ↓ (`onReorderLayer` front/back).
+- Texto «Activa · N trazos» como identificador principal.
+- Slider horizontal «Opacidad» bajo la tarjeta.
+
+### 7.3 Grupos de capas (carpetas)
+
+Referencia Sketchbook: fila **Grupo** con icono carpeta + nombre; capas anidadas indentadas debajo.
+
+| Regla | Detalle |
+|-------|---------|
+| **Crear grupo** | Acción «+ grupo» o agrupar capas seleccionadas (definir en implementación) |
+| **Visibilidad grupo** | Ojo del grupo oculta/muestra **todas** las capas del grupo en compositor |
+| **Opacidad grupo** | Slider vertical del grupo modifica opacidad efectiva de hijas (multiplicativa o override — **decidir en impl.**; default: `opacity_efectiva = grupo × capa`) |
+| **Bloqueo grupo** | Opcional v1: candado grupo bloquea todas las hijas |
+| **Reordenar** | Grupos y capas sueltas reordenables con **≡**; arrastrar grupo mueve bloque entero |
+| **Persistencia** | Extender `MapDrawingV2`: p. ej. `layers` mixtos `{ kind: "layer" \| "group", … }` o `groupId` + metadata grupo — **migración v2→v2.1** |
+
+> **Nota:** MAP-006 entregó capas planas; grupos es **feature nueva** dentro de MAP-013, no polish menor.
+
+### 7.4 Miniatura de capa (preview)
+
+Sustituye el contador de trazos.
+
+| Regla | Detalle |
+|-------|---------|
+| **Contenido** | Render de los trazos **de esa capa** solamente |
+| **Encuadre** | **Bounding box** del contenido dibujado — **no** escala del lienzo completo |
+| **Ejemplo** | Lienzo 4000×4000 con un trazo pequeño → miniatura muestra solo esa mancha ampliada (zoom al contenido), estilo Sketchbook |
+| **Capa vacía** | Placeholder neutro (grid vacío / «—») |
+| **Rendimiento** | Cache por capa; invalidar al editar trazos de esa capa |
+| **Técnica orientativa** | Offscreen canvas: calcular bbox strokes → `drawMapStrokes` recortado/escalado al rect miniatura |
+
+### 7.5 Backlog ítems CAPAS
+
+| ID | Prioridad | Entregable | Notas | Estado |
+|----|-----------|------------|-------|--------|
+| M13-LAY-01 | **P1** | Fila capa compacta estilo Sketchbook (layout §7.2) | Sustituye tarjetas altas actuales | ⬜ |
+| M13-LAY-02 | **P1** | Opacidad **vertical** a la derecha de cada fila | Eliminar slider horizontal inferior | ⬜ |
+| M13-LAY-03 | **P1** | Reordenar **drag-and-drop** con handle **≡** | Quitar flechas ↑↓; pointer capture + reorder en `layers[]` | ⬜ |
+| M13-LAY-04 | **P1** | **Miniatura** bbox-contenido por capa | Reemplaza `strokeCount` en UI; ver §7.4 | ⬜ |
+| M13-LAY-05 | **P1** | **Grupos** de capas (UI + persistencia) | Schema §7.3; carpeta colapsable | ⬜ |
+| M13-LAY-06 | **P1** | Visibilidad/opacidad de **grupo → hijas** | Compositor aplica opacidad/visible compuesta | ⬜ |
+| M13-LAY-07 | **P2** | DnD **grupos** enteros + capas entre grupos | Mismo handle ≡ en fila grupo | ⬜ |
+| M13-LAY-08 | **P2** | Borrar / renombrar grupo; disolver grupo | Capas hijas vuelven a raíz | ⬜ |
+| M13-LAY-09 | **P3** | Colapsar/expandir grupo en panel | Flecha carpeta como Sketchbook | ⬜ |
+
+**Archivos probables:** `MapLayersPanel.tsx`, `mapLayerThumbnail.ts` (nuevo), tipos `maps.ts`, compositor `mapStrokeRender` / `paintMapViewport`, tests bbox + reorder.
 
 ---
 
-## 8. Backlog — Multi-mundo y metadatos (MAP-002/003/007)
+## 8. Backlog — Estudio dibujo (barra inferior, MAP-005/006)
+
+| ID | Prioridad | Problema | Dirección | Origen | Estado |
+|----|-----------|----------|-----------|--------|--------|
+| M13-DRAW-01 | **P2** | Barra estudio ancha | Paleta compacta **en sección Estudio del rail** (SHELL-04) | Captura | ⬜ |
+| M13-DRAW-02 | **P2** | Modos pan/dibujo/hotspot/pin mezclados | Modo exclusivo; indicador en rail Estudio o lienzo | Usuario | ⬜ |
+| M13-DRAW-03 | **P3** | Presión tableta MAP-005 | Revisar spec §3bis | MAP-005 | ⏸ |
+| M13-DRAW-04 | **P2** | Expandir/recortar en pie | M13-SHELL-07 — menú Mapas o ⋮ cabecera | Captura | ⬜ |
+
+---
+
+## 9. Backlog — Multi-mundo y metadatos (MAP-002/003/007)
 
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
@@ -128,7 +327,7 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 ---
 
-## 9. Backlog — Integración manuscrito / calendario
+## 10. Backlog — Integración manuscrito / calendario
 
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
@@ -137,7 +336,7 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 ---
 
-## 10. Backlog — Técnico / deuda (pospuesto de MAP-012)
+## 11. Backlog — Técnico / deuda (pospuesto de MAP-012)
 
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
@@ -148,19 +347,27 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 ---
 
-## 11. Orden sugerido de trabajo
+## 12. Orden sugerido de trabajo
 
 ```text
-Oleada 1 — Desbloqueo (P0)
-  M13-NAV-01 → M13-UX-01 (cabecera) → smoke mini nav
+Oleada 0 — Shell panel derecho (P0, usuario 2026-06-11)
+  M13-SHELL-01 → SHELL-02 → SHELL-03 → SHELL-05
+  M13-SHELL-06 (Desde + timeline unificados abajo)
+  M13-SHELL-04 (estudio al rail)
 
-Oleada 2 — «Dejar de parecer nave espacial» (P1 UX)
-  M13-UX-02, M13-UX-03, M13-UX-04
-  M13-T-01, M13-T-02
-  M13-LOC-01, M13-LOC-02
+Oleada 1 — Desbloqueo comportamiento
+  M13-NAV-01 → smoke mini nav
 
-Oleada 3 — Comportamiento fino (P1 restante + P2)
-  M13-NAV-02…05 · M13-LOC-03…05 · M13-DRAW-* · M13-UX-*
+Oleada 2 — Contenido secciones (P1)
+  M13-LAY-01…04 (capas Sketchbook dentro de rail)
+  M13-T-01, M13-T-02 (scrubber + parches en contexto nueva barra)
+  M13-LOC-01 (handoff editor — cuando se afine)
+
+Oleada 2b — Grupos capas (opcional, caro)
+  M13-LAY-05 → LAY-06
+
+Oleada 3 — Polish P2
+  M13-NAV-02…05 · M13-LOC-03…05 · M13-DRAW-* · M13-LAY-07…09 · M13-UX-*
 
 Oleada 4 — Retomar MAP-012
   Smoke §6 · purga · docs · cierre Fase F
@@ -170,7 +377,7 @@ Oleada 4 — Retomar MAP-012
 
 ---
 
-## 12. Fuera de MAP-013 (no mezclar)
+## 13. Fuera de MAP-013 (no mezclar)
 
 | Tema | Destino |
 |------|---------|
@@ -181,18 +388,20 @@ Oleada 4 — Retomar MAP-012
 
 ---
 
-## 13. Registro
+## 14. Registro
 
 | Fecha | Evento |
 |-------|--------|
 | 2026-06-11 | Backlog MAP-013 creado — MAP-012 ⏸ pospuesto; deuda §13 MAP-008/009/010/011 + feedback UI «nave espacial» consolidados |
 | | Usuario pospone smoke MAP-012 hasta módulo usable |
+| 2026-06-11 | **§7 Panel CAPAS** — spec Sketchbook: miniaturas bbox, opacidad vertical, DnD ≡, grupos |
+| 2026-06-11 | **§2bis Shell UI** — panel derecho tipo manuscrito (rail iconos); rojo → secciones; Desde fusionado con timeline abajo; M13-SHELL-01…09 |
 
 **Notas libres:** _(añadir aquí ítems nuevos con formato M13-XXX antes de codificar)_
 
 ---
 
-## 14. Plantilla para nuevos ítems
+## 15. Plantilla para nuevos ítems
 
 ```markdown
 | M13-???-NN | P? | _(qué falla / qué duele)_ | _(dirección de solución)_ | _(origen)_ | ⬜ |
@@ -200,4 +409,4 @@ Oleada 4 — Retomar MAP-012
 
 ---
 
-**Última actualización:** 2026-06-11
+**Última actualización:** 2026-06-11 (§2bis shell panel derecho + Desde/timeline)
