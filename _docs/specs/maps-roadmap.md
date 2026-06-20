@@ -7,7 +7,7 @@
 |-------|--------|
 | **Era** | III (`03-ROADMAP.md`) |
 | **Versión objetivo** | v0.11.x |
-| **Estado** | MAP-001 ✅ … MAP-009 ✅ · MAP-010 ✅ (polish §13 diferido) |
+| **Estado** | MAP-001 ✅ … MAP-010 ✅ · MAP-011 🔄 · **MAP-013 📋** · MAP-012 ⏸ |
 
 ---
 
@@ -38,8 +38,10 @@ MAP-001 persistencia v2 + purga física legacy
     │                             ├──► MAP-010 hotspots + breadcrumb
     │                             │
     │                             └──► MAP-011 marcas X (manuscrito)
+    │                                       │
+    │                                       └──► MAP-013 afinado UX/comportamiento
     │
-    └──► MAP-012 smoke Era III + barrido deps/docs
+    └──► MAP-012 smoke Era III + barrido deps/docs (⏸ tras MAP-013)
 ```
 
 ---
@@ -59,8 +61,9 @@ MAP-001 persistencia v2 + purga física legacy
 | **MAP-008** | Secundarios: parches + visibilidad T — [plan](plans/Fase%20F/MAP-008-secondary-patches.md) ✅ · QA parcial | §4.3 | MAP-007 |
 | **MAP-009** | Compositor + timeline T — [plan](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) ✅ · QA `1781899299029-15084` | §4.4 | MAP-008 |
 | **MAP-010** | Hotspots → dibujo hijo; volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) ✅ · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 | §5 | MAP-004, MAP-009 |
-| **MAP-011** | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) 📋 | §4bis.4.1 | MAP-009, MAP-010, manuscrito |
-| **MAP-012** | Smoke QA + quitar Leaflet/Excalidraw + grep restos | §2 | todo lo anterior |
+| **MAP-011** | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) 🔄 impl | §4bis.4.1 | MAP-009, MAP-010, manuscrito |
+| **MAP-013** | Backlog correcciones UX + comportamiento — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) 📋 | §2–§8 | MAP-011 |
+| **MAP-012** | Smoke QA + purga legacy + cierre Fase F — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) ⏸ | §2 | MAP-013 |
 
 ---
 
@@ -98,6 +101,9 @@ Resumen — detalle en [`maps-design.md` §9](maps-design.md#9-persistencia-en-d
 | 2026-06-11 | **MAP-009 ✅ cerrado** — scrubber + memoria T; QA `1781899299029-15084`; polish §13 diferido → [`MAP-009-map-timeline-scrubber.md`](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) |
 | 2026-06-11 | **MAP-010 📋** plan hotspots + navegación hijo — [`MAP-010-hotspots-nav.md`](plans/Fase%20F/MAP-010-hotspots-nav.md) |
 | 2026-06-11 | **MAP-010 ✅ cerrado** — nav/hotspots + compositor; QA parcial; polish §13 → [`MAP-010-hotspots-nav.md`](plans/Fase%20F/MAP-010-hotspots-nav.md) |
-| 2026-06-11 | **MAP-011 📋** plan ubicaciones MS → marcas X @ T — [`MAP-011-manuscript-location-x.md`](plans/Fase%20F/MAP-011-manuscript-location-x.md) |
+| 2026-06-11 | **MAP-011 🔄** impl código |
+| 2026-06-11 | **MAP-012 📋** plan smoke + purga — [`MAP-012-smoke-era-iii-purge.md`](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) |
+| 2026-06-11 | **MAP-012 ⏸** pospuesto — MAP-013 backlog correcciones primero |
+| 2026-06-11 | **MAP-013 📋** — [`MAP-013-maps-corrections-backlog.md`](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) |
 
-**Última actualización:** 2026-06-11 (MAP-011 planificado)
+**Última actualización:** 2026-06-11 (MAP-013 · MAP-012 ⏸)

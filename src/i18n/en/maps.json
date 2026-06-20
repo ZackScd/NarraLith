@@ -171,6 +171,29 @@
     "createNavInline": "Create child drawing…",
     "save": "Save hotspot"
   },
+  "location": {
+    "panelTitle": "Locations",
+    "panelAria": "Locations for map {{mapId}}",
+    "hint": "Pins anchor manuscript locations on the map. They do not create MS tags.",
+    "atT": "At T = {{time}}",
+    "noTime": "no T",
+    "emptyAtT": "No locations at this time.",
+    "unpinned": "No pin on map",
+    "unpinnedCount": "{{count}} unpinned at T",
+    "pinsTitle": "Map pins",
+    "placePin": "Place pin",
+    "movePin": "Move pin",
+    "deletePin": "Delete pin",
+    "placeHint": "Click on the canvas to anchor «{{label}}».",
+    "moveHint": "Drag on the canvas to move the pin.",
+    "placeHintBanner": "Click on the canvas to place the pin.",
+    "moveHintBanner": "Drag to move the pin.",
+    "cancelPlacement": "Cancel placement",
+    "deleteTitle": "Delete pin",
+    "deleteMessage": "Delete pin for «{{name}}»?",
+    "deleteConfirm": "Delete",
+    "cancel": "Cancel"
+  },
   "desde": {
     "label": "From",
     "hint": "Local temporal origin of this map (year 0)",
@@ -279,6 +302,9 @@
     "nav_name_required": "Child drawing name is required.",
     "nav_referenced_by_hotspot": "Cannot delete: a hotspot points to this drawing.",
     "hotspot_invalid_bounds": "Hotspot area extends outside the canvas.",
-    "invalid_hotspot": "Invalid hotspot."
+    "invalid_hotspot": "Invalid hotspot.",
+    "invalid_location_pin": "Invalid location pin.",
+    "location_pin_duplicate": "A pin for this location already exists.",
+    "location_pin_invalid_bounds": "The pin is outside the canvas."
   }
 }

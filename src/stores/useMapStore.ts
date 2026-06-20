@@ -5,6 +5,12 @@ import { DEFAULT_MAP_DRAWING_REF } from "@/lib/types/maps";
 
 export type MapViewMode = "interactive" | "edit";
 
+export interface PendingEditorLocationPin {
+  locationKey: string;
+  label: string;
+  previewTRaw: string | null;
+}
+
 interface MapStoreV2 {
   activeMapId: string | null;
   viewMode: MapViewMode;
@@ -12,6 +18,7 @@ interface MapStoreV2 {
   navStack: MapNavFrame[];
   previewTimeTRaw: string | null;
   previewTimeByMapId: Record<string, string>;
+  pendingEditorLocationPin: PendingEditorLocationPin | null;
   setActiveMap: (mapId: string | null) => void;
   setViewMode: (mode: MapViewMode) => void;
   setActiveDrawingRef: (ref: MapDrawingRef) => void;
@@ -19,6 +26,7 @@ interface MapStoreV2 {
   navPop: (toDepth?: number) => void;
   resetNavStack: () => void;
   setPreviewTimeTRaw: (raw: string | null, mapId?: string | null) => void;
+  setPendingEditorLocationPin: (payload: PendingEditorLocationPin | null) => void;
   resetMapSessionState: (previewDefault?: string | null) => void;
   reset: () => void;
 }
@@ -30,6 +38,7 @@ const initial = {
   navStack: [] as MapNavFrame[],
   previewTimeTRaw: null as string | null,
   previewTimeByMapId: {} as Record<string, string>,
+  pendingEditorLocationPin: null as PendingEditorLocationPin | null,
 };
 
 export const useMapStore = create<MapStoreV2>((set) => ({
@@ -81,10 +90,12 @@ export const useMapStore = create<MapStoreV2>((set) => ({
         previewTimeByMapId: nextByMapId,
       };
     }),
+  setPendingEditorLocationPin: (payload) => set({ pendingEditorLocationPin: payload }),
   resetMapSessionState: (previewDefault) =>
     set({
       previewTimeTRaw: previewDefault ?? null,
       navStack: [],
+      pendingEditorLocationPin: null,
     }),
   reset: () => set({ ...initial }),
 }));

@@ -30,6 +30,7 @@ import { useManuscriptLabelDraftStore } from "@/stores/useManuscriptLabelDraftSt
 import { useTimeTagDialogStore } from "@/stores/useTimeTagDialogStore";
 
 import { SideEventSection } from "./sidePanel/SideEventSection";
+import { SideLocationMapSection } from "./sidePanel/SideLocationMapSection";
 import { SideTimeSection } from "./sidePanel/SideTimeSection";
 import { TimeTagDialog } from "./sidePanel/TimeTagDialog";
 
@@ -307,6 +308,7 @@ export function EditorSidePanel() {
           <>
             <SideEventSection />
             <SideTimeSection />
+            <SideLocationMapSection />
           </>
         ) : null}
       </div>

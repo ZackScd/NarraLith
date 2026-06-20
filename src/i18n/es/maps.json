@@ -171,6 +171,29 @@
     "createNavInline": "Crear dibujo hijo…",
     "save": "Guardar hotspot"
   },
+  "location": {
+    "panelTitle": "Ubicaciones",
+    "panelAria": "Ubicaciones del mapa {{mapId}}",
+    "hint": "Los pins anclan ubicaciones del manuscrito en el mapa. No crean etiquetas en el MS.",
+    "atT": "En T = {{time}}",
+    "noTime": "sin T",
+    "emptyAtT": "Sin ubicaciones en este instante.",
+    "unpinned": "Sin pin en el mapa",
+    "unpinnedCount": "{{count}} sin anclar en T",
+    "pinsTitle": "Pins del mapa",
+    "placePin": "Colocar pin",
+    "movePin": "Mover pin",
+    "deletePin": "Eliminar pin",
+    "placeHint": "Clic en el lienzo para anclar «{{label}}».",
+    "moveHint": "Arrastra en el lienzo para mover el pin.",
+    "placeHintBanner": "Clic en el lienzo para colocar el pin.",
+    "moveHintBanner": "Arrastra para mover el pin.",
+    "cancelPlacement": "Cancelar colocación",
+    "deleteTitle": "Eliminar pin",
+    "deleteMessage": "¿Eliminar el pin de «{{name}}»?",
+    "deleteConfirm": "Eliminar",
+    "cancel": "Cancelar"
+  },
   "desde": {
     "label": "Desde",
     "hint": "Origen temporal local del mapa (año 0)",
@@ -279,6 +302,9 @@
     "nav_name_required": "El nombre del dibujo hijo es obligatorio.",
     "nav_referenced_by_hotspot": "No se puede eliminar: un hotspot apunta a este dibujo.",
     "hotspot_invalid_bounds": "La zona del hotspot queda fuera del lienzo.",
-    "invalid_hotspot": "Hotspot no válido."
+    "invalid_hotspot": "Hotspot no válido.",
+    "invalid_location_pin": "Pin de ubicación no válido.",
+    "location_pin_duplicate": "Ya existe un pin para esa ubicación.",
+    "location_pin_invalid_bounds": "El pin queda fuera del lienzo."
   }
 }

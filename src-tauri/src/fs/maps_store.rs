@@ -14,6 +14,7 @@ const MAPS_DIR: &str = "maps";
 const INDEX_FILENAME: &str = "index.json";
 const MAP_FILENAME: &str = "map.json";
 const HOTSPOTS_FILENAME: &str = "hotspots.json";
+const LOCATION_PINS_FILENAME: &str = "location-pins.json";
 const PRINCIPAL_DRAWING_REL: &str = "drawings/principal.json";
 const SECONDARY_DRAWINGS_DIR: &str = "drawings/secondary";
 const NAV_DRAWINGS_DIR: &str = "drawings/nav";
@@ -212,6 +213,34 @@ impl MapHotspotsFileV1 {
         Self {
             version: 1,
             hotspots: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapLocationPinV1 {
+    pub id: String,
+    pub location_key: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    pub x: f64,
+    pub y: f64,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapLocationPinsFileV1 {
+    pub version: u32,
+    pub pins: Vec<MapLocationPinV1>,
+}
+
+impl MapLocationPinsFileV1 {
+    fn empty() -> Self {
+        Self {
+            version: 1,
+            pins: Vec::new(),
         }
     }
 }
@@ -694,6 +723,36 @@ pub fn save_map_hotspots(
     Ok(())
 }
 
+pub fn get_map_location_pins(
+    project_root: &Path,
+    map_id: &str,
+) -> Result<MapLocationPinsFileV1, AppError> {
+    let path = map_dir(project_root, map_id)?.join(LOCATION_PINS_FILENAME);
+    if !path.is_file() {
+        return Ok(MapLocationPinsFileV1::empty());
+    }
+    let file: MapLocationPinsFileV1 = read_json(&path)?;
+    validate_location_pins_file(&file, project_root, map_id)?;
+    Ok(file)
+}
+
+pub fn save_map_location_pins(
+    project_root: &Path,
+    map_id: &str,
+    file: &MapLocationPinsFileV1,
+) -> Result<(), AppError> {
+    if file.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    validate_location_pins_file(file, project_root, map_id)?;
+    let path = map_dir(project_root, map_id)?.join(LOCATION_PINS_FILENAME);
+    write_json_atomic(&path, file)?;
+    let doc = get_map_document(project_root, map_id)?;
+    let now = timestamp_now();
+    upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
+    Ok(())
+}
+
 pub fn create_blank_map(
     project_root: &Path,
     name: &str,
@@ -728,6 +787,10 @@ pub fn create_blank_map(
     };
     write_json(&map_dir.join(MAP_FILENAME), &doc)?;
     write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV1::empty())?;
+    write_json(
+        &map_dir.join(LOCATION_PINS_FILENAME),
+        &MapLocationPinsFileV1::empty(),
+    )?;
 
     let drawing = default_principal_drawing(width, height);
     write_json_atomic(&map_dir.join(PRINCIPAL_DRAWING_REL), &drawing)?;
@@ -805,6 +868,10 @@ pub fn create_map_from_image(
     };
     write_json(&map_dir.join(MAP_FILENAME), &doc)?;
     write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV1::empty())?;
+    write_json(
+        &map_dir.join(LOCATION_PINS_FILENAME),
+        &MapLocationPinsFileV1::empty(),
+    )?;
 
     let drawing = default_principal_drawing(width, height);
     write_json_atomic(&map_dir.join(PRINCIPAL_DRAWING_REL), &drawing)?;
@@ -875,6 +942,7 @@ pub fn crop_map_canvas(
     save_map_drawing(project_root, map_id, &drawing)?;
     sync_secondary_drawings_dimensions(project_root, map_id, new_width, new_height, true)?;
     sync_nav_drawings_dimensions(project_root, map_id, new_width, new_height, true)?;
+    sync_location_pins_on_crop(project_root, map_id, new_width, new_height)?;
     save_map_document(project_root, &doc)?;
     Ok(doc)
 }
@@ -1278,6 +1346,57 @@ fn validate_hotspots_file(
         }
         validate_hotspot_bounds(&hotspot.bounds, max_x, max_y)?;
     }
+    Ok(())
+}
+
+fn validate_location_pins_file(
+    file: &MapLocationPinsFileV1,
+    project_root: &Path,
+    map_id: &str,
+) -> Result<(), AppError> {
+    if file.version != 1 {
+        return Err(AppError::new("error.maps.schema_version_unsupported"));
+    }
+    let doc = get_map_document(project_root, map_id)?;
+    let max_x = doc.width as f64;
+    let max_y = doc.height as f64;
+    let mut seen_keys = std::collections::HashSet::new();
+    for pin in &file.pins {
+        if pin.id.trim().is_empty() || pin.location_key.trim().is_empty() {
+            return Err(AppError::new("error.maps.invalid_location_pin"));
+        }
+        if !seen_keys.insert(pin.location_key.clone()) {
+            return Err(AppError::new("error.maps.location_pin_duplicate"));
+        }
+        validate_location_pin_point(pin.x, pin.y, max_x, max_y)?;
+    }
+    Ok(())
+}
+
+fn validate_location_pin_point(x: f64, y: f64, max_x: f64, max_y: f64) -> Result<(), AppError> {
+    if x < 0.0 || y < 0.0 || x > max_x || y > max_y {
+        return Err(AppError::new("error.maps.location_pin_invalid_bounds"));
+    }
+    Ok(())
+}
+
+fn sync_location_pins_on_crop(
+    project_root: &Path,
+    map_id: &str,
+    new_width: u32,
+    new_height: u32,
+) -> Result<(), AppError> {
+    let path = map_dir(project_root, map_id)?.join(LOCATION_PINS_FILENAME);
+    if !path.is_file() {
+        return Ok(());
+    }
+    let mut file: MapLocationPinsFileV1 = read_json(&path)?;
+    let max_x = new_width as f64;
+    let max_y = new_height as f64;
+    file.pins.retain(|pin| {
+        pin.x >= 0.0 && pin.x <= max_x && pin.y >= 0.0 && pin.y <= max_y
+    });
+    write_json_atomic(&path, &file)?;
     Ok(())
 }
 
@@ -2417,5 +2536,83 @@ mod tests {
         };
         let err = save_map_hotspots(root, &summary.id, &hotspots).unwrap_err();
         assert_eq!(err.key, "error.maps.hotspot_invalid_bounds");
+    }
+
+    #[test]
+    fn location_pins_crud_bounds_and_crop_sync() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "LocPins", 1200, 800).unwrap();
+        assert!(get_map_location_pins(root, &summary.id).unwrap().pins.is_empty());
+
+        let pins = MapLocationPinsFileV1 {
+            version: 1,
+            pins: vec![
+                MapLocationPinV1 {
+                    id: "pin-a".to_string(),
+                    location_key: "castillo".to_string(),
+                    label: Some("Castillo".to_string()),
+                    x: 100.0,
+                    y: 200.0,
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                },
+                MapLocationPinV1 {
+                    id: "pin-b".to_string(),
+                    location_key: "puerto".to_string(),
+                    label: None,
+                    // Fuera del lienzo tras crop 1200×800 → 1000×700 (sync elimina pin).
+                    x: 1100.0,
+                    y: 750.0,
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                },
+            ],
+        };
+        save_map_location_pins(root, &summary.id, &pins).unwrap();
+        let loaded = get_map_location_pins(root, &summary.id).unwrap();
+        assert_eq!(loaded.pins.len(), 2);
+
+        let duplicate_key = MapLocationPinsFileV1 {
+            version: 1,
+            pins: vec![
+                MapLocationPinV1 {
+                    id: "pin-1".to_string(),
+                    location_key: "castillo".to_string(),
+                    label: None,
+                    x: 1.0,
+                    y: 1.0,
+                    updated_at: "now".to_string(),
+                },
+                MapLocationPinV1 {
+                    id: "pin-2".to_string(),
+                    location_key: "castillo".to_string(),
+                    label: None,
+                    x: 2.0,
+                    y: 2.0,
+                    updated_at: "now".to_string(),
+                },
+            ],
+        };
+        let err = save_map_location_pins(root, &summary.id, &duplicate_key).unwrap_err();
+        assert_eq!(err.key, "error.maps.location_pin_duplicate");
+
+        let out_of_bounds = MapLocationPinsFileV1 {
+            version: 1,
+            pins: vec![MapLocationPinV1 {
+                id: "pin-bad".to_string(),
+                location_key: "far".to_string(),
+                label: None,
+                x: 1300.0,
+                y: 10.0,
+                updated_at: "now".to_string(),
+            }],
+        };
+        let err = save_map_location_pins(root, &summary.id, &out_of_bounds).unwrap_err();
+        assert_eq!(err.key, "error.maps.location_pin_invalid_bounds");
+
+        crop_map_canvas(root, &summary.id, 1000, 700).unwrap();
+        let after_crop = get_map_location_pins(root, &summary.id).unwrap();
+        assert_eq!(after_crop.pins.len(), 1);
+        assert_eq!(after_crop.pins[0].id, "pin-a");
+        assert_eq!(after_crop.pins[0].x, 100.0);
     }
 }

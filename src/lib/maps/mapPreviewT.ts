@@ -3,7 +3,8 @@ export type MapPreviewTSource =
   | "picker"
   | "mapLoad"
   | "desdeSync"
-  | "markerClick";
+  | "markerClick"
+  | "editorHandoff";
 
 /** T efectivo para composición: preview en RAM o fallback Desde. */
 export function resolveMapPreviewT(

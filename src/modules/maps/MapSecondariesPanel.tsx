@@ -71,7 +71,7 @@ export function MapSecondariesPanel({
 
   return (
     <section
-      className="flex min-h-0 flex-1 basis-0 flex-col border-b border-border/60 bg-background"
+      className="flex shrink-0 flex-col border-b border-border/60 bg-background"
       aria-label={t("secondary.panelAria", { mapId })}
     >
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
@@ -91,7 +91,7 @@ export function MapSecondariesPanel({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div className="overflow-y-auto p-2">
         <button
           type="button"
           className={cn(

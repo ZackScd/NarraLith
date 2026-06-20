@@ -87,6 +87,9 @@ export const ACTION_EVENTS = {
     hotspotCreate: "obs.action.map.hotspotCreate",
     hotspotUpdate: "obs.action.map.hotspotUpdate",
     hotspotDelete: "obs.action.map.hotspotDelete",
+    locationPinCreate: "obs.action.map.locationPinCreate",
+    locationPinMove: "obs.action.map.locationPinMove",
+    locationPinDelete: "obs.action.map.locationPinDelete",
   },
   graph: {
     nodeOpen: "obs.action.graph.nodeOpen",

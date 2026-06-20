@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useMapAutosave } from "@/hooks/useMapAutosave";
 import { useMapProject } from "@/hooks/useMapProject";
+import { useProjectLocations } from "@/hooks/useProjectLocations";
 import { useProjectTimeline } from "@/hooks/useProjectTimeline";
 import { useMapNav } from "@/hooks/useMapNav";
 import { useMapDrawingSession } from "@/hooks/useMapDrawingSession";
@@ -15,9 +16,15 @@ import { usePersistMapDrawingDraft } from "@/hooks/usePersistMapDrawingDraft";
 import { trackAction } from "@/lib/action-audit/trackAction";
 import { hitTestHotspots } from "@/lib/maps/mapHotspotHitTest";
 import { createHotspotId } from "@/lib/maps/mapHotspotIds";
+import { createLocationPinId } from "@/lib/maps/mapLocationPinIds";
+import {
+  filterOccurrencesAtT,
+  mergeOccurrencesWithPins,
+} from "@/lib/maps/mapLocationAtT";
 import { PRINCIPAL_HOST_DRAWING_REF } from "@/lib/maps/mapHostDrawingRef";
 import { resolveMapPreviewT, type MapPreviewTSource } from "@/lib/maps/mapPreviewT";
 import { filterVisibleSecondaries } from "@/lib/maps/mapSecondaryVisibility";
+import type { ProjectLocationOccurrenceV1 } from "@/lib/types/mapLocations";
 import type { MapCreateDraft, MapDrawingRef, MapHotspotBoundsV1, MapNavSummaryV1, OpenPreference } from "@/lib/types/maps";
 import { DEFAULT_MAP_DRAWING_REF, drawingRefKey, parseDrawingRefKey } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
@@ -33,6 +40,7 @@ import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
 import { MapNavBreadcrumb } from "@/modules/maps/MapNavBreadcrumb";
 import { MapNavDrawingsPanel } from "@/modules/maps/MapNavDrawingsPanel";
 import { HotspotTargetDialog, MapHotspotsPanel } from "@/modules/maps/MapHotspotsPanel";
+import { MapLocationsPanel } from "@/modules/maps/MapLocationsPanel";
 import { MapPreviewTField } from "@/modules/maps/MapPreviewTField";
 import { MapSecondariesPanel } from "@/modules/maps/MapSecondariesPanel";
 import { MapTimelineBar } from "@/modules/maps/MapTimelineBar";
@@ -54,6 +62,8 @@ export function MapWorkspace() {
   const setActiveDrawingRef = useMapStore((s) => s.setActiveDrawingRef);
   const previewTimeTRaw = useMapStore((s) => s.previewTimeTRaw);
   const setPreviewTimeTRaw = useMapStore((s) => s.setPreviewTimeTRaw);
+  const pendingEditorLocationPin = useMapStore((s) => s.pendingEditorLocationPin);
+  const setPendingEditorLocationPin = useMapStore((s) => s.setPendingEditorLocationPin);
   const rootPath = useProjectStore((s) => s.activeProject?.rootPath ?? "");
   const activeDrawingRefKey = drawingRefKey(activeDrawingRef);
   const sessionDrawingRefKeyRef = useRef(activeDrawingRefKey);
@@ -69,6 +79,7 @@ export function MapWorkspace() {
     navDrawings,
     navFiles,
     hotspots,
+    locationPins,
     loading,
     creating,
     canvasBusy,
@@ -88,12 +99,14 @@ export function MapWorkspace() {
     createNav,
     deleteNav,
     saveHotspots,
+    saveLocationPins,
     updateMapDesde,
     applyDefaultDesde,
     ensureTimelineAndCalendar,
   } = useMapProject();
 
   const { events: timelineEvents } = useProjectTimeline();
+  const { occurrences: projectLocations } = useProjectLocations();
   const calendar = useCalendarStore((s) => s.config);
   const baselineConfig = useCalendarStore((s) => s.baselineConfig);
   const loadCalendar = useCalendarStore((s) => s.loadCalendar);
@@ -109,6 +122,10 @@ export function MapWorkspace() {
     null,
   );
   const [hotspotTargetOpen, setHotspotTargetOpen] = useState(false);
+  const [locationPinBusy, setLocationPinBusy] = useState(false);
+  const [locationPlacementTarget, setLocationPlacementTarget] =
+    useState<ProjectLocationOccurrenceV1 | null>(null);
+  const [locationMovePinId, setLocationMovePinId] = useState<string | null>(null);
 
   const activeSummary = maps.find((map) => map.id === activeMapId);
   const isPinned = activeSummary?.defaultOnOpen === true;
@@ -198,6 +215,49 @@ export function MapWorkspace() {
       calendar,
     );
   }, [calendar, document?.desde, previewT, secondaries]);
+
+  useEffect(() => {
+    if (!pendingEditorLocationPin || !activeMapId || !document) return;
+    if (pendingEditorLocationPin.previewTRaw) {
+      handlePreviewTChange(pendingEditorLocationPin.previewTRaw, "editorHandoff");
+    }
+    setHotspotDrawMode(false);
+    setLocationMovePinId(null);
+    setLocationPlacementTarget({
+      id: `editor-${pendingEditorLocationPin.locationKey}`,
+      locationKey: pendingEditorLocationPin.locationKey,
+      label: pendingEditorLocationPin.label,
+      effectiveTimeRaw: pendingEditorLocationPin.previewTRaw ?? previewT ?? "",
+      effectiveTimestamp: null,
+      sourcePath: "",
+      segmentId: null,
+      tagKind: "inline",
+    });
+    setPendingEditorLocationPin(null);
+  }, [
+    activeMapId,
+    document,
+    handlePreviewTChange,
+    pendingEditorLocationPin,
+    previewT,
+    setPendingEditorLocationPin,
+  ]);
+
+  const occurrencesAtT = useMemo(() => {
+    if (!calendar || !previewT) return [];
+    return filterOccurrencesAtT(projectLocations, previewT, calendar);
+  }, [calendar, previewT, projectLocations]);
+
+  const { markers: locationMarkers, unpinnedKeys: unpinnedLocationKeysAtT } = useMemo(
+    () => mergeOccurrencesWithPins(occurrencesAtT, locationPins),
+    [locationPins, occurrencesAtT],
+  );
+
+  const unpinnedOccurrencesAtT = useMemo(
+    () =>
+      occurrencesAtT.filter((item) => unpinnedLocationKeysAtT.includes(item.locationKey)),
+    [occurrencesAtT, unpinnedLocationKeysAtT],
+  );
 
   const activeSecondaryIds = useMemo(
     () => visibleSecondaries.map((item) => item.id),
@@ -402,6 +462,89 @@ export function MapWorkspace() {
     },
     [activeMapId, hotspots, saveHotspots],
   );
+
+  const handleLocationPinPlace = useCallback(
+    async (x: number, y: number) => {
+      if (!activeMapId || !locationPlacementTarget) return;
+      setLocationPinBusy(true);
+      try {
+        const pinId = createLocationPinId();
+        const next = [
+          ...locationPins,
+          {
+            id: pinId,
+            locationKey: locationPlacementTarget.locationKey,
+            label: locationPlacementTarget.label,
+            x,
+            y,
+            updatedAt: new Date().toISOString(),
+          },
+        ];
+        await saveLocationPins(next);
+        trackAction("map", "locationPinCreate", {
+          mapId: activeMapId,
+          pinId,
+          locationKey: locationPlacementTarget.locationKey,
+          x,
+          y,
+        });
+        setLocationPlacementTarget(null);
+      } finally {
+        setLocationPinBusy(false);
+      }
+    },
+    [activeMapId, locationPins, locationPlacementTarget, saveLocationPins],
+  );
+
+  const handleLocationPinMove = useCallback(
+    async (x: number, y: number) => {
+      if (!activeMapId || !locationMovePinId) return;
+      const target = locationPins.find((item) => item.id === locationMovePinId);
+      if (!target) return;
+      setLocationPinBusy(true);
+      try {
+        const next = locationPins.map((item) =>
+          item.id === locationMovePinId
+            ? { ...item, x, y, updatedAt: new Date().toISOString() }
+            : item,
+        );
+        await saveLocationPins(next);
+        trackAction("map", "locationPinMove", {
+          mapId: activeMapId,
+          pinId: locationMovePinId,
+          x,
+          y,
+        });
+        setLocationMovePinId(null);
+      } finally {
+        setLocationPinBusy(false);
+      }
+    },
+    [activeMapId, locationMovePinId, locationPins, saveLocationPins],
+  );
+
+  const handleDeleteLocationPin = useCallback(
+    async (pinId: string) => {
+      if (!activeMapId) return;
+      const target = locationPins.find((item) => item.id === pinId);
+      setLocationPinBusy(true);
+      try {
+        await saveLocationPins(locationPins.filter((item) => item.id !== pinId));
+        trackAction("map", "locationPinDelete", {
+          mapId: activeMapId,
+          pinId,
+          locationKey: target?.locationKey ?? "",
+        });
+        if (locationMovePinId === pinId) {
+          setLocationMovePinId(null);
+        }
+      } finally {
+        setLocationPinBusy(false);
+      }
+    },
+    [activeMapId, locationMovePinId, locationPins, saveLocationPins],
+  );
+
   const previewStroke = isEditMode ? drawingSession.currentStroke : null;
 
   const handleCreate = async (draft: MapCreateDraft) => {
@@ -710,7 +853,7 @@ export function MapWorkspace() {
           <>
             <div className="flex min-h-0 flex-1">
               {isEditMode ? (
-                <div className="flex h-full min-h-0 w-56 shrink-0 flex-col overflow-hidden border-r border-border/60">
+                <div className="flex h-full min-h-0 w-56 shrink-0 flex-col overflow-y-auto border-r border-border/60">
                   <MapSecondariesPanel
                     mapId={activeMapId}
                     mapDesde={document.desde}
@@ -772,8 +915,37 @@ export function MapWorkspace() {
                         hotspots={principalHotspots}
                         drawMode={hotspotDrawMode}
                         busy={hotspotBusy}
-                        onToggleDrawMode={setHotspotDrawMode}
+                        onToggleDrawMode={(active) => {
+                          setHotspotDrawMode(active);
+                          if (active) {
+                            setLocationPlacementTarget(null);
+                            setLocationMovePinId(null);
+                          }
+                        }}
                         onDeleteHotspot={handleDeleteHotspot}
+                      />
+                      <MapLocationsPanel
+                        mapId={activeMapId}
+                        previewT={previewT}
+                        occurrencesAtT={occurrencesAtT}
+                        unpinnedAtT={unpinnedOccurrencesAtT}
+                        pins={locationPins}
+                        placementTarget={locationPlacementTarget}
+                        movePinId={locationMovePinId}
+                        busy={locationPinBusy}
+                        onStartPlacement={(occurrence) => {
+                          setHotspotDrawMode(false);
+                          setLocationMovePinId(null);
+                          setLocationPlacementTarget(occurrence);
+                        }}
+                        onCancelPlacement={() => setLocationPlacementTarget(null)}
+                        onStartMove={(pinId) => {
+                          setHotspotDrawMode(false);
+                          setLocationPlacementTarget(null);
+                          setLocationMovePinId(pinId);
+                        }}
+                        onCancelMove={() => setLocationMovePinId(null)}
+                        onDeletePin={handleDeleteLocationPin}
                       />
                     </>
                   ) : null}
@@ -796,6 +968,14 @@ export function MapWorkspace() {
                 composeNavDrawingRefKey={composeNavDrawingRefKey}
                 hotspotOverlays={!isNavView && isEditMode ? principalHotspots : []}
                 hotspotDrawMode={hotspotDrawMode && !isNavView}
+                locationMarkers={locationMarkers}
+                locationPinPlacementActive={Boolean(locationPlacementTarget) && !isNavView}
+                locationPinMoveActive={Boolean(locationMovePinId) && !isNavView}
+                locationCountAtT={locationMarkers.length}
+                unpinnedKeysAtT={unpinnedLocationKeysAtT.length}
+                pinnedKeysTotal={locationPins.length}
+                onLocationPinPlace={handleLocationPinPlace}
+                onLocationPinMove={handleLocationPinMove}
                 viewMode={viewMode}
                 activeLayerId={isEditMode ? drawingSession.activeLayerId : null}
                 previewStroke={previewStroke}
@@ -828,7 +1008,7 @@ export function MapWorkspace() {
                 previewT={previewT}
                 secondaries={secondaries}
                 calendar={calendar}
-                interactive={!isEditMode}
+                interactive
                 onPreviewTChange={handlePreviewTChange}
               />
             ) : null}

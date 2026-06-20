@@ -504,6 +504,8 @@ Fase 10  QA manual §9 (+ opcional re-QA nav MAP-010 §13) + cerrar §12
 
 ## 11. Handoff → MAP-012
 
+Ver plan completo: [`MAP-012-smoke-era-iii-purge.md`](MAP-012-smoke-era-iii-purge.md) §2 (auditoría) · §6 (smoke) · §7 (purga).
+
 MAP-012 tomará:
 
 - **Smoke Era III** — mapas + MS + X @ T + nav + parches en un recorrido.

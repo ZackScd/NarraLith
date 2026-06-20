@@ -8,7 +8,7 @@ Cada tarea con alcance no trivial tiene un **plan markdown** antes de codificar.
 
 | Ruta | Uso |
 |------|-----|
-| **`Fase F/`**, **`Fase G/`**, … | Planes **activos** (próximo: MAP-000 en Fase F) |
+| **`Fase F/`**, **`Fase G/`**, … | Planes **activos** (próximo: **MAP-013** backlog correcciones mapas) |
 | **[`_archive/`](_archive/)** | Fases **cerradas** A–E — consulta histórica |
 
 El prefijo `_` en `_archive/` mantiene el histórico arriba en el explorador sin mezclarlo con trabajo nuevo.
@@ -37,4 +37,4 @@ No duplica la lista maestra de trabajo futuro (MAP, WB, FIX-010e…) — eso sig
 
 ---
 
-**Última revisión:** 2026-06-11 (MAP-011 planificado · próximo ejecutar MAP-011)
+**Última revisión:** 2026-06-11 (MAP-013 backlog · [`MAP-013-maps-corrections-backlog.md`](Fase%20F/MAP-013-maps-corrections-backlog.md) · MAP-012 ⏸)

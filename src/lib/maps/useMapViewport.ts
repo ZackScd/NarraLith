@@ -3,12 +3,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invokeCommand } from "@/lib/ipc";
 import { countMapStrokes } from "@/lib/maps/mapDrawingStats";
 import { formatMapDesdeDisplay } from "@/lib/maps/mapDesde";
+import { drawLocationMarkers, drawLocationPinDraft } from "@/lib/maps/mapLocationMarkers";
 import { mapAssetProjectPath } from "@/lib/maps/mapAssetPath";
 import { paintStrokeLayer } from "@/lib/maps/mapStrokeBuffer";
 import { drawMapStrokes } from "@/lib/maps/mapStrokeRender";
 import { renderAudit } from "@/lib/render-audit";
 import { UI_EVENTS } from "@/lib/render-audit/events";
 import type { MapDocumentV1, MapDrawingV2, MapHotspotBoundsV1, MapHotspotV1, MapStrokeV2 } from "@/lib/types/maps";
+import type { MapLocatedMarkerV1 } from "@/lib/types/mapLocations";
 import type { MapViewMode } from "@/stores/useMapStore";
 import type { MapStudioTool } from "@/stores/useMapStudioStore";
 
@@ -30,6 +32,8 @@ export interface MapViewportPaintOptions {
   composeNavDrawingRefKey?: string;
   hotspotOverlays?: MapHotspotV1[];
   hotspotDraftBounds?: MapHotspotBoundsV1 | null;
+  locationMarkers?: MapLocatedMarkerV1[];
+  locationPinDraft?: { x: number; y: number } | null;
 }
 
 export interface MapViewportState {
@@ -69,6 +73,11 @@ interface UseMapViewportOptions {
   onInteractiveClick?: (worldX: number, worldY: number) => boolean;
   hotspotOverlays?: MapHotspotV1[];
   hotspotDraftBounds?: MapHotspotBoundsV1 | null;
+  locationMarkers?: MapLocatedMarkerV1[];
+  locationPinDraft?: { x: number; y: number } | null;
+  locationCountAtT?: number;
+  unpinnedKeysAtT?: number;
+  pinnedKeysTotal?: number;
 }
 
 interface ContainerSize {
@@ -174,6 +183,19 @@ function drawHotspotOverlays(
   }
 }
 
+function drawLocationOverlays(
+  ctx: CanvasRenderingContext2D,
+  markers: MapLocatedMarkerV1[],
+  draftPoint: { x: number; y: number } | null | undefined,
+): void {
+  if (markers.length > 0) {
+    drawLocationMarkers(ctx, markers);
+  }
+  if (draftPoint) {
+    drawLocationPinDraft(ctx, draftPoint.x, draftPoint.y);
+  }
+}
+
 export function paintMapViewport(
   ctx: CanvasRenderingContext2D,
   size: ContainerSize,
@@ -217,6 +239,11 @@ export function paintMapViewport(
       );
     });
     ctx.drawImage(navLayer, 0, 0);
+    drawLocationOverlays(
+      ctx,
+      options.locationMarkers ?? [],
+      options.locationPinDraft,
+    );
     drawHotspotOverlays(
       ctx,
       options.hotspotOverlays ?? [],
@@ -250,6 +277,11 @@ export function paintMapViewport(
     ctx.drawImage(strokeLayer, 0, 0);
   }
 
+  drawLocationOverlays(
+    ctx,
+    options.locationMarkers ?? [],
+    options.locationPinDraft,
+  );
   drawHotspotOverlays(
     ctx,
     options.hotspotOverlays ?? [],
@@ -303,6 +335,11 @@ export function useMapViewport({
   onInteractiveClick,
   hotspotOverlays = [],
   hotspotDraftBounds = null,
+  locationMarkers = [],
+  locationPinDraft = null,
+  locationCountAtT = 0,
+  unpinnedKeysAtT = 0,
+  pinnedKeysTotal = 0,
 }: UseMapViewportOptions) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -362,6 +399,9 @@ export function useMapViewport({
         activeNavId,
         navStackIds,
         hostHotspotCount,
+        locationCountAtT,
+        unpinnedKeysAtT,
+        pinnedKeysTotal,
         visibleLayers: activeEditingDrawing.layers
           .filter((layer) => layer.visible)
           .map((layer) => layer.id),
@@ -374,11 +414,14 @@ export function useMapViewport({
       activeSecondaryIds,
       document.desde,
       hostHotspotCount,
+      locationCountAtT,
       mapId,
       navDepth,
       navStackIds,
+      pinnedKeysTotal,
       previewTimeTRaw,
       secondaryCount,
+      unpinnedKeysAtT,
       viewMode,
     ],
   );
@@ -405,6 +448,8 @@ export function useMapViewport({
         composeNavDrawingRefKey,
         hotspotOverlays,
         hotspotDraftBounds,
+        locationMarkers,
+        locationPinDraft,
       },
     );
   }, [
@@ -417,6 +462,8 @@ export function useMapViewport({
     document,
     hotspotDraftBounds,
     hotspotOverlays,
+    locationMarkers,
+    locationPinDraft,
     mapId,
     overlayDrawings,
     previewStroke,

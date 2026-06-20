@@ -1,3 +1,4 @@
+mod location_occurrences;
 mod checker;
 mod commands;
 mod db;
@@ -112,6 +113,9 @@ pub fn run() {
             commands::maps::delete_map_nav_cmd,
             commands::maps::get_map_hotspots_cmd,
             commands::maps::save_map_hotspots_cmd,
+            commands::maps::list_project_location_occurrences_cmd,
+            commands::maps::get_map_location_pins_cmd,
+            commands::maps::save_map_location_pins_cmd,
             commands::graph::get_graph_data_cmd,
             commands::graph::rebuild_graph_index_cmd,
             commands::graph::rebuild_graph_index_async_cmd,

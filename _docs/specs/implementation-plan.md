@@ -31,7 +31,7 @@
 | **C** | FIX-008…009, **OBS-002** | Fixes explorador / timeline + registro UI | 8 ✅ |
 | **D** | **OBS-003**, FIX-010…011 (+ sub 010g–i) | Acciones UI + épica «eliminar no rompe» | 11+ |
 | **E** | ERAII-001…003 | Cierre Era II — manuscrito | 3 |
-| **F** | MAP-000…012 | Refactor mapas Era III | 13 |
+| **F** | MAP-000…013 | Refactor mapas Era III | 14 |
 | **G** | WB-001… | Post-WB v2 (aplazado) | — |
 
 ---
@@ -134,8 +134,9 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-008** | ✅ | Secundarios: parches transparentes, visibilidad T — [plan](plans/Fase%20F/MAP-008-secondary-patches.md) · QA parcial | Alto | [`maps-design.md` §4.3](maps-design.md) |
 | **MAP-009** | ✅ | Compositor + timeline del mapa (scrubber **T**) — [plan](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) · QA `1781899299029-15084` · polish §13 diferido | Alto | [`maps-design.md` §4.4](maps-design.md) |
 | **MAP-010** | ✅ | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 diferido | Alto | [`maps-design.md` §5](maps-design.md) |
-| **MAP-011** | 📋 | Ubicaciones desde manuscrito: marcas **X** en T (stub Era III) — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
-| **MAP-012** | ⬜ | Smoke Era III + purga código mapas legacy | Medio | [`maps-design.md`](maps-design.md) · [`06-ARCHITECTURE.md`](archive/retired-cadence/06-ARCHITECTURE.md) |
+| **MAP-011** | 🔄 | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) · impl ✅ · afinado → MAP-013 | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
+| **MAP-012** | ⏸ | Smoke Era III + purga legacy — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) · **pospuesto** tras MAP-013 | Medio | [`maps-design.md`](maps-design.md) §2 |
+| **MAP-013** | 📋 | Correcciones UX + comportamiento módulo mapas — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) | Alto | [`maps-design.md`](maps-design.md) §2–§8 |
 
 **Dependencias internas (orientativas):**
 
@@ -145,7 +146,8 @@ MAP-001 → MAP-004 → MAP-005 → MAP-006
 MAP-007 → MAP-008 → MAP-009
 MAP-004 + MAP-009 → MAP-010
 MAP-009 + manuscrito estable → MAP-011
-todo → MAP-012
+MAP-011 → MAP-013 (afinado UX/comportamiento)
+MAP-013 → MAP-012 (smoke + purga + cierre Fase F)
 ```
 
 ---
@@ -210,8 +212,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 26 | MAP-008 | Secundarios temporales ✅ |
 | 27 | MAP-009 | Compositor + timeline T ✅ |
 | 28 | MAP-010 | Navegación hotspots ✅ |
-| 29 | MAP-011 | Marcas X ubicación MS 📋 |
-| 30 | MAP-012 | Smoke + purga legacy mapas |
+| 29 | MAP-011 | Marcas X ubicación MS 🔄 impl |
+| 30 | MAP-013 | Backlog correcciones mapas 📋 |
+| 31 | MAP-012 | Smoke + purga legacy ⏸ tras MAP-013 |
 | — | WB-* | Post-WB (aplazado) |
 
 ---
@@ -284,8 +287,10 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **MAP-007 ✅ cerrado** dibujo principal + «Desde» — QA `1781851429000-23756` |
 | 2026-06-11 | **MAP-008 📋** secundarios + parches temporales — [`MAP-008-secondary-patches.md`](plans/Fase%20F/MAP-008-secondary-patches.md) |
 | 2026-06-11 | **MAP-010 ✅ cerrado** — nav/hotspots + compositor; QA parcial `1781902329565-1512` + `1781902875392-8868`; polish §13 → [`MAP-010-hotspots-nav.md`](plans/Fase%20F/MAP-010-hotspots-nav.md) |
-| 2026-06-11 | **MAP-011 📋** plan ubicaciones MS → marcas X @ T — [`MAP-011-manuscript-location-x.md`](plans/Fase%20F/MAP-011-manuscript-location-x.md) |
+| 2026-06-11 | **MAP-011 📋→🔄** plan + impl código (pins, X @ T, panel); QA formal → MAP-012 §6.F |
+| 2026-06-11 | **MAP-012 ⏸** pospuesto — smoke bloqueado por UX/comportamiento; usuario |
+| 2026-06-11 | **MAP-013 📋** backlog correcciones módulo mapas — [`MAP-013-maps-corrections-backlog.md`](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) |
 
 ---
 
-**Última actualización:** 2026-06-11 (MAP-011 planificado)
+**Última actualización:** 2026-06-11 (MAP-013 backlog · MAP-012 ⏸)

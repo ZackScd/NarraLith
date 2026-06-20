@@ -74,7 +74,15 @@
     "eventNamePlaceholder": "Add event",
     "eventDescriptionPlaceholder": "Event description",
     "eventCloseBlock": "Close event block",
-    "eventExpandBlock": "Expand event block"
+    "eventExpandBlock": "Expand event block",
+    "locationMapTitle": "Location on map",
+    "locationMapHint": "Add the tag to the manuscript and anchor a pin on the active map.",
+    "locationInsertOnly": "Manuscript tag only",
+    "locationInsertAndPin": "Tag + pin on map",
+    "locationPinOnMapTooltip": "Opens the map in edit mode — click the canvas to place the pin",
+    "locationNeedsTime": "Add a time tag to this block first.",
+    "locationInsertFailed": "Could not insert the tag. Place the cursor in the text.",
+    "locationNoActiveMap": "Open a map in the Maps view before anchoring."
   },
   "eventFrame": {
     "deleteEventPending": "Click to mark event for deletion",
