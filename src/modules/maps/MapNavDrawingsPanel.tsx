@@ -24,6 +24,7 @@ interface MapNavDrawingsPanelProps {
   onSelectDrawing: (ref: MapDrawingRef) => void;
   onCreate: (name: string) => Promise<void>;
   onDelete: (navId: string) => Promise<void>;
+  embedded?: boolean;
 }
 
 export function MapNavDrawingsPanel({
@@ -34,6 +35,7 @@ export function MapNavDrawingsPanel({
   onSelectDrawing,
   onCreate,
   onDelete,
+  embedded = false,
 }: MapNavDrawingsPanelProps) {
   const { t } = useTranslation("maps");
   const [createOpen, setCreateOpen] = useState(false);
@@ -41,13 +43,20 @@ export function MapNavDrawingsPanel({
 
   return (
     <section
-      className="flex shrink-0 flex-col border-b border-border/60 bg-background"
+      className={cn(
+        "flex flex-col bg-background",
+        embedded ? "min-h-0 flex-1" : "shrink-0 border-b border-border/60",
+      )}
       aria-label={t("nav.panelAria", { mapId })}
     >
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("nav.panelTitle")}
-        </h2>
+        {!embedded ? (
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("nav.panelTitle")}
+          </h2>
+        ) : (
+          <span className="sr-only">{t("nav.panelTitle")}</span>
+        )}
         <Button
           type="button"
           variant="ghost"

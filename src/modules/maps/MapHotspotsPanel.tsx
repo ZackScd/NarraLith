@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { MapHotspotBoundsV1, MapHotspotV1, MapNavSummaryV1 } from "@/lib/types/maps";
+import { cn } from "@/lib/utils";
 
 import { CreateNavDialog } from "./CreateNavDialog";
 
@@ -24,6 +25,7 @@ interface MapHotspotsPanelProps {
   busy?: boolean;
   onToggleDrawMode: (active: boolean) => void;
   onDeleteHotspot: (hotspotId: string) => Promise<void>;
+  embedded?: boolean;
 }
 
 export function MapHotspotsPanel({
@@ -33,19 +35,24 @@ export function MapHotspotsPanel({
   busy = false,
   onToggleDrawMode,
   onDeleteHotspot,
+  embedded = false,
 }: MapHotspotsPanelProps) {
   const { t } = useTranslation("maps");
   const [deleteTarget, setDeleteTarget] = useState<MapHotspotV1 | null>(null);
 
   return (
     <section
-      className="flex shrink-0 flex-col bg-background"
+      className={cn("flex flex-col bg-background", embedded && "min-h-0 flex-1")}
       aria-label={t("hotspot.panelAria", { mapId })}
     >
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("hotspot.panelTitle")}
-        </h2>
+        {!embedded ? (
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("hotspot.panelTitle")}
+          </h2>
+        ) : (
+          <span className="sr-only">{t("hotspot.panelTitle")}</span>
+        )}
         <Button
           type="button"
           variant={drawMode ? "default" : "ghost"}

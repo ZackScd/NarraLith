@@ -27,6 +27,7 @@ interface MapSecondariesPanelProps {
   secondaries: MapSecondarySummaryV1[];
   activeDrawingRef: MapDrawingRef;
   busy?: boolean;
+  embedded?: boolean;
   onSelectDrawing: (ref: MapDrawingRef) => void;
   onCreate: (draft: {
     name: string;
@@ -52,6 +53,7 @@ export function MapSecondariesPanel({
   onCreate,
   onUpdateMeta,
   onDelete,
+  embedded = false,
 }: MapSecondariesPanelProps) {
   const { t } = useTranslation("maps");
   const [createOpen, setCreateOpen] = useState(false);
@@ -71,13 +73,20 @@ export function MapSecondariesPanel({
 
   return (
     <section
-      className="flex shrink-0 flex-col border-b border-border/60 bg-background"
+      className={cn(
+        "flex flex-col bg-background",
+        embedded ? "min-h-0 flex-1" : "shrink-0 border-b border-border/60",
+      )}
       aria-label={t("secondary.panelAria", { mapId })}
     >
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("secondary.panelTitle")}
-        </h2>
+        {!embedded ? (
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("secondary.panelTitle")}
+          </h2>
+        ) : (
+          <span className="sr-only">{t("secondary.panelTitle")}</span>
+        )}
         <Button
           type="button"
           variant="ghost"

@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { MapLocationPinV1, ProjectLocationOccurrenceV1 } from "@/lib/types/mapLocations";
+import { cn } from "@/lib/utils";
 
 interface MapLocationsPanelProps {
   mapId: string;
@@ -27,6 +28,7 @@ interface MapLocationsPanelProps {
   onStartMove: (pinId: string) => void;
   onCancelMove: () => void;
   onDeletePin: (pinId: string) => Promise<void>;
+  embedded?: boolean;
 }
 
 export function MapLocationsPanel({
@@ -43,6 +45,7 @@ export function MapLocationsPanel({
   onStartMove,
   onCancelMove,
   onDeletePin,
+  embedded = false,
 }: MapLocationsPanelProps) {
   const { t } = useTranslation("maps");
   const [deleteTarget, setDeleteTarget] = useState<MapLocationPinV1 | null>(null);
@@ -50,13 +53,17 @@ export function MapLocationsPanel({
 
   return (
     <section
-      className="flex shrink-0 flex-col bg-background"
+      className={cn("flex flex-col bg-background", embedded && "min-h-0 flex-1")}
       aria-label={t("location.panelAria", { mapId })}
     >
       <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("location.panelTitle")}
-        </h2>
+        {!embedded ? (
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("location.panelTitle")}
+          </h2>
+        ) : (
+          <span className="sr-only">{t("location.panelTitle")}</span>
+        )}
         {pinModeActive ? (
           <Button
             type="button"

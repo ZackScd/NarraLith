@@ -30,6 +30,7 @@ interface MapTimelineBarProps {
   calendar: CalendarConfig;
   interactive: boolean;
   onPreviewTChange: (raw: string, source: MapPreviewTSource) => void;
+  desdeField?: React.ReactNode;
 }
 
 export function MapTimelineBar({
@@ -40,6 +41,7 @@ export function MapTimelineBar({
   calendar,
   interactive,
   onPreviewTChange,
+  desdeField,
 }: MapTimelineBarProps) {
   const { t } = useTranslation("maps");
   const trackRef = useRef<HTMLDivElement>(null);
@@ -187,7 +189,10 @@ export function MapTimelineBar({
       className="flex shrink-0 flex-col gap-1 border-t border-border/60 bg-muted/20 px-3 py-2"
       aria-label={t("timeline.barAria", { mapId })}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
+        {desdeField ? (
+          <div className="shrink-0 border-r border-border/50 pr-3">{desdeField}</div>
+        ) : null}
         <div className="flex shrink-0 items-center gap-0.5">
           <Button
             type="button"

@@ -1,9 +1,8 @@
-import { Eye, Loader2, Map as MapIcon, Pencil, Plus, Star } from "lucide-react";
+import { Eye, Loader2, Map as MapIcon, Pencil, Plus } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useMapAutosave } from "@/hooks/useMapAutosave";
 import { useMapProject } from "@/hooks/useMapProject";
 import { useProjectLocations } from "@/hooks/useProjectLocations";
@@ -27,7 +26,6 @@ import { filterVisibleSecondaries } from "@/lib/maps/mapSecondaryVisibility";
 import type { ProjectLocationOccurrenceV1 } from "@/lib/types/mapLocations";
 import type { MapCreateDraft, MapDrawingRef, MapHotspotBoundsV1, MapNavSummaryV1, OpenPreference } from "@/lib/types/maps";
 import { DEFAULT_MAP_DRAWING_REF, drawingRefKey, parseDrawingRefKey } from "@/lib/types/maps";
-import { cn } from "@/lib/utils";
 import { CreateMapDialog } from "@/modules/maps/CreateMapDialog";
 import {
   MapCanvasSizeDialog,
@@ -35,13 +33,14 @@ import {
 } from "@/modules/maps/MapCanvasSizeDialog";
 import { useMapStudioShortcuts } from "@/hooks/useMapStudioShortcuts";
 import { MapDesdeField } from "@/modules/maps/MapDesdeField";
+import { MapEditSidePanel } from "@/modules/maps/MapEditSidePanel";
 import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
+import { MapMapsSection } from "@/modules/maps/MapMapsSection";
 import { MapNavBreadcrumb } from "@/modules/maps/MapNavBreadcrumb";
 import { MapNavDrawingsPanel } from "@/modules/maps/MapNavDrawingsPanel";
 import { HotspotTargetDialog, MapHotspotsPanel } from "@/modules/maps/MapHotspotsPanel";
 import { MapLocationsPanel } from "@/modules/maps/MapLocationsPanel";
-import { MapPreviewTField } from "@/modules/maps/MapPreviewTField";
 import { MapSecondariesPanel } from "@/modules/maps/MapSecondariesPanel";
 import { MapTimelineBar } from "@/modules/maps/MapTimelineBar";
 import { MapViewport } from "@/modules/maps/MapViewport";
@@ -692,8 +691,8 @@ export function MapWorkspace() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <header className="flex shrink-0 flex-col gap-3 border-b border-border/60 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
+      <header className="flex shrink-0 border-b border-border/60 px-4 py-3">
+        <div className="flex w-full items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <MapIcon className="size-5 shrink-0 text-muted-foreground" />
             <div className="min-w-0">
@@ -710,7 +709,26 @@ export function MapWorkspace() {
               ) : null}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {!isEditMode && maps.length > 0 ? (
+              <select
+                id="map-selector"
+                className={`${SELECT_CLASS} w-auto min-w-[180px] max-w-[280px]`}
+                value={activeMapId ?? ""}
+                onChange={(e) => handleMapChange(e.target.value)}
+                aria-label={t("selector.label")}
+              >
+                {maps.map((map) => (
+                  <option key={map.id} value={map.id}>
+                    {t("selector.option", {
+                      name: map.name,
+                      width: map.width,
+                      height: map.height,
+                    })}
+                  </option>
+                ))}
+              </select>
+            ) : null}
             {activeMapId && document ? (
               isEditMode ? (
                 <Button size="sm" onClick={handleExitEdit}>
@@ -724,100 +742,19 @@ export function MapWorkspace() {
                 </Button>
               )
             ) : null}
-            <Button size="sm" disabled={creating} onClick={() => setCreateOpen(true)}>
-              {creating ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Plus className="size-4" />
-              )}
-              {t("createMap")}
-            </Button>
-          </div>
-        </div>
-
-        {maps.length > 0 ? (
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[200px] flex-1 space-y-1.5">
-              <Label htmlFor="map-selector">{t("selector.label")}</Label>
-              <select
-                id="map-selector"
-                className={SELECT_CLASS}
-                value={activeMapId ?? ""}
-                onChange={(e) => handleMapChange(e.target.value)}
-              >
-                {maps.map((map) => (
-                  <option key={map.id} value={map.id}>
-                    {t("selector.option", {
-                      name: map.name,
-                      width: map.width,
-                      height: map.height,
-                    })}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="min-w-[180px] flex-1 space-y-1.5">
-              <Label htmlFor="map-open-preference">{t("openPreference.label")}</Label>
-              <select
-                id="map-open-preference"
-                className={SELECT_CLASS}
-                value={openPreference}
-                onChange={(e) => handlePreferenceChange(e.target.value as OpenPreference)}
-              >
-                <option value="lastViewed">{t("openPreference.lastViewed")}</option>
-                <option value="pinned">{t("openPreference.pinned")}</option>
-                <option value="lastModified">{t("openPreference.lastModified")}</option>
-              </select>
-            </div>
-
-            {activeMapId ? (
-              <div className="space-y-1.5">
-                <span className="block text-sm font-medium leading-none">{t("pin.label")}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-9"
-                  aria-pressed={isPinned}
-                  title={isPinned ? t("pin.unpin") : t("pin.pin")}
-                  onClick={handlePinToggle}
-                >
-                  <Star
-                    className={cn(
-                      "size-4",
-                      isPinned ? "fill-amber-400 text-amber-400" : "text-muted-foreground",
-                    )}
-                  />
-                </Button>
-              </div>
+            {!isEditMode ? (
+              <Button size="sm" disabled={creating} onClick={() => setCreateOpen(true)}>
+                {creating ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {t("createMap")}
+              </Button>
             ) : null}
           </div>
-        ) : null}
-      </header>
-
-      {activeMapId && document ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-border/60 px-4 py-2">
-          <MapDesdeField
-            mapId={activeMapId}
-            desde={document.desde}
-            calendar={calendar}
-            baselineConfig={baselineConfig}
-            events={timelineEvents}
-            onUpdate={handleDesdeUpdate}
-            onSuggest={handleDesdeSuggest}
-          />
-          {isEditMode && calendar ? (
-            <MapPreviewTField
-              previewT={previewT}
-              calendar={calendar}
-              baselineConfig={baselineConfig}
-              events={timelineEvents}
-              onPreviewTChange={handlePreviewTChange}
-            />
-          ) : null}
         </div>
-      ) : null}
+      </header>
 
       {activeMapId && document && isNavView ? (
         <MapNavBreadcrumb
@@ -852,105 +789,6 @@ export function MapWorkspace() {
         {activeMapId && document && drawing ? (
           <>
             <div className="flex min-h-0 flex-1">
-              {isEditMode ? (
-                <div className="flex h-full min-h-0 w-56 shrink-0 flex-col overflow-y-auto border-r border-border/60">
-                  <MapSecondariesPanel
-                    mapId={activeMapId}
-                    mapDesde={document.desde}
-                    defaultTiempoInicio={previewT}
-                    calendar={calendar}
-                    secondaries={secondaries}
-                    activeDrawingRef={activeDrawingRef}
-                    busy={secondaryBusy}
-                    onSelectDrawing={handleSelectDrawing}
-                    onCreate={handleCreateSecondary}
-                    onUpdateMeta={async (secondaryId, patch) => {
-                      setSecondaryBusy(true);
-                      try {
-                        await updateSecondaryMeta(secondaryId, patch);
-                      } finally {
-                        setSecondaryBusy(false);
-                      }
-                    }}
-                    onDelete={async (secondaryId) => {
-                      setSecondaryBusy(true);
-                      try {
-                        await deleteSecondary(secondaryId);
-                        if (
-                          activeDrawingRef.kind === "secondary" &&
-                          activeDrawingRef.id === secondaryId
-                        ) {
-                          setActiveDrawingRef({ kind: "principal" });
-                        }
-                      } finally {
-                        setSecondaryBusy(false);
-                      }
-                    }}
-                  />
-                  {!isNavView ? (
-                    <>
-                      <MapNavDrawingsPanel
-                        mapId={activeMapId}
-                        navDrawings={navDrawings}
-                        activeDrawingRef={activeDrawingRef}
-                        busy={navBusy}
-                        onSelectDrawing={handleSelectDrawing}
-                        onCreate={async (name) => {
-                          await handleCreateNavDrawing(name);
-                        }}
-                        onDelete={async (navId) => {
-                          setNavBusy(true);
-                          try {
-                            await deleteNav(navId);
-                            if (activeDrawingRef.kind === "nav" && activeDrawingRef.id === navId) {
-                              setActiveDrawingRef({ kind: "principal" });
-                            }
-                          } finally {
-                            setNavBusy(false);
-                          }
-                        }}
-                      />
-                      <MapHotspotsPanel
-                        mapId={activeMapId}
-                        hotspots={principalHotspots}
-                        drawMode={hotspotDrawMode}
-                        busy={hotspotBusy}
-                        onToggleDrawMode={(active) => {
-                          setHotspotDrawMode(active);
-                          if (active) {
-                            setLocationPlacementTarget(null);
-                            setLocationMovePinId(null);
-                          }
-                        }}
-                        onDeleteHotspot={handleDeleteHotspot}
-                      />
-                      <MapLocationsPanel
-                        mapId={activeMapId}
-                        previewT={previewT}
-                        occurrencesAtT={occurrencesAtT}
-                        unpinnedAtT={unpinnedOccurrencesAtT}
-                        pins={locationPins}
-                        placementTarget={locationPlacementTarget}
-                        movePinId={locationMovePinId}
-                        busy={locationPinBusy}
-                        onStartPlacement={(occurrence) => {
-                          setHotspotDrawMode(false);
-                          setLocationMovePinId(null);
-                          setLocationPlacementTarget(occurrence);
-                        }}
-                        onCancelPlacement={() => setLocationPlacementTarget(null)}
-                        onStartMove={(pinId) => {
-                          setHotspotDrawMode(false);
-                          setLocationPlacementTarget(null);
-                          setLocationMovePinId(pinId);
-                        }}
-                        onCancelMove={() => setLocationMovePinId(null)}
-                        onDeletePin={handleDeleteLocationPin}
-                      />
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
               <MapViewport
                 mapId={activeMapId}
                 document={document}
@@ -985,19 +823,164 @@ export function MapWorkspace() {
                 onHotspotRectComplete={handleHotspotRectComplete}
               />
               {isEditMode && drawingSession.drawing ? (
-                <MapLayersPanel
-                  mapId={activeMapId}
-                  drawing={drawingSession.drawing}
-                  activeLayerId={drawingSession.activeLayerId}
-                  onSelectLayer={drawingSession.selectActiveLayer}
-                  onCreateLayer={() => {
-                    drawingSession.createLayer(t("studio.layers.defaultName", {
-                      index: drawingSession.drawing!.layers.length + 1,
-                    }));
-                  }}
-                  onDeleteLayer={drawingSession.deleteLayer}
-                  onPatchLayer={drawingSession.patchLayer}
-                  onReorderLayer={drawingSession.reorderLayer}
+                <MapEditSidePanel
+                  isNavView={isNavView}
+                  mapsSection={
+                    <MapMapsSection
+                      maps={maps}
+                      activeMapId={activeMapId}
+                      openPreference={openPreference}
+                      isPinned={isPinned}
+                      creating={creating}
+                      onMapChange={handleMapChange}
+                      onPreferenceChange={handlePreferenceChange}
+                      onPinToggle={handlePinToggle}
+                      onCreateMap={() => setCreateOpen(true)}
+                    />
+                  }
+                  layersSection={
+                    <MapLayersPanel
+                      embedded
+                      mapId={activeMapId}
+                      drawing={drawingSession.drawing}
+                      activeLayerId={drawingSession.activeLayerId}
+                      onSelectLayer={drawingSession.selectActiveLayer}
+                      onCreateLayer={() => {
+                        drawingSession.createLayer(
+                          t("studio.layers.defaultName", {
+                            index: drawingSession.drawing!.layers.length + 1,
+                          }),
+                        );
+                      }}
+                      onDeleteLayer={drawingSession.deleteLayer}
+                      onPatchLayer={drawingSession.patchLayer}
+                      onReorderLayer={drawingSession.reorderLayer}
+                    />
+                  }
+                  patchesSection={
+                    <MapSecondariesPanel
+                      embedded
+                      mapId={activeMapId}
+                      mapDesde={document.desde}
+                      defaultTiempoInicio={previewT}
+                      calendar={calendar}
+                      secondaries={secondaries}
+                      activeDrawingRef={activeDrawingRef}
+                      busy={secondaryBusy}
+                      onSelectDrawing={handleSelectDrawing}
+                      onCreate={handleCreateSecondary}
+                      onUpdateMeta={async (secondaryId, patch) => {
+                        setSecondaryBusy(true);
+                        try {
+                          await updateSecondaryMeta(secondaryId, patch);
+                        } finally {
+                          setSecondaryBusy(false);
+                        }
+                      }}
+                      onDelete={async (secondaryId) => {
+                        setSecondaryBusy(true);
+                        try {
+                          await deleteSecondary(secondaryId);
+                          if (
+                            activeDrawingRef.kind === "secondary" &&
+                            activeDrawingRef.id === secondaryId
+                          ) {
+                            setActiveDrawingRef({ kind: "principal" });
+                          }
+                        } finally {
+                          setSecondaryBusy(false);
+                        }
+                      }}
+                    />
+                  }
+                  navSection={
+                    !isNavView ? (
+                      <MapNavDrawingsPanel
+                        embedded
+                        mapId={activeMapId}
+                        navDrawings={navDrawings}
+                        activeDrawingRef={activeDrawingRef}
+                        busy={navBusy}
+                        onSelectDrawing={handleSelectDrawing}
+                        onCreate={async (name) => {
+                          await handleCreateNavDrawing(name);
+                        }}
+                        onDelete={async (navId) => {
+                          setNavBusy(true);
+                          try {
+                            await deleteNav(navId);
+                            if (activeDrawingRef.kind === "nav" && activeDrawingRef.id === navId) {
+                              setActiveDrawingRef({ kind: "principal" });
+                            }
+                          } finally {
+                            setNavBusy(false);
+                          }
+                        }}
+                      />
+                    ) : null
+                  }
+                  hotspotsSection={
+                    !isNavView ? (
+                      <MapHotspotsPanel
+                        embedded
+                        mapId={activeMapId}
+                        hotspots={principalHotspots}
+                        drawMode={hotspotDrawMode}
+                        busy={hotspotBusy}
+                        onToggleDrawMode={(active) => {
+                          setHotspotDrawMode(active);
+                          if (active) {
+                            setLocationPlacementTarget(null);
+                            setLocationMovePinId(null);
+                          }
+                        }}
+                        onDeleteHotspot={handleDeleteHotspot}
+                      />
+                    ) : null
+                  }
+                  locationsSection={
+                    !isNavView ? (
+                      <MapLocationsPanel
+                        embedded
+                        mapId={activeMapId}
+                        previewT={previewT}
+                        occurrencesAtT={occurrencesAtT}
+                        unpinnedAtT={unpinnedOccurrencesAtT}
+                        pins={locationPins}
+                        placementTarget={locationPlacementTarget}
+                        movePinId={locationMovePinId}
+                        busy={locationPinBusy}
+                        onStartPlacement={(occurrence) => {
+                          setHotspotDrawMode(false);
+                          setLocationMovePinId(null);
+                          setLocationPlacementTarget(occurrence);
+                        }}
+                        onCancelPlacement={() => setLocationPlacementTarget(null)}
+                        onStartMove={(pinId) => {
+                          setHotspotDrawMode(false);
+                          setLocationPlacementTarget(null);
+                          setLocationMovePinId(pinId);
+                        }}
+                        onCancelMove={() => setLocationMovePinId(null)}
+                        onDeletePin={handleDeleteLocationPin}
+                      />
+                    ) : null
+                  }
+                  studioSection={
+                    <MapEditStudio
+                      embedded
+                      mapId={activeMapId}
+                      canvasBusy={canvasBusy}
+                      isDirty={drawingSession.isDirty}
+                      saveStatus={drawingSession.saveStatus}
+                      canUndo={drawingSession.canUndo}
+                      canRedo={drawingSession.canRedo}
+                      onUndo={drawingSession.undo}
+                      onRedo={drawingSession.redo}
+                      onExpand={() => openCanvasDialog("expand")}
+                      onCrop={() => openCanvasDialog("crop")}
+                    />
+                  }
                 />
               ) : null}
             </div>
@@ -1010,20 +993,17 @@ export function MapWorkspace() {
                 calendar={calendar}
                 interactive
                 onPreviewTChange={handlePreviewTChange}
-              />
-            ) : null}
-            {isEditMode && activeMapId ? (
-              <MapEditStudio
-                mapId={activeMapId}
-                canvasBusy={canvasBusy}
-                isDirty={drawingSession.isDirty}
-                saveStatus={drawingSession.saveStatus}
-                canUndo={drawingSession.canUndo}
-                canRedo={drawingSession.canRedo}
-                onUndo={drawingSession.undo}
-                onRedo={drawingSession.redo}
-                onExpand={() => openCanvasDialog("expand")}
-                onCrop={() => openCanvasDialog("crop")}
+                desdeField={
+                  <MapDesdeField
+                    mapId={activeMapId}
+                    desde={document.desde}
+                    calendar={calendar}
+                    baselineConfig={baselineConfig}
+                    events={timelineEvents}
+                    onUpdate={handleDesdeUpdate}
+                    onSuggest={handleDesdeSuggest}
+                  />
+                }
               />
             ) : null}
           </>

@@ -33,6 +33,7 @@ interface MapLayersPanelProps {
   mapId: string;
   drawing: MapDrawingV2;
   activeLayerId: string | null;
+  embedded?: boolean;
   onSelectLayer: (layerId: string) => void;
   onCreateLayer: () => void;
   onDeleteLayer: (layerId: string) => void;
@@ -58,6 +59,7 @@ export function MapLayersPanel({
   onDeleteLayer,
   onPatchLayer,
   onReorderLayer,
+  embedded = false,
 }: MapLayersPanelProps) {
   const { t } = useTranslation("maps");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; strokeCount: number } | null>(
@@ -107,13 +109,25 @@ export function MapLayersPanel({
 
   return (
     <aside
-      className="flex w-64 shrink-0 flex-col border-l border-border/60 bg-muted/10"
+      className={cn(
+        "flex flex-col bg-muted/10",
+        embedded ? "min-h-0 flex-1" : "w-64 shrink-0 border-l border-border/60",
+      )}
       aria-label={t("studio.layers.panelAria", { mapId })}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("studio.layers.title")}
-        </h2>
+      <div
+        className={cn(
+          "flex items-center justify-between gap-2 px-3 py-2",
+          embedded ? "border-b border-border/60" : "border-b border-border/60",
+        )}
+      >
+        {!embedded ? (
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("studio.layers.title")}
+          </h2>
+        ) : (
+          <span className="sr-only">{t("studio.layers.title")}</span>
+        )}
         <Button
           type="button"
           size="icon"

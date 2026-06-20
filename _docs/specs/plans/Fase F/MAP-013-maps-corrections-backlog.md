@@ -1,6 +1,6 @@
 # MAP-013 — Backlog de correcciones del módulo mapas
 
-> **Estado:** 📋 **Backlog activo** (2026-06-11) — lista viva; ítems se afinan y priorizan antes de ejecutar  
+> **Estado:** 🔄 **En curso** (2026-06-11) — Oleada 0 shell ✅; §7 capas y oleadas 1+ pendientes  
 > **Tipo:** Correcciones UX + comportamiento + deuda §13 acumulada — **no** features Era IV/WB  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) · **Previo:** [MAP-011](MAP-011-manuscript-location-x.md) 🔄 · **Bloquea:** [MAP-012](MAP-012-smoke-era-iii-purge.md) ⏸  
 > **Spec de referencia:** [`maps-design.md`](../../maps-design.md)
@@ -143,14 +143,14 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 
 | ID | Prioridad | Entregable | Notas | Estado |
 |----|-----------|------------|-------|--------|
-| M13-SHELL-01 | **P0** | `MapEditSidePanel` — rail + panel colapsable (patrón manuscrito) | Nuevo componente; solo modo edición | ⬜ |
-| M13-SHELL-02 | **P0** | Mover selector mapa + «Al abrir» + pin → sección **Mapas** | Quita bloque rojo cabecera | ⬜ |
-| M13-SHELL-03 | **P0** | Eliminar columna **izq.** fija; paneles → secciones rail | Parches, Nav, Hotspots, Ubicaciones | ⬜ |
-| M13-SHELL-04 | **P1** | Mover `MapEditStudio` (barra dibujo) → sección **Estudio** rail | Quita bloque rojo inferior | ⬜ |
-| M13-SHELL-05 | **P1** | Cabecera mínima: título + toggle interactivo/edición | Sin selector ni preferencias | ⬜ |
-| M13-SHELL-06 | **P0** | **Desde** integrado en `MapTimelineBar` (§2bis.3) | Elimina barra amarilla; cierra UX-02 | ⬜ |
+| M13-SHELL-01 | **P0** | `MapEditSidePanel` — rail + panel colapsable (patrón manuscrito) | Nuevo componente; solo modo edición | ✅ |
+| M13-SHELL-02 | **P0** | Mover selector mapa + «Al abrir» + pin → sección **Mapas** | Quita bloque rojo cabecera | ✅ |
+| M13-SHELL-03 | **P0** | Eliminar columna **izq.** fija; paneles → secciones rail | Parches, Nav, Hotspots, Ubicaciones | ✅ |
+| M13-SHELL-04 | **P1** | Mover `MapEditStudio` (barra dibujo) → sección **Estudio** rail | Quita bloque rojo inferior | ✅ |
+| M13-SHELL-05 | **P1** | Cabecera mínima: título + toggle interactivo/edición | Sin selector ni preferencias | ✅ |
+| M13-SHELL-06 | **P0** | **Desde** integrado en `MapTimelineBar` (§2bis.3) | Elimina barra amarilla; cierra UX-02 | ✅ |
 | M13-SHELL-07 | **P2** | Expandir/recortar lienzo — ubicación final (Mapas vs menú ⋮) | Usuario afinará después | ⬜ |
-| M13-SHELL-08 | **P2** | Modo interactivo: rail oculto; solo lienzo + breadcrumb + timeline | Contraste MAP-004 | ⬜ |
+| M13-SHELL-08 | **P2** | Modo interactivo: rail oculto; solo lienzo + breadcrumb + timeline | Contraste MAP-004 | ✅ |
 | M13-SHELL-09 | **P3** | Persistir sección rail activa + collapsed en sesión mapa | Opcional UX | ⬜ |
 
 **Archivos probables:** nuevo `MapEditSidePanel.tsx`, refactor `MapWorkspace.tsx` layout, `MapTimelineBar.tsx` + `MapDesdeField`, `useLayoutStore` o `useMapStudioStore`.
@@ -163,10 +163,10 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
-| M13-UX-01 | ~~P0~~ **→ SHELL** | Cabecera saturada | M13-SHELL-02 + SHELL-05 | Captura | 🔄 → §2bis |
-| M13-UX-02 | **P0** | Triple tiempo (Desde arriba + scrubber) | Desde + scrubber **una barra** abajo — M13-SHELL-06 | Usuario | ⬜ |
-| M13-UX-03 | ~~P1~~ **→ SHELL** | Columna izq. apilada | Rail derecho M13-SHELL-03 | MAP-010 H1 | 🔄 → §2bis |
-| M13-UX-04 | ~~P1~~ **→ SHELL** | Pie timeline + estudio | SHELL-04 + SHELL-06 | Usuario | 🔄 → §2bis |
+| M13-UX-01 | ~~P0~~ **→ SHELL** | Cabecera saturada | M13-SHELL-02 + SHELL-05 | Captura | ✅ |
+| M13-UX-02 | **P0** | Triple tiempo (Desde arriba + scrubber) | Desde + scrubber **una barra** abajo — M13-SHELL-06 | Usuario | ✅ |
+| M13-UX-03 | ~~P1~~ **→ SHELL** | Columna izq. apilada | Rail derecho M13-SHELL-03 | MAP-010 H1 | ✅ |
+| M13-UX-04 | ~~P1~~ **→ SHELL** | Pie timeline + estudio | SHELL-04 + SHELL-06 | Usuario | ✅ |
 | M13-UX-05 | **P2** | Badge «TERRENO BASE» poco claro | Copy según sección rail + `activeDrawingRef` | MAP-010 H2 | ⬜ |
 | M13-UX-06 | **P1** | Contenido CAPAS denso | §7 Sketchbook **dentro** sección rail Capas | Usuario · §7 | ⬜ |
 | M13-UX-07 | **P2** | Opacidad capa vs pincel | Tooltip Capas vs Estudio en rail | Captura | ⬜ |
@@ -208,7 +208,7 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
 | M13-LOC-01 | **P1** | Atajo editor → mapa (`SideLocationMapSection`) es **placeholder**, no flujo deseado | Rediseñar handoff: ¿abrir mapa en T del evento? ¿panel split? | Usuario · MAP-011 | ⬜ |
-| M13-LOC-02 | ~~P1~~ **→ SHELL** | Panel Ubicaciones enterrado | Sección rail **Ubicaciones** (icono 6) — M13-SHELL-03 | Captura | 🔄 → §2bis |
+| M13-LOC-02 | ~~P1~~ **→ SHELL** | Panel Ubicaciones enterrado | Sección rail **Ubicaciones** (icono 6) — M13-SHELL-03 | Captura | ✅ |
 | M13-LOC-03 | **P2** | Marcas X visibles también en **edición** (spec C5: solo interactivo) | Ocultar `locationMarkers` salvo ghost colocación | MAP-011 C5 · MAP-012 §2.8 | ⬜ |
 | M13-LOC-04 | **P2** | Anclar pin: flujo poco guiado (lista ocurrencias @ T vs unpinned) | Wizard corto o click-to-place más obvio | Usuario | ⬜ |
 | M13-LOC-05 | **P2** | Tras crop, pins fuera de bounds — verificar feedback UI | Toast + panel refresh (Rust ya sincroniza) | MAP-011 · MAP-012 §8.1 | ⬜ |
@@ -396,6 +396,7 @@ Oleada 4 — Retomar MAP-012
 | | Usuario pospone smoke MAP-012 hasta módulo usable |
 | 2026-06-11 | **§7 Panel CAPAS** — spec Sketchbook: miniaturas bbox, opacidad vertical, DnD ≡, grupos |
 | 2026-06-11 | **§2bis Shell UI** — panel derecho tipo manuscrito (rail iconos); rojo → secciones; Desde fusionado con timeline abajo; M13-SHELL-01…09 |
+| 2026-06-11 | **Oleada 0 impl.** — `MapEditSidePanel`, `MapMapsSection`, `useMapEditPanelStore`; refactor `MapWorkspace` (M13-SHELL-01…06, 08 ✅); capas §7 **sin rediseño** |
 
 **Notas libres:** _(añadir aquí ítems nuevos con formato M13-XXX antes de codificar)_
 

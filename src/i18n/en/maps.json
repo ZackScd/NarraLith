@@ -1,5 +1,19 @@
 {
   "title": "Maps",
+  "editPanel": {
+    "title": "Map edit panel",
+    "expand": "Expand panel",
+    "collapse": "Collapse panel",
+    "sections": {
+      "maps": "Maps",
+      "layers": "Layers",
+      "patches": "Patches",
+      "nav": "Child drawings",
+      "hotspots": "Hotspots",
+      "locations": "Locations",
+      "studio": "Studio"
+    }
+  },
   "loadFailed": "Could not load the map.",
   "loadingMaps": "Loading maps…",
   "genericError": "Failed to save the map.",
