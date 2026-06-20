@@ -76,7 +76,7 @@
     "eventCloseBlock": "Close event block",
     "eventExpandBlock": "Expand event block",
     "locationMapTitle": "Location on map",
-    "locationMapHint": "Add the tag to the manuscript and anchor a pin on the active map.",
+    "locationMapHint": "Insert the tag in the manuscript, or jump to the map at the event's T to place a pin.",
     "locationInsertOnly": "Manuscript tag only",
     "locationInsertAndPin": "Tag + pin on map",
     "locationPinOnMapTooltip": "Opens the map in edit mode — click the canvas to place the pin",

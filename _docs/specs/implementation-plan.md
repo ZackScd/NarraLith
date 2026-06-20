@@ -136,7 +136,7 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-010** | ✅ | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 diferido | Alto | [`maps-design.md` §5](maps-design.md) |
 | **MAP-011** | 🔄 | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) · impl ✅ · afinado → MAP-013 | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
 | **MAP-012** | ⏸ | Smoke Era III + purga legacy — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) · **pospuesto** tras MAP-013 | Medio | [`maps-design.md`](maps-design.md) §2 |
-| **MAP-013** | 🔄 | Correcciones UX + comportamiento módulo mapas — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) · Oleada 0 shell ✅ | Alto | [`maps-design.md`](maps-design.md) §2–§8 |
+| **MAP-013** | 🔄 | Correcciones UX + comportamiento módulo mapas — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) · oleadas 0–2 + polish P2 ✅ | Alto | [`maps-design.md`](maps-design.md) §2–§8 |
 
 **Dependencias internas (orientativas):**
 

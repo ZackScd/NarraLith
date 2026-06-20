@@ -57,4 +57,21 @@ describe("computeMapTimelineRange", () => {
     expect(range.maxDay).toBeGreaterThan(range.minDay);
     expect(range.desdeDay).toBeNull();
   });
+
+  it("usa padding adaptativo más ajustado que ±365 días por defecto", () => {
+    const adaptive = computeMapTimelineRange(
+      "1.1.2020",
+      [summary("a", "1.1.2021", "1.1.2022")],
+      "1.1.2021",
+      config,
+    );
+    const legacy = computeMapTimelineRange(
+      "1.1.2020",
+      [summary("a", "1.1.2021", "1.1.2022")],
+      "1.1.2021",
+      config,
+      { paddingDays: 365 },
+    );
+    expect(adaptive.maxDay - adaptive.minDay).toBeLessThan(legacy.maxDay - legacy.minDay);
+  });
 });

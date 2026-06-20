@@ -1,5 +1,5 @@
 import { Plus, SquareDashedMousePointer, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { CreateNavDialog } from "./CreateNavDialog";
 interface MapHotspotsPanelProps {
   mapId: string;
   hotspots: MapHotspotV1[];
+  navDrawings: MapNavSummaryV1[];
   drawMode: boolean;
   busy?: boolean;
   onToggleDrawMode: (active: boolean) => void;
@@ -31,6 +32,7 @@ interface MapHotspotsPanelProps {
 export function MapHotspotsPanel({
   mapId,
   hotspots,
+  navDrawings,
   drawMode,
   busy = false,
   onToggleDrawMode,
@@ -39,6 +41,11 @@ export function MapHotspotsPanel({
 }: MapHotspotsPanelProps) {
   const { t } = useTranslation("maps");
   const [deleteTarget, setDeleteTarget] = useState<MapHotspotV1 | null>(null);
+
+  const navById = useMemo(
+    () => new Map(navDrawings.map((item) => [item.id, item])),
+    [navDrawings],
+  );
 
   return (
     <section
@@ -70,22 +77,35 @@ export function MapHotspotsPanel({
         <p className="border-b border-border/40 px-3 py-2 text-[11px] text-muted-foreground">
           {t("hotspot.drawHint")}
         </p>
-      ) : null}
+      ) : (
+        <p className="border-b border-border/40 px-3 py-2 text-[11px] text-muted-foreground">
+          {t("hotspot.interactiveHint")}
+        </p>
+      )}
 
       <div className="overflow-y-auto p-2">
         {hotspots.length === 0 ? (
           <p className="px-2 py-3 text-xs text-muted-foreground">{t("hotspot.empty")}</p>
         ) : null}
-        {hotspots.map((item) => (
+        {hotspots.map((item) => {
+          const targetNav = navById.get(item.targetNavId);
+          return (
           <div
             key={item.id}
             className="mb-1 rounded-md border border-transparent hover:bg-muted/60"
           >
             <div className="flex flex-col px-2 py-2 text-xs">
               <span className="font-medium">{item.label ?? item.id}</span>
-              <span className="text-muted-foreground">{item.targetNavId}</span>
               <span className="text-muted-foreground">
-                {Math.round(item.bounds.width)}×{Math.round(item.bounds.height)}
+                {t("hotspot.targetNavLabel", {
+                  name: targetNav?.name ?? item.targetNavId,
+                })}
+              </span>
+              <span className="text-muted-foreground">
+                {t("hotspot.zoneSize", {
+                  width: Math.round(item.bounds.width),
+                  height: Math.round(item.bounds.height),
+                })}
               </span>
             </div>
             <div className="flex justify-end gap-1 px-2 pb-2">
@@ -101,7 +121,8 @@ export function MapHotspotsPanel({
               </Button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <Dialog

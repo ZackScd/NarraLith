@@ -32,6 +32,7 @@ export interface MapViewportPaintOptions {
   composeNavDrawingRefKey?: string;
   hotspotOverlays?: MapHotspotV1[];
   hotspotDraftBounds?: MapHotspotBoundsV1 | null;
+  hotspotOverlayStyle?: HotspotOverlayStyle;
   locationMarkers?: MapLocatedMarkerV1[];
   locationPinDraft?: { x: number; y: number } | null;
 }
@@ -48,7 +49,7 @@ export const MAP_VIEWPORT_MAX_ZOOM = 2;
 const GRID_SIZE = 32;
 const MAX_DPR = 2;
 const COMPOSITOR_AUDIT_DEBOUNCE_MS = 150;
-const INTERACTIVE_CLICK_MOVE_PX = 5;
+export const INTERACTIVE_CLICK_MOVE_PX = 5;
 
 interface UseMapViewportOptions {
   mapId: string;
@@ -73,6 +74,7 @@ interface UseMapViewportOptions {
   onInteractiveClick?: (worldX: number, worldY: number) => boolean;
   hotspotOverlays?: MapHotspotV1[];
   hotspotDraftBounds?: MapHotspotBoundsV1 | null;
+  hotspotOverlayStyle?: HotspotOverlayStyle;
   locationMarkers?: MapLocatedMarkerV1[];
   locationPinDraft?: { x: number; y: number } | null;
   locationCountAtT?: number;
@@ -162,21 +164,34 @@ function drawGrid(
   }
 }
 
+export type HotspotOverlayStyle = "edit" | "interactive";
+
 function drawHotspotOverlays(
   ctx: CanvasRenderingContext2D,
   hotspots: MapHotspotV1[],
   draftBounds: MapHotspotBoundsV1 | null | undefined,
+  style: HotspotOverlayStyle = "edit",
 ): void {
   const drawRect = (bounds: MapHotspotBoundsV1, stroke: string, fill: string) => {
     ctx.fillStyle = fill;
     ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
     ctx.strokeStyle = stroke;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = style === "interactive" ? 1.5 : 2;
+    ctx.setLineDash(style === "interactive" ? [6, 4] : []);
     ctx.strokeRect(bounds.x + 0.5, bounds.y + 0.5, bounds.width - 1, bounds.height - 1);
+    ctx.setLineDash([]);
   };
 
   for (const hotspot of hotspots) {
-    drawRect(hotspot.bounds, "rgba(59, 130, 246, 0.95)", "rgba(59, 130, 246, 0.18)");
+    if (style === "interactive") {
+      drawRect(
+        hotspot.bounds,
+        "rgba(59, 130, 246, 0.55)",
+        "rgba(59, 130, 246, 0.1)",
+      );
+    } else {
+      drawRect(hotspot.bounds, "rgba(59, 130, 246, 0.95)", "rgba(59, 130, 246, 0.18)");
+    }
   }
   if (draftBounds && draftBounds.width > 0 && draftBounds.height > 0) {
     drawRect(draftBounds, "rgba(234, 179, 8, 0.95)", "rgba(234, 179, 8, 0.2)");
@@ -248,6 +263,7 @@ export function paintMapViewport(
       ctx,
       options.hotspotOverlays ?? [],
       options.hotspotDraftBounds,
+      options.hotspotOverlayStyle ?? "edit",
     );
     ctx.restore();
     return;
@@ -286,6 +302,7 @@ export function paintMapViewport(
     ctx,
     options.hotspotOverlays ?? [],
     options.hotspotDraftBounds,
+    options.hotspotOverlayStyle ?? "edit",
   );
 
   ctx.restore();
@@ -335,6 +352,7 @@ export function useMapViewport({
   onInteractiveClick,
   hotspotOverlays = [],
   hotspotDraftBounds = null,
+  hotspotOverlayStyle = "edit",
   locationMarkers = [],
   locationPinDraft = null,
   locationCountAtT = 0,
@@ -448,6 +466,7 @@ export function useMapViewport({
         composeNavDrawingRefKey,
         hotspotOverlays,
         hotspotDraftBounds,
+        hotspotOverlayStyle,
         locationMarkers,
         locationPinDraft,
       },
@@ -461,6 +480,7 @@ export function useMapViewport({
     containerSize,
     document,
     hotspotDraftBounds,
+    hotspotOverlayStyle,
     hotspotOverlays,
     locationMarkers,
     locationPinDraft,

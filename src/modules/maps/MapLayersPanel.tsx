@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   ChevronDown,
-  ChevronUp,
+  ChevronRight,
   Eye,
   EyeOff,
+  Folder,
+  FolderPlus,
   Lock,
   LockOpen,
   Plus,
@@ -20,14 +22,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { countLayerStrokes } from "@/lib/maps/mapDrawingSession";
 import {
-  countLayerStrokes,
-  layerArrayIndex,
-  layersForPanel,
-} from "@/lib/maps/mapDrawingSession";
-import type { MapDrawingV2 } from "@/lib/types/maps";
+  buildLayerPanelRows,
+  panelRowDragId,
+  type LayerGroupPatch,
+} from "@/lib/maps/mapLayerGroups";
+import type { MapDrawingLayerGroupV2, MapDrawingLayerV2, MapDrawingV2 } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
+import { MapLayerThumbnail } from "@/modules/maps/MapLayerThumbnail";
+import { MapLayerVerticalOpacity } from "@/modules/maps/MapLayerVerticalOpacity";
+import {
+  MapLayerDragHandle,
+  MapLayerDropRow,
+  MapLayerListDnDProvider,
+} from "@/modules/maps/mapLayerListDnD";
 
 interface MapLayersPanelProps {
   mapId: string;
@@ -36,7 +45,9 @@ interface MapLayersPanelProps {
   embedded?: boolean;
   onSelectLayer: (layerId: string) => void;
   onCreateLayer: () => void;
+  onCreateGroup: () => { groupId: string; name: string } | null;
   onDeleteLayer: (layerId: string) => void;
+  onDeleteGroup: (groupId: string) => void;
   onPatchLayer: (
     layerId: string,
     patch: Partial<{
@@ -47,7 +58,8 @@ interface MapLayersPanelProps {
     }>,
     obsAction?: "layerVisible" | "layerOpacity" | "layerLock" | "layerRename",
   ) => void;
-  onReorderLayer: (layerId: string, direction: "front" | "back") => void;
+  onPatchGroup: (groupId: string, patch: LayerGroupPatch) => void;
+  onReorderPanelRow: (fromDragId: string, toDragId: string) => void;
 }
 
 export function MapLayersPanel({
@@ -56,9 +68,12 @@ export function MapLayersPanel({
   activeLayerId,
   onSelectLayer,
   onCreateLayer,
+  onCreateGroup,
   onDeleteLayer,
+  onDeleteGroup,
   onPatchLayer,
-  onReorderLayer,
+  onPatchGroup,
+  onReorderPanelRow,
   embedded = false,
 }: MapLayersPanelProps) {
   const { t } = useTranslation("maps");
@@ -66,16 +81,30 @@ export function MapLayersPanel({
     null,
   );
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
-  const panelLayers = useMemo(() => layersForPanel(drawing), [drawing]);
+  const panelRows = useMemo(() => buildLayerPanelRows(drawing), [drawing]);
 
-  const beginRename = useCallback((layerId: string, currentName: string) => {
+  const beginLayerRename = useCallback((layerId: string, currentName: string) => {
+    setEditingGroupId(null);
     setEditingLayerId(layerId);
     setEditingName(currentName);
   }, []);
 
-  const commitRename = useCallback(
+  const beginGroupRename = useCallback((groupId: string, currentName: string) => {
+    setEditingLayerId(null);
+    setEditingGroupId(groupId);
+    setEditingName(currentName);
+  }, []);
+
+  const handleCreateGroup = useCallback(() => {
+    const created = onCreateGroup();
+    if (!created) return;
+    beginGroupRename(created.groupId, created.name);
+  }, [beginGroupRename, onCreateGroup]);
+
+  const commitLayerRename = useCallback(
     (layerId: string) => {
       const trimmed = editingName.trim();
       if (trimmed.length > 0) {
@@ -87,7 +116,25 @@ export function MapLayersPanel({
     [editingName, onPatchLayer],
   );
 
-  const requestDelete = useCallback(
+  const commitGroupRename = useCallback(
+    (groupId: string) => {
+      const trimmed = editingName.trim();
+      if (trimmed.length > 0) {
+        onPatchGroup(groupId, { name: trimmed });
+      }
+      setEditingGroupId(null);
+      setEditingName("");
+    },
+    [editingName, onPatchGroup],
+  );
+
+  const confirmDeleteLayer = useCallback(() => {
+    if (!deleteTarget) return;
+    onDeleteLayer(deleteTarget.id);
+    setDeleteTarget(null);
+  }, [deleteTarget, onDeleteLayer]);
+
+  const requestDeleteLayer = useCallback(
     (layerId: string) => {
       const layer = drawing.layers.find((item) => item.id === layerId);
       if (!layer) return;
@@ -101,11 +148,233 @@ export function MapLayersPanel({
     [drawing.layers, onDeleteLayer],
   );
 
-  const confirmDelete = useCallback(() => {
-    if (!deleteTarget) return;
-    onDeleteLayer(deleteTarget.id);
-    setDeleteTarget(null);
-  }, [deleteTarget, onDeleteLayer]);
+  const renderLayerRow = (
+    layer: MapDrawingLayerV2,
+    dragId: string,
+    nested = false,
+  ) => {
+    const isActive = layer.id === activeLayerId;
+
+    return (
+      <MapLayerDropRow key={dragId} dragId={dragId}>
+        <li
+          aria-selected={isActive}
+          className={cn(
+            "flex items-center gap-1 rounded-md border px-1 py-1 transition-colors",
+            nested && "ml-3",
+            isActive
+              ? "border-primary/50 bg-muted/80 ring-1 ring-primary/30"
+              : "border-transparent bg-background/60 hover:bg-muted/40",
+          )}
+        >
+          <div className="flex shrink-0 flex-col gap-0.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-6"
+              title={layer.visible ? t("studio.layers.hide") : t("studio.layers.show")}
+              aria-pressed={layer.visible}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPatchLayer(layer.id, { visible: !layer.visible }, "layerVisible");
+              }}
+            >
+              {layer.visible ? (
+                <Eye className="size-3" />
+              ) : (
+                <EyeOff className="size-3 text-muted-foreground" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-6"
+              title={layer.locked ? t("studio.layers.unlock") : t("studio.layers.lock")}
+              aria-pressed={layer.locked}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPatchLayer(layer.id, { locked: !layer.locked }, "layerLock");
+              }}
+            >
+              {layer.locked ? (
+                <Lock className="size-3" />
+              ) : (
+                <LockOpen className="size-3 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-1 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            aria-current={isActive ? "true" : undefined}
+            onClick={() => onSelectLayer(layer.id)}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              beginLayerRename(layer.id, layer.name);
+            }}
+          >
+            <MapLayerThumbnail layer={layer} />
+            {editingLayerId === layer.id ? (
+              <input
+                className="h-7 min-w-0 flex-1 rounded border border-input bg-background px-1.5 text-xs"
+                value={editingName}
+                autoFocus
+                onChange={(event) => setEditingName(event.target.value)}
+                onBlur={() => commitLayerRename(layer.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") commitLayerRename(layer.id);
+                  if (event.key === "Escape") setEditingLayerId(null);
+                }}
+                onClick={(event) => event.stopPropagation()}
+              />
+            ) : (
+              <span
+                className={cn(
+                  "min-w-0 flex-1 truncate text-xs",
+                  isActive && "font-medium text-primary",
+                )}
+              >
+                {layer.name}
+              </span>
+            )}
+          </button>
+
+          <MapLayerVerticalOpacity
+            value={layer.opacity}
+            onChange={(opacity) => onPatchLayer(layer.id, { opacity }, "layerOpacity")}
+          />
+
+          <MapLayerDragHandle dragId={dragId} />
+
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-6 shrink-0 text-destructive/80 hover:text-destructive"
+            disabled={drawing.layers.length <= 1}
+            title={t("studio.layers.delete")}
+            aria-label={t("studio.layers.delete")}
+            onClick={(event) => {
+              event.stopPropagation();
+              requestDeleteLayer(layer.id);
+            }}
+          >
+            <Trash2 className="size-3" />
+          </Button>
+        </li>
+      </MapLayerDropRow>
+    );
+  };
+
+  const renderGroupRow = (group: MapDrawingLayerGroupV2, dragId: string, memberCount: number) => (
+    <MapLayerDropRow key={dragId} dragId={dragId} dropKind="group">
+      <li className="rounded-md border border-border/40 bg-muted/20 px-1 py-1">
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-6 shrink-0"
+            title={
+              group.collapsed
+                ? t("studio.layers.expandGroup")
+                : t("studio.layers.collapseGroup")
+            }
+            onClick={() => onPatchGroup(group.id, { collapsed: !group.collapsed })}
+          >
+            {group.collapsed ? (
+              <ChevronRight className="size-3.5" />
+            ) : (
+              <ChevronDown className="size-3.5" />
+            )}
+          </Button>
+
+          <div className="flex shrink-0 flex-col gap-0.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-6"
+              title={group.visible ? t("studio.layers.hideGroup") : t("studio.layers.showGroup")}
+              aria-pressed={group.visible}
+              onClick={() => onPatchGroup(group.id, { visible: !group.visible })}
+            >
+              {group.visible ? (
+                <Eye className="size-3" />
+              ) : (
+                <EyeOff className="size-3 text-muted-foreground" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-6"
+              title={group.locked ? t("studio.layers.unlockGroup") : t("studio.layers.lockGroup")}
+              aria-pressed={group.locked}
+              onClick={() => onPatchGroup(group.id, { locked: !group.locked })}
+            >
+              {group.locked ? (
+                <Lock className="size-3" />
+              ) : (
+                <LockOpen className="size-3 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
+
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <Folder className="size-4 shrink-0 text-amber-600/80" />
+            {editingGroupId === group.id ? (
+              <input
+                className="h-7 min-w-0 flex-1 rounded border border-input bg-background px-1.5 text-xs"
+                value={editingName}
+                autoFocus
+                onChange={(event) => setEditingName(event.target.value)}
+                onBlur={() => commitGroupRename(group.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") commitGroupRename(group.id);
+                  if (event.key === "Escape") setEditingGroupId(null);
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="min-w-0 flex-1 truncate text-left text-xs font-medium"
+                onDoubleClick={() => beginGroupRename(group.id, group.name)}
+              >
+                {group.name}
+                <span className="ml-1 text-[10px] font-normal text-muted-foreground">
+                  ({memberCount})
+                </span>
+              </button>
+            )}
+          </div>
+
+          <MapLayerVerticalOpacity
+            value={group.opacity}
+            onChange={(opacity) => onPatchGroup(group.id, { opacity })}
+          />
+
+          <MapLayerDragHandle dragId={dragId} />
+
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-6 shrink-0 text-destructive/80 hover:text-destructive"
+            title={t("studio.layers.dissolveGroup")}
+            aria-label={t("studio.layers.dissolveGroup")}
+            onClick={() => onDeleteGroup(group.id)}
+          >
+            <Trash2 className="size-3" />
+          </Button>
+        </div>
+      </li>
+    </MapLayerDropRow>
+  );
 
   return (
     <aside
@@ -115,12 +384,7 @@ export function MapLayersPanel({
       )}
       aria-label={t("studio.layers.panelAria", { mapId })}
     >
-      <div
-        className={cn(
-          "flex items-center justify-between gap-2 px-3 py-2",
-          embedded ? "border-b border-border/60" : "border-b border-border/60",
-        )}
-      >
+      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
         {!embedded ? (
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t("studio.layers.title")}
@@ -128,182 +392,60 @@ export function MapLayersPanel({
         ) : (
           <span className="sr-only">{t("studio.layers.title")}</span>
         )}
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          className="size-7"
-          title={t("studio.layers.add")}
-          aria-label={t("studio.layers.add")}
-          onClick={onCreateLayer}
-        >
-          <Plus className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="size-7"
+            title={t("studio.layers.addGroup")}
+            aria-label={t("studio.layers.addGroup")}
+            onClick={handleCreateGroup}
+          >
+            <FolderPlus className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="size-7"
+            title={t("studio.layers.add")}
+            aria-label={t("studio.layers.add")}
+            onClick={onCreateLayer}
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
       </div>
 
-      <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
-        {panelLayers.map((layer) => {
-          const isActive = layer.id === activeLayerId;
-          const stackIndex = layerArrayIndex(drawing, layer.id);
-          const canMoveFront = stackIndex < drawing.layers.length - 1;
-          const canMoveBack = stackIndex > 0;
-          const strokeCount = countLayerStrokes(layer);
-
-          return (
-            <li
-              key={layer.id}
-              aria-selected={isActive}
-              className={cn(
-                "rounded-md border px-2 py-2 transition-colors",
-                isActive
-                  ? "border-primary/60 bg-muted shadow-sm ring-2 ring-primary ring-offset-1 ring-offset-background"
-                  : "border-border/50 bg-background/80 hover:bg-muted/40",
-              )}
-            >
-              <button
-                type="button"
-                className={cn(
-                  "mb-2 w-full rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                  isActive && "font-medium",
-                )}
-                aria-current={isActive ? "true" : undefined}
-                onClick={() => onSelectLayer(layer.id)}
-              >
-                {editingLayerId === layer.id ? (
-                  <input
-                    className="h-7 w-full rounded border border-input bg-background px-2 text-xs"
-                    value={editingName}
-                    autoFocus
-                    onChange={(event) => setEditingName(event.target.value)}
-                    onBlur={() => commitRename(layer.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        commitRename(layer.id);
-                      }
-                      if (event.key === "Escape") {
-                        setEditingLayerId(null);
-                      }
-                    }}
-                    onClick={(event) => event.stopPropagation()}
-                  />
-                ) : (
-                  <>
-                    <span
-                      className="block truncate text-xs font-medium"
-                      onDoubleClick={(event) => {
-                        event.stopPropagation();
-                        beginRename(layer.id, layer.name);
-                      }}
-                    >
-                      {layer.name}
-                    </span>
-                    {isActive ? (
-                      <span className="text-[10px] font-medium text-primary">
-                        {t("studio.layers.active")}
-                      </span>
-                    ) : null}
-                  </>
-                )}
-                <span className="text-[10px] text-muted-foreground">
-                  {t("studio.layers.strokeCount", { count: strokeCount })}
-                </span>
-              </button>
-
-              <div className="flex flex-wrap items-center gap-1">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  title={
-                    layer.visible ? t("studio.layers.hide") : t("studio.layers.show")
-                  }
-                  aria-pressed={layer.visible}
-                  onClick={() =>
-                    onPatchLayer(layer.id, { visible: !layer.visible }, "layerVisible")
-                  }
-                >
-                  {layer.visible ? (
-                    <Eye className="size-3.5" />
-                  ) : (
-                    <EyeOff className="size-3.5 text-muted-foreground" />
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  title={layer.locked ? t("studio.layers.unlock") : t("studio.layers.lock")}
-                  aria-pressed={layer.locked}
-                  onClick={() =>
-                    onPatchLayer(layer.id, { locked: !layer.locked }, "layerLock")
-                  }
-                >
-                  {layer.locked ? (
-                    <Lock className="size-3.5" />
-                  ) : (
-                    <LockOpen className="size-3.5 text-muted-foreground" />
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  disabled={!canMoveFront}
-                  title={t("studio.layers.moveUp")}
-                  onClick={() => onReorderLayer(layer.id, "front")}
-                >
-                  <ChevronUp className="size-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  disabled={!canMoveBack}
-                  title={t("studio.layers.moveDown")}
-                  onClick={() => onReorderLayer(layer.id, "back")}
-                >
-                  <ChevronDown className="size-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-7 text-destructive"
-                  disabled={drawing.layers.length <= 1}
-                  title={t("studio.layers.delete")}
-                  onClick={() => requestDelete(layer.id)}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </div>
-
-              <div className="mt-2 space-y-1">
-                <Label className="text-[10px] text-muted-foreground">
-                  {t("studio.layers.opacityLabel")}
-                </Label>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={Math.round(layer.opacity * 100)}
-                  className="h-1.5 w-full accent-primary"
-                  onChange={(event) =>
-                    onPatchLayer(
-                      layer.id,
-                      { opacity: Number(event.target.value) / 100 },
-                      "layerOpacity",
-                    )
-                  }
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <MapLayerListDnDProvider onReorder={onReorderPanelRow}>
+        <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-1.5">
+          {panelRows.map((row) => {
+            const dragId = panelRowDragId(row);
+            if (row.kind === "group") {
+              return (
+                <li key={dragId} className="space-y-0.5">
+                  {renderGroupRow(row.group, dragId, row.members.length)}
+                  {!row.group.collapsed
+                    ? row.members.map((member) =>
+                        renderLayerRow(
+                          member.layer,
+                          panelRowDragId({
+                            kind: "layer",
+                            layer: member.layer,
+                            stackIndex: member.stackIndex,
+                          }),
+                          true,
+                        ),
+                      )
+                    : null}
+                </li>
+              );
+            }
+            return renderLayerRow(row.layer, dragId);
+          })}
+        </ul>
+      </MapLayerListDnDProvider>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
@@ -317,7 +459,7 @@ export function MapLayersPanel({
             <Button type="button" variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("studio.layers.deleteCancel")}
             </Button>
-            <Button type="button" variant="destructive" onClick={confirmDelete}>
+            <Button type="button" variant="destructive" onClick={confirmDeleteLayer}>
               {t("studio.layers.deleteConfirm")}
             </Button>
           </DialogFooter>

@@ -85,6 +85,9 @@ export function MapLocationsPanel({
       <p className="border-b border-border/40 px-3 py-2 text-[11px] text-muted-foreground">
         {t("location.hint")}
       </p>
+      <p className="border-b border-border/40 px-3 py-2 text-[11px] text-muted-foreground">
+        {t("location.extractionHint")}
+      </p>
 
       {pinModeActive ? (
         <p className="border-b border-border/40 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-400">
@@ -179,9 +182,41 @@ export function MapLocationsPanel({
         })}
 
         {unpinnedAtT.length > 0 ? (
-          <p className="mt-2 px-2 text-[10px] text-muted-foreground">
-            {t("location.unpinnedCount", { count: unpinnedAtT.length })}
-          </p>
+          <>
+            <p className="mt-2 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+              {t("location.unpinnedSection", { count: unpinnedAtT.length })}
+            </p>
+            {unpinnedAtT.map((item) => (
+              <div
+                key={`unpinned-${item.locationKey}`}
+                className="mb-1 rounded-md border border-amber-500/30 bg-amber-500/5"
+              >
+                <div className="flex items-center justify-between gap-2 px-2 py-2 text-xs">
+                  <div className="min-w-0">
+                    <span className="block truncate font-medium">{item.label}</span>
+                    <span className="text-muted-foreground">{item.effectiveTimeRaw}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={placementTarget?.locationKey === item.locationKey ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 shrink-0 gap-1 px-2 text-[11px]"
+                    disabled={busy || Boolean(movePinId)}
+                    onClick={() => {
+                      if (placementTarget?.locationKey === item.locationKey) {
+                        onCancelPlacement();
+                      } else {
+                        onStartPlacement(item);
+                      }
+                    }}
+                  >
+                    <MapPin className="size-3" />
+                    {t("location.placePin")}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </>
         ) : null}
 
         {pins.length > 0 ? (

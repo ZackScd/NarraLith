@@ -1,5 +1,6 @@
 import { MAP_STUDIO_MIN_POINT_DISTANCE } from "@/lib/maps/mapBrushes";
 import { documentDistance } from "@/lib/maps/mapDrawCoords";
+import { resolveLayerEffectiveState } from "@/lib/maps/mapLayerGroups";
 import type {
   MapDrawingLayerV2,
   MapDrawingV2,
@@ -54,11 +55,11 @@ export function normalizeLayerName(name: string, fallbackIndex: number): string 
 
 /** Primera capa dibujable o, si ninguna, la primera del stack (MAP-006 D3). */
 export function resolveDefaultActiveLayerId(drawing: MapDrawingV2): string | null {
-  return (
-    drawing.layers.find((layer) => layer.visible && !layer.locked)?.id ??
-    drawing.layers[0]?.id ??
-    null
-  );
+  const drawable = drawing.layers.find((layer) => {
+    const effective = resolveLayerEffectiveState(layer, drawing.groups);
+    return effective.visible && !effective.locked;
+  });
+  return drawable?.id ?? drawing.layers[0]?.id ?? null;
 }
 
 /** Capa activa explícita o fallback a la primera dibujable (MAP-006 D3). */
@@ -69,10 +70,16 @@ export function resolveActiveLayer(
   if (activeLayerId) {
     const selected = drawing.layers.find((layer) => layer.id === activeLayerId);
     if (selected) {
-      return selected.visible && !selected.locked ? selected : null;
+      const effective = resolveLayerEffectiveState(selected, drawing.groups);
+      return effective.visible && !effective.locked ? selected : null;
     }
   }
-  return drawing.layers.find((layer) => layer.visible && !layer.locked) ?? null;
+  return (
+    drawing.layers.find((layer) => {
+      const effective = resolveLayerEffectiveState(layer, drawing.groups);
+      return effective.visible && !effective.locked;
+    }) ?? null
+  );
 }
 
 export function getDrawBlockReason(
@@ -82,10 +89,11 @@ export function getDrawBlockReason(
   if (activeLayerId) {
     const selected = drawing.layers.find((layer) => layer.id === activeLayerId);
     if (selected) {
-      if (selected.locked) {
+      const effective = resolveLayerEffectiveState(selected, drawing.groups);
+      if (effective.locked) {
         return "locked";
       }
-      if (!selected.visible) {
+      if (!effective.visible) {
         return "no_layer";
       }
       return null;
@@ -100,8 +108,11 @@ export function ensureActiveLayerId(
 ): string | null {
   if (current) {
     const layer = drawing.layers.find((item) => item.id === current);
-    if (layer?.visible && !layer.locked) {
-      return current;
+    if (layer) {
+      const effective = resolveLayerEffectiveState(layer, drawing.groups);
+      if (effective.visible && !effective.locked) {
+        return current;
+      }
     }
   }
   return resolveDefaultActiveLayerId(drawing);

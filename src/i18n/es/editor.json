@@ -76,7 +76,7 @@
     "eventCloseBlock": "Cerrar bloque de evento",
     "eventExpandBlock": "Expandir bloque de evento",
     "locationMapTitle": "Ubicación en mapa",
-    "locationMapHint": "Añade la etiqueta al manuscrito y ancla un pin en el mapa activo.",
+    "locationMapHint": "Insert the tag in the manuscript, or jump to the map at the event's T to place a pin.",
     "locationInsertOnly": "Solo etiqueta en el manuscrito",
     "locationInsertAndPin": "Etiqueta + anclar en mapa",
     "locationPinOnMapTooltip": "Abre el mapa en edición y coloca el pin con un clic",

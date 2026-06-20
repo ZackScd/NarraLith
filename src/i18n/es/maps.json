@@ -2,6 +2,7 @@
   "title": "Mapas",
   "editPanel": {
     "title": "Panel de edición del mapa",
+    "interactiveTitle": "Panel del mapa",
     "expand": "Expandir panel",
     "collapse": "Contraer panel",
     "sections": {
@@ -59,6 +60,7 @@
     }
   },
   "canvas": {
+    "sectionTitle": "Lienzo",
     "expandAction": "Expandir lienzo…",
     "cropAction": "Recortar lienzo…",
     "expandTitle": "Expandir lienzo",
@@ -87,6 +89,7 @@
   },
   "openPreference": {
     "label": "Al abrir",
+    "tooltip": "Qué mapa abrir al entrar al módulo: el último que viste, el fijado con ⭐ o el más reciente.",
     "lastViewed": "Último visto",
     "pinned": "Mapa fijado",
     "lastModified": "Último modificado"
@@ -97,7 +100,8 @@
     "unpin": "Quitar fijado"
   },
   "principal": {
-    "badge": "Terreno base"
+    "badge": "Base del mapa",
+    "badgeTitle": "Dibujo principal del mapa (sin parche temporal seleccionado para editar)"
   },
   "previewT": {
     "label": "Vista en T",
@@ -128,6 +132,8 @@
     "tiempoFinLabel": "Cerrar en",
     "closePatchLabel": "Cerrar parche en fecha",
     "dateRange": "{{start}} → {{end}}",
+    "visibleAtT": "Vigente en T",
+    "hiddenAtT": "Fuera de T",
     "createTitle": "Nuevo parche temporal",
     "createDescription": "Dibuja solo la zona que cambia; el resto del lienzo permanece transparente.",
     "createSubmit": "Crear parche",
@@ -170,6 +176,9 @@
     "panelAria": "Hotspots del mapa {{mapId}}",
     "drawZone": "Dibujar zona clickable",
     "drawHint": "Arrastra en el lienzo para definir el área. Solo en el terreno base.",
+    "interactiveHint": "En modo edición solo se dibujan zonas. En mapa interactivo, clic en zona → navegar al dibujo hijo.",
+    "targetNavLabel": "Destino: {{name}}",
+    "zoneSize": "Zona: {{width}}×{{height}} px",
     "empty": "Sin hotspots. Dibuja una zona y elige un dibujo hijo destino.",
     "delete": "Eliminar hotspot",
     "deleteTitle": "Eliminar hotspot",
@@ -189,11 +198,13 @@
     "panelTitle": "Ubicaciones",
     "panelAria": "Ubicaciones del mapa {{mapId}}",
     "hint": "Los pins anclan ubicaciones del manuscrito en el mapa. No crean etiquetas en el MS.",
+    "extractionHint": "Las ocurrencias se extraen del manuscrito según la vista en T (etiquetas de ubicación en eventos @ T).",
     "atT": "En T = {{time}}",
     "noTime": "sin T",
     "emptyAtT": "Sin ubicaciones en este instante.",
     "unpinned": "Sin pin en el mapa",
     "unpinnedCount": "{{count}} sin anclar en T",
+    "unpinnedSection": "Sin pin en T ({{count}})",
     "pinsTitle": "Pins del mapa",
     "placePin": "Colocar pin",
     "movePin": "Mover pin",
@@ -264,6 +275,9 @@
     },
     "sizeLabel": "Tamaño",
     "opacityLabel": "Opacidad",
+    "brushOpacityLabel": "Pincel",
+    "brushOpacityTooltip": "Opacidad del trazo al dibujar (no afecta capas ya guardadas)",
+    "activeTool": "Modo: {{tool}}",
     "undo": "Deshacer",
     "redo": "Rehacer",
     "customColor": "Color personalizado",
@@ -288,13 +302,28 @@
       "moveUp": "Subir capa",
       "moveDown": "Bajar capa",
       "delete": "Eliminar capa",
-      "opacityLabel": "Opacidad",
+      "opacityLabel": "Opacidad de capa",
+      "layerOpacityTooltip": "Opacidad de la capa en el compositor (no del pincel)",
+      "opacityValue": "Opacidad {{percent}} %",
       "lockedToast": "La capa activa está bloqueada.",
       "noLayerToast": "No hay capa activa disponible para dibujar.",
       "deleteTitle": "Eliminar capa",
       "deleteMessage": "Esta capa tiene {{count}} trazos. ¿Eliminarla?",
       "deleteCancel": "Cancelar",
-      "deleteConfirm": "Eliminar"
+      "deleteConfirm": "Eliminar",
+      "dragLayer": "Arrastrar para reordenar",
+      "emptyThumbnail": "—",
+      "addGroup": "Nueva carpeta",
+      "defaultGroupName": "Carpeta {{index}}",
+      "noGroup": "Sin carpeta",
+      "groupAssign": "Carpeta",
+      "dissolveGroup": "Disolver carpeta",
+      "collapseGroup": "Contraer carpeta",
+      "expandGroup": "Expandir carpeta",
+      "hideGroup": "Ocultar carpeta",
+      "showGroup": "Mostrar carpeta",
+      "lockGroup": "Bloquear carpeta",
+      "unlockGroup": "Desbloquear carpeta"
     }
   },
   "errors": {

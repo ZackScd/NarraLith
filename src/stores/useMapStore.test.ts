@@ -48,6 +48,7 @@ describe("useMapStore navStack", () => {
     expect(useMapStore.getState().navStack).toHaveLength(1);
     useMapStore.getState().navPop();
     expect(useMapStore.getState().navStack).toHaveLength(0);
+    expect(useMapStore.getState().activeDrawingRef).toEqual({ kind: "principal" });
   });
 
   it("setActiveMap resetea navStack al cambiar mapa", () => {

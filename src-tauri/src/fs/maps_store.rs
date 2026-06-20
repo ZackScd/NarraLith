@@ -113,11 +113,25 @@ struct ResolvedInitial {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct MapDrawingLayerGroupV2 {
+    pub id: String,
+    pub name: String,
+    pub visible: bool,
+    pub opacity: f64,
+    pub locked: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collapsed: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct MapDrawingV2 {
     pub version: u32,
     pub width: u32,
     pub height: u32,
     pub layers: Vec<MapDrawingLayerV2>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub groups: Vec<MapDrawingLayerGroupV2>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -129,6 +143,8 @@ pub struct MapDrawingLayerV2 {
     pub opacity: f64,
     pub locked: bool,
     pub strokes: Vec<MapStrokeV2>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -1526,7 +1542,9 @@ fn default_principal_drawing(width: u32, height: u32) -> MapDrawingV2 {
             opacity: 1.0,
             locked: false,
             strokes: Vec::new(),
+            group_id: None,
         }],
+        groups: Vec::new(),
     }
 }
 
@@ -1612,6 +1630,30 @@ fn validate_drawing(drawing: &MapDrawingV2) -> Result<(), AppError> {
         }
         if !(0.0..=1.0).contains(&layer.opacity) {
             return Err(AppError::new("error.maps.invalid_json"));
+        }
+        if let Some(group_id) = &layer.group_id {
+            if group_id.trim().is_empty() {
+                return Err(AppError::new("error.maps.invalid_json"));
+            }
+        }
+    }
+    let mut seen_group_ids = std::collections::HashSet::new();
+    for group in &drawing.groups {
+        if group.id.trim().is_empty() || !seen_group_ids.insert(group.id.clone()) {
+            return Err(AppError::new("error.maps.invalid_json"));
+        }
+        if group.name.trim().is_empty() {
+            return Err(AppError::new("error.maps.invalid_json"));
+        }
+        if !(0.0..=1.0).contains(&group.opacity) {
+            return Err(AppError::new("error.maps.invalid_json"));
+        }
+    }
+    for layer in &drawing.layers {
+        if let Some(group_id) = &layer.group_id {
+            if !seen_group_ids.contains(group_id) {
+                return Err(AppError::new("error.maps.invalid_json"));
+            }
         }
     }
     for stroke in drawing.layers.iter().flat_map(|l| &l.strokes) {
@@ -2200,6 +2242,7 @@ mod tests {
                     opacity: 1.0,
                     locked: false,
                     strokes: vec![],
+                    group_id: None,
                 },
                 MapDrawingLayerV2 {
                     id: "layer-a".to_string(),
@@ -2208,8 +2251,10 @@ mod tests {
                     opacity: 1.0,
                     locked: false,
                     strokes: vec![],
+                    group_id: None,
                 },
             ],
+            groups: Vec::new(),
         };
         assert!(validate_drawing(&drawing).is_err());
     }
@@ -2227,7 +2272,9 @@ mod tests {
                 opacity: 1.5,
                 locked: false,
                 strokes: vec![],
+                group_id: None,
             }],
+            groups: Vec::new(),
         };
         assert!(validate_drawing(&drawing).is_err());
     }

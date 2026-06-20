@@ -104,6 +104,15 @@ export interface MapStrokeV2 {
   points: MapStrokePointV2[];
 }
 
+export interface MapDrawingLayerGroupV2 {
+  id: string;
+  name: string;
+  visible: boolean;
+  opacity: number;
+  locked: boolean;
+  collapsed?: boolean;
+}
+
 export interface MapDrawingLayerV2 {
   id: string;
   name: string;
@@ -111,6 +120,7 @@ export interface MapDrawingLayerV2 {
   opacity: number;
   locked: boolean;
   strokes: MapStrokeV2[];
+  groupId?: string | null;
 }
 
 export interface MapDrawingV2 {
@@ -118,6 +128,7 @@ export interface MapDrawingV2 {
   width: number;
   height: number;
   layers: MapDrawingLayerV2[];
+  groups?: MapDrawingLayerGroupV2[];
 }
 
 /** Host del hotspot — v1 UI solo crea `principal`; `nav` reservado v1.1 */

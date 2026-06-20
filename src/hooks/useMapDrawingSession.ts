@@ -14,11 +14,10 @@ import {
   cloneDrawing,
   ensureActiveLayerId,
   MAP_UNDO_MAX_DEPTH,
-  moveLayerTowardBack,
-  moveLayerTowardFront,
   pushStrokeToLayer,
   removeLayer,
   removeStrokeFromLayer,
+  reorderLayers,
   resolveActiveLayer,
   resolveDefaultActiveLayerId,
   updateLayer,
@@ -26,6 +25,16 @@ import {
   type MapDrawingUndoOp,
   type MapLayerPatch,
 } from "@/lib/maps/mapDrawingSession";
+import {
+  addLayerGroup,
+  assignLayerToGroup,
+  buildLayerPanelRows,
+  panelRowDragId,
+  removeLayerGroup,
+  reorderPanelRows,
+  updateLayerGroup,
+  type LayerGroupPatch,
+} from "@/lib/maps/mapLayerGroups";
 import { strokeHadPressure } from "@/lib/maps/mapDrawingStats";
 import { trackAction } from "@/lib/action-audit/trackAction";
 import type { MapDrawingV2, MapStrokeV2 } from "@/lib/types/maps";
@@ -278,23 +287,71 @@ export function useMapDrawingSession({
     [drawing, mapId, mutateDrawing],
   );
 
-  const reorderLayer = useCallback(
-    (layerId: string, direction: "front" | "back") => {
+  const moveLayerToIndex = useCallback(
+    (layerId: string, toIndex: number) => {
       if (!drawing) return;
       const fromIndex = drawing.layers.findIndex((layer) => layer.id === layerId);
-      if (fromIndex === -1) return;
-      const next =
-        direction === "front"
-          ? moveLayerTowardFront(drawing, layerId)
-          : moveLayerTowardBack(drawing, layerId);
-      const toIndex = next.layers.findIndex((layer) => layer.id === layerId);
-      if (fromIndex === toIndex) return;
+      if (fromIndex === -1 || fromIndex === toIndex) return;
+      const next = reorderLayers(drawing, fromIndex, toIndex);
       mutateDrawing(() => next);
       if (mapId) {
-        trackAction("map", "layerReorder", { mapId, layerId, fromIndex, toIndex });
+        trackAction("map", "layerReorder", {
+          mapId,
+          layerId,
+          fromIndex,
+          toIndex,
+        });
       }
     },
     [drawing, mapId, mutateDrawing],
+  );
+
+  const createGroup = useCallback(
+    (name?: string) => {
+      if (!drawing) return null;
+      const result = addLayerGroup(drawing, name);
+      mutateDrawing(() => result.drawing);
+      const group = result.drawing.groups?.find((item) => item.id === result.groupId);
+      if (!group) return null;
+      return { groupId: group.id, name: group.name };
+    },
+    [drawing, mutateDrawing],
+  );
+
+  const deleteGroup = useCallback(
+    (groupId: string) => {
+      if (!drawing) return;
+      mutateDrawing(() => removeLayerGroup(drawing, groupId));
+    },
+    [drawing, mutateDrawing],
+  );
+
+  const patchGroup = useCallback(
+    (groupId: string, patch: LayerGroupPatch) => {
+      if (!drawing) return;
+      mutateDrawing(() => updateLayerGroup(drawing, groupId, patch));
+    },
+    [drawing, mutateDrawing],
+  );
+
+  const assignLayerGroup = useCallback(
+    (layerId: string, groupId: string | null) => {
+      if (!drawing) return;
+      mutateDrawing(() => assignLayerToGroup(drawing, layerId, groupId));
+    },
+    [drawing, mutateDrawing],
+  );
+
+  const reorderPanelRow = useCallback(
+    (fromDragId: string, toDragId: string) => {
+      if (!drawing || fromDragId === toDragId) return;
+      const rows = buildLayerPanelRows(drawing);
+      const fromRow = rows.find((row) => panelRowDragId(row) === fromDragId);
+      const toRow = rows.find((row) => panelRowDragId(row) === toDragId);
+      if (!fromRow || !toRow) return;
+      mutateDrawing(() => reorderPanelRows(drawing, fromRow, toRow));
+    },
+    [drawing, mutateDrawing],
   );
 
   const commitStroke = useCallback(
@@ -417,6 +474,11 @@ export function useMapDrawingSession({
     createLayer,
     deleteLayer,
     patchLayer,
-    reorderLayer,
+    moveLayerToIndex,
+    createGroup,
+    deleteGroup,
+    patchGroup,
+    assignLayerGroup,
+    reorderPanelRow,
   };
 }

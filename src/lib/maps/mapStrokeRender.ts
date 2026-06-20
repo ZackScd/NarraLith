@@ -1,5 +1,6 @@
 import { segmentStrokeStyle } from "@/lib/maps/mapBrushEngine";
 import type { MapDrawingLayerV2, MapDrawingV2, MapStrokePointV2, MapStrokeV2 } from "@/lib/types/maps";
+import { resolveLayerEffectiveState } from "@/lib/maps/mapLayerGroups";
 
 export interface StrokePolyline {
   strokeId: string;
@@ -15,15 +16,32 @@ export function buildStrokePolylines(stroke: MapStrokeV2): StrokePolyline | null
   };
 }
 
-export function buildLayerPolylines(layer: MapDrawingLayerV2): StrokePolyline[] {
-  if (!layer.visible) return [];
+export function buildLayerPolylines(
+  layer: MapDrawingLayerV2,
+  groups?: MapDrawingV2["groups"],
+): StrokePolyline[] {
+  const effective = resolveLayerEffectiveState(layer, groups);
+  if (!effective.visible) return [];
   return layer.strokes
     .map(buildStrokePolylines)
     .filter((polyline): polyline is StrokePolyline => polyline !== null);
 }
 
+/** Dibuja los trazos de una capa (sin preview). */
+export function drawLayerStrokes(
+  ctx: CanvasRenderingContext2D,
+  layer: MapDrawingLayerV2,
+): void {
+  ctx.save();
+  ctx.globalAlpha = layer.opacity;
+  for (const stroke of layer.strokes) {
+    drawStroke(ctx, stroke, layer.opacity);
+  }
+  ctx.restore();
+}
+
 export function buildDrawingPolylines(drawing: MapDrawingV2): StrokePolyline[] {
-  return drawing.layers.flatMap(buildLayerPolylines);
+  return drawing.layers.flatMap((layer) => buildLayerPolylines(layer, drawing.groups));
 }
 
 export function drawMapStrokes(
@@ -33,11 +51,12 @@ export function drawMapStrokes(
   activeLayerId?: string | null,
 ): void {
   for (const layer of drawing.layers) {
-    if (!layer.visible) continue;
+    const effective = resolveLayerEffectiveState(layer, drawing.groups);
+    if (!effective.visible) continue;
     ctx.save();
-    ctx.globalAlpha = layer.opacity;
+    ctx.globalAlpha = effective.opacity;
     for (const stroke of layer.strokes) {
-      drawStroke(ctx, stroke, layer.opacity);
+      drawStroke(ctx, stroke, effective.opacity);
     }
     ctx.restore();
   }
@@ -46,8 +65,13 @@ export function drawMapStrokes(
     const layer =
       (activeLayerId
         ? drawing.layers.find((item) => item.id === activeLayerId)
-        : null) ?? drawing.layers.find((item) => item.visible && !item.locked);
-    const layerOpacity = layer?.opacity ?? 1;
+        : null) ?? drawing.layers.find((item) => {
+        const effective = resolveLayerEffectiveState(item, drawing.groups);
+        return effective.visible && !effective.locked;
+      });
+    const layerOpacity = layer
+      ? resolveLayerEffectiveState(layer, drawing.groups).opacity
+      : 1;
     ctx.save();
     ctx.globalAlpha = layerOpacity;
     drawStroke(ctx, previewStroke, layerOpacity);

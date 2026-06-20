@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatMapDesdeDisplay } from "@/lib/maps/mapDesde";
+import { isSecondaryVisibleAtT } from "@/lib/maps/mapSecondaryVisibility";
 import type { CalendarConfig } from "@/lib/types/calendar";
 import type { MapDrawingRef, MapSecondarySummaryV1 } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ interface MapSecondariesPanelProps {
   defaultTiempoInicio: string | null;
   calendar: CalendarConfig | null;
   secondaries: MapSecondarySummaryV1[];
+  previewT: string | null;
   activeDrawingRef: MapDrawingRef;
   busy?: boolean;
   embedded?: boolean;
@@ -47,6 +49,7 @@ export function MapSecondariesPanel({
   defaultTiempoInicio,
   calendar,
   secondaries,
+  previewT,
   activeDrawingRef,
   busy = false,
   onSelectDrawing,
@@ -61,6 +64,15 @@ export function MapSecondariesPanel({
   const [deleteTarget, setDeleteTarget] = useState<MapSecondarySummaryV1 | null>(null);
 
   const isPrincipalActive = activeDrawingRef.kind === "principal";
+  const previewActive = Boolean(previewT && calendar);
+
+  const isVisibleAtPreviewT = (item: MapSecondarySummaryV1) => {
+    if (!previewActive || !previewT) return false;
+    return isSecondaryVisibleAtT(item, mapDesde, previewT, calendar!);
+  };
+
+  const principalVisibleAtT =
+    previewActive && secondaries.every((item) => !isVisibleAtPreviewT(item));
 
   const formatRange = (item: MapSecondarySummaryV1) => {
     const start = formatMapDesdeDisplay(item.tiempoInicio, calendar);
@@ -104,24 +116,35 @@ export function MapSecondariesPanel({
         <button
           type="button"
           className={cn(
-            "mb-1 flex w-full flex-col rounded-md px-2 py-2 text-left text-xs transition-colors",
-            isPrincipalActive ? "bg-muted" : "hover:bg-muted/60",
+            "mb-1 flex w-full flex-col rounded-md border px-2 py-2 text-left text-xs transition-colors",
+            isPrincipalActive ? "border-primary/40 bg-muted" : "border-transparent hover:bg-muted/60",
+            principalVisibleAtT && !isPrincipalActive && "border-emerald-500/40 opacity-100",
           )}
           onClick={() => onSelectDrawing({ kind: "principal" })}
         >
-          <span className="font-medium">{t("principal.badge")}</span>
+          <span className="flex items-center gap-2 font-medium">
+            {t("principal.badge")}
+            {principalVisibleAtT ? (
+              <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                {t("secondary.visibleAtT")}
+              </span>
+            ) : null}
+          </span>
           <span className="text-muted-foreground">{t("secondary.principalHint")}</span>
         </button>
 
         {secondaries.map((item) => {
           const isActive =
             activeDrawingRef.kind === "secondary" && activeDrawingRef.id === item.id;
+          const visibleAtT = isVisibleAtPreviewT(item);
           return (
             <div
               key={item.id}
               className={cn(
-                "mb-1 rounded-md border border-transparent",
-                isActive ? "bg-muted" : "hover:bg-muted/60",
+                "mb-1 rounded-md border transition-colors",
+                isActive ? "border-primary/40 bg-muted" : "border-transparent hover:bg-muted/60",
+                previewActive && visibleAtT && "border-emerald-500/40",
+                previewActive && !visibleAtT && "opacity-45",
               )}
             >
               <button
@@ -129,7 +152,18 @@ export function MapSecondariesPanel({
                 className="flex w-full flex-col px-2 py-2 text-left text-xs"
                 onClick={() => onSelectDrawing({ kind: "secondary", id: item.id })}
               >
-                <span className="font-medium">{item.name}</span>
+                <span className="flex items-center gap-2 font-medium">
+                  {item.name}
+                  {previewActive && visibleAtT ? (
+                    <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                      {t("secondary.visibleAtT")}
+                    </span>
+                  ) : previewActive ? (
+                    <span className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                      {t("secondary.hiddenAtT")}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="text-muted-foreground">{formatRange(item)}</span>
               </button>
               <div className="flex justify-end gap-1 px-2 pb-2">

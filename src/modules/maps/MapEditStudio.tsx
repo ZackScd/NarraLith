@@ -21,8 +21,8 @@ interface MapEditStudioProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  onExpand: () => void;
-  onCrop: () => void;
+  onExpand?: () => void;
+  onCrop?: () => void;
   embedded?: boolean;
 }
 
@@ -74,6 +74,7 @@ export function MapEditStudio({
   const disabled = canvasBusy;
   const showBrushControls = tool === "brush";
   const saveLabelKey = saveStatusLabelKey(saveStatus, isDirty);
+  const activeToolLabel = TOOLS.find((entry) => entry.id === tool)?.labelKey;
 
   const handleToolChange = (next: MapStudioTool) => {
     if (next === tool) return;
@@ -158,7 +159,12 @@ export function MapEditStudio({
 
         {showBrushControls ? (
           <div className="flex min-w-[140px] flex-1 items-center gap-2 text-xs text-muted-foreground">
-            <span className="w-10 shrink-0">{t("studio.opacityLabel")}</span>
+            <span
+              className="w-10 shrink-0"
+              title={t("studio.brushOpacityTooltip")}
+            >
+              {t("studio.brushOpacityLabel")}
+            </span>
             <input
               type="range"
               min={5}
@@ -167,7 +173,8 @@ export function MapEditStudio({
               disabled={disabled}
               className="min-w-0 flex-1 accent-primary"
               value={Math.round(baseOpacity * 100)}
-              aria-label={t("studio.opacityLabel")}
+              aria-label={t("studio.brushOpacityLabel")}
+              title={t("studio.brushOpacityTooltip")}
               onChange={(e) => setBaseOpacity(Number(e.target.value) / 100)}
             />
             <span className="w-7 shrink-0 text-right tabular-nums">
@@ -220,6 +227,13 @@ export function MapEditStudio({
         ) : null}
       </div>
 
+      {embedded && activeToolLabel ? (
+        <p className="text-[10px] text-muted-foreground">
+          {t("studio.activeTool", { tool: t(activeToolLabel) })}
+        </p>
+      ) : null}
+
+      {!embedded && onExpand && onCrop ? (
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button
           type="button"
@@ -240,6 +254,7 @@ export function MapEditStudio({
           {t("canvas.cropAction")}
         </Button>
       </div>
+      ) : null}
     </div>
   );
 }

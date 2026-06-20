@@ -1,10 +1,28 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useMapEditPanelStore } from "@/stores/useMapEditPanelStore";
 
+function mockSessionStorage() {
+  const store = new Map<string, string>();
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => {
+      store.clear();
+    },
+  };
+}
+
 describe("useMapEditPanelStore", () => {
   beforeEach(() => {
+    vi.stubGlobal("sessionStorage", mockSessionStorage());
     useMapEditPanelStore.setState({
+      mapId: null,
       contentExpanded: true,
       activeSection: "layers",
     });
@@ -24,6 +42,26 @@ describe("useMapEditPanelStore", () => {
     expect(useMapEditPanelStore.getState()).toMatchObject({
       contentExpanded: true,
       activeSection: "maps",
+    });
+  });
+
+  it("syncForMap restaura estado persistido por mapa", () => {
+    useMapEditPanelStore.getState().syncForMap("map-a");
+    useMapEditPanelStore.getState().openSection("patches");
+    useMapEditPanelStore.getState().toggleContentExpanded();
+
+    useMapEditPanelStore.getState().syncForMap("map-b");
+    expect(useMapEditPanelStore.getState()).toMatchObject({
+      mapId: "map-b",
+      activeSection: "layers",
+      contentExpanded: true,
+    });
+
+    useMapEditPanelStore.getState().syncForMap("map-a");
+    expect(useMapEditPanelStore.getState()).toMatchObject({
+      mapId: "map-a",
+      activeSection: "patches",
+      contentExpanded: false,
     });
   });
 });

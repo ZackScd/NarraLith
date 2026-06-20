@@ -2,6 +2,7 @@
   "title": "Maps",
   "editPanel": {
     "title": "Map edit panel",
+    "interactiveTitle": "Map panel",
     "expand": "Expand panel",
     "collapse": "Collapse panel",
     "sections": {
@@ -59,6 +60,7 @@
     }
   },
   "canvas": {
+    "sectionTitle": "Canvas",
     "expandAction": "Expand canvas…",
     "cropAction": "Crop canvas…",
     "expandTitle": "Expand canvas",
@@ -87,6 +89,7 @@
   },
   "openPreference": {
     "label": "On open",
+    "tooltip": "Which map to show when entering the module: last viewed, starred pin, or most recently modified.",
     "lastViewed": "Last viewed",
     "pinned": "Pinned map",
     "lastModified": "Last modified"
@@ -97,7 +100,8 @@
     "unpin": "Unpin"
   },
   "principal": {
-    "badge": "Base terrain"
+    "badge": "Map base",
+    "badgeTitle": "Main map drawing (no temporal patch selected for editing)"
   },
   "previewT": {
     "label": "View at T",
@@ -128,6 +132,8 @@
     "tiempoFinLabel": "Close at",
     "closePatchLabel": "Close patch on date",
     "dateRange": "{{start}} → {{end}}",
+    "visibleAtT": "Active at T",
+    "hiddenAtT": "Outside T",
     "createTitle": "New temporal patch",
     "createDescription": "Draw only the changing area; the rest of the canvas stays transparent.",
     "createSubmit": "Create patch",
@@ -170,6 +176,9 @@
     "panelAria": "Hotspots for map {{mapId}}",
     "drawZone": "Draw clickable zone",
     "drawHint": "Drag on the canvas to define the area. Base terrain only.",
+    "interactiveHint": "In edit mode you draw zones only. In interactive mode, click a zone to navigate to the child drawing.",
+    "targetNavLabel": "Target: {{name}}",
+    "zoneSize": "Zone: {{width}}×{{height}} px",
     "empty": "No hotspots. Draw a zone and pick a child drawing target.",
     "delete": "Delete hotspot",
     "deleteTitle": "Delete hotspot",
@@ -189,11 +198,13 @@
     "panelTitle": "Locations",
     "panelAria": "Locations for map {{mapId}}",
     "hint": "Pins anchor manuscript locations on the map. They do not create MS tags.",
+    "extractionHint": "Occurrences are extracted from the manuscript at preview T (location tags in events @ T).",
     "atT": "At T = {{time}}",
     "noTime": "no T",
     "emptyAtT": "No locations at this time.",
     "unpinned": "No pin on map",
     "unpinnedCount": "{{count}} unpinned at T",
+    "unpinnedSection": "Unpinned at T ({{count}})",
     "pinsTitle": "Map pins",
     "placePin": "Place pin",
     "movePin": "Move pin",
@@ -264,6 +275,9 @@
     },
     "sizeLabel": "Size",
     "opacityLabel": "Opacity",
+    "brushOpacityLabel": "Brush",
+    "brushOpacityTooltip": "Stroke opacity while drawing (does not change saved layer opacity)",
+    "activeTool": "Mode: {{tool}}",
     "undo": "Undo",
     "redo": "Redo",
     "customColor": "Custom color",
@@ -288,13 +302,28 @@
       "moveUp": "Move layer up",
       "moveDown": "Move layer down",
       "delete": "Delete layer",
-      "opacityLabel": "Opacity",
+      "opacityLabel": "Layer opacity",
+      "layerOpacityTooltip": "Layer opacity in the compositor (not brush opacity)",
+      "opacityValue": "Opacity {{percent}}%",
       "lockedToast": "The active layer is locked.",
       "noLayerToast": "No active layer is available for drawing.",
       "deleteTitle": "Delete layer",
       "deleteMessage": "This layer has {{count}} strokes. Delete it?",
       "deleteCancel": "Cancel",
-      "deleteConfirm": "Delete"
+      "deleteConfirm": "Delete",
+      "dragLayer": "Drag to reorder",
+      "emptyThumbnail": "—",
+      "addGroup": "New folder",
+      "defaultGroupName": "Folder {{index}}",
+      "noGroup": "No folder",
+      "groupAssign": "Folder",
+      "dissolveGroup": "Dissolve folder",
+      "collapseGroup": "Collapse folder",
+      "expandGroup": "Expand folder",
+      "hideGroup": "Hide folder",
+      "showGroup": "Show folder",
+      "lockGroup": "Lock folder",
+      "unlockGroup": "Unlock folder"
     }
   },
   "errors": {

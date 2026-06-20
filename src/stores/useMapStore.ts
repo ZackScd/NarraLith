@@ -60,7 +60,22 @@ export const useMapStore = create<MapStoreV2>((set) => ({
         previewTimeByMapId: nextByMapId,
       };
     }),
-  setViewMode: (mode) => set({ viewMode: mode }),
+  setViewMode: (mode) =>
+    set((state) => {
+      if (mode === "edit") {
+        return {
+          viewMode: mode,
+          navStack: [],
+        };
+      }
+      if (mode === "interactive" && state.navStack.length === 0) {
+        return {
+          viewMode: mode,
+          activeDrawingRef: DEFAULT_MAP_DRAWING_REF,
+        };
+      }
+      return { viewMode: mode };
+    }),
   setActiveDrawingRef: (ref) => set({ activeDrawingRef: ref }),
   navPush: (frame) =>
     set((state) => ({
@@ -71,10 +86,15 @@ export const useMapStore = create<MapStoreV2>((set) => ({
       if (state.navStack.length === 0) {
         return state;
       }
-      if (toDepth === undefined) {
-        return { navStack: state.navStack.slice(0, -1) };
-      }
-      return { navStack: state.navStack.slice(0, Math.max(0, toDepth)) };
+      const nextStack =
+        toDepth === undefined
+          ? state.navStack.slice(0, -1)
+          : state.navStack.slice(0, Math.max(0, toDepth));
+      return {
+        navStack: nextStack,
+        activeDrawingRef:
+          nextStack.length === 0 ? DEFAULT_MAP_DRAWING_REF : state.activeDrawingRef,
+      };
     }),
   resetNavStack: () => set({ navStack: [] }),
   setPreviewTimeTRaw: (raw, mapId) =>

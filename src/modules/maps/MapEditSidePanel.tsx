@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   Layers,
   Map as MapIcon,
@@ -7,6 +8,7 @@ import {
   Paintbrush,
   PanelRightClose,
   PanelRightOpen,
+  Pencil,
   Sticker,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -19,26 +21,30 @@ import {
 } from "@/stores/useMapEditPanelStore";
 
 interface MapEditSidePanelProps {
+  isEditMode: boolean;
   isNavView: boolean;
+  onToggleEditMode: () => void;
   mapsSection: React.ReactNode;
   layersSection: React.ReactNode | null;
-  patchesSection: React.ReactNode;
+  patchesSection: React.ReactNode | null;
   navSection: React.ReactNode | null;
   hotspotsSection: React.ReactNode | null;
   locationsSection: React.ReactNode | null;
   studioSection: React.ReactNode | null;
 }
 
-type RailItem = {
+type RailSectionItem = {
+  kind: "section";
   id: MapEditPanelSectionId;
   icon: typeof MapIcon;
   labelKey: string;
   hidden?: boolean;
-  disabled?: boolean;
 };
 
 export function MapEditSidePanel({
+  isEditMode,
   isNavView,
+  onToggleEditMode,
   mapsSection,
   layersSection,
   patchesSection,
@@ -53,29 +59,37 @@ export function MapEditSidePanel({
   const toggleContentExpanded = useMapEditPanelStore((s) => s.toggleContentExpanded);
   const openSection = useMapEditPanelStore((s) => s.openSection);
 
-  const railItems: RailItem[] = [
-    { id: "maps", icon: MapIcon, labelKey: "editPanel.sections.maps" },
-    { id: "layers", icon: Layers, labelKey: "editPanel.sections.layers" },
-    { id: "patches", icon: Sticker, labelKey: "editPanel.sections.patches" },
+  useEffect(() => {
+    if (!isEditMode && activeSection !== "maps") {
+      openSection("maps");
+    }
+  }, [activeSection, isEditMode, openSection]);
+
+  const editRailSections: RailSectionItem[] = [
+    { kind: "section", id: "layers", icon: Layers, labelKey: "editPanel.sections.layers" },
+    { kind: "section", id: "patches", icon: Sticker, labelKey: "editPanel.sections.patches" },
     {
+      kind: "section",
       id: "nav",
       icon: Network,
       labelKey: "editPanel.sections.nav",
       hidden: isNavView,
     },
     {
+      kind: "section",
       id: "hotspots",
       icon: MousePointerClick,
       labelKey: "editPanel.sections.hotspots",
       hidden: isNavView,
     },
     {
+      kind: "section",
       id: "locations",
       icon: MapPin,
       labelKey: "editPanel.sections.locations",
       hidden: isNavView,
     },
-    { id: "studio", icon: Paintbrush, labelKey: "editPanel.sections.studio" },
+    { kind: "section", id: "studio", icon: Paintbrush, labelKey: "editPanel.sections.studio" },
   ];
 
   const sectionContent: Record<MapEditPanelSectionId, React.ReactNode | null> = {
@@ -89,13 +103,17 @@ export function MapEditSidePanel({
   };
 
   const activeLabelKey =
-    railItems.find((item) => item.id === activeSection)?.labelKey ??
-    "editPanel.sections.layers";
+    activeSection === "maps"
+      ? "editPanel.sections.maps"
+      : (editRailSections.find((item) => item.id === activeSection)?.labelKey ??
+        "editPanel.sections.layers");
+
+  const panelContent = sectionContent[activeSection];
 
   return (
     <aside
       className="flex h-full min-h-0 shrink-0 border-l border-border/60 bg-card"
-      aria-label={t("editPanel.title")}
+      aria-label={t(isEditMode ? "editPanel.title" : "editPanel.interactiveTitle")}
     >
       {contentExpanded ? (
         <div className="flex min-h-0 w-64 flex-col">
@@ -104,9 +122,7 @@ export function MapEditSidePanel({
               {t(activeLabelKey)}
             </h2>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            {sectionContent[activeSection]}
-          </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{panelContent}</div>
         </div>
       ) : null}
 
@@ -116,12 +132,8 @@ export function MapEditSidePanel({
           size="icon"
           variant="ghost"
           className="size-8"
-          title={
-            contentExpanded ? t("editPanel.collapse") : t("editPanel.expand")
-          }
-          aria-label={
-            contentExpanded ? t("editPanel.collapse") : t("editPanel.expand")
-          }
+          title={contentExpanded ? t("editPanel.collapse") : t("editPanel.expand")}
+          aria-label={contentExpanded ? t("editPanel.collapse") : t("editPanel.expand")}
           onClick={toggleContentExpanded}
         >
           {contentExpanded ? (
@@ -131,29 +143,57 @@ export function MapEditSidePanel({
           )}
         </Button>
 
-        {railItems
-          .filter((item) => !item.hidden)
-          .map(({ id, icon: Icon, labelKey, disabled }) => (
-            <Button
-              key={id}
-              type="button"
-              size="icon"
-              variant={activeSection === id && contentExpanded ? "secondary" : "ghost"}
-              className={cn(
-                "size-8",
-                activeSection === id &&
-                  contentExpanded &&
-                  "border border-primary/30",
-              )}
-              disabled={disabled}
-              title={t(labelKey)}
-              aria-label={t(labelKey)}
-              aria-pressed={activeSection === id && contentExpanded}
-              onClick={() => openSection(id)}
-            >
-              <Icon className="size-4" />
-            </Button>
-          ))}
+        <Button
+          type="button"
+          size="icon"
+          variant={activeSection === "maps" && contentExpanded ? "secondary" : "ghost"}
+          className={cn(
+            "size-8",
+            activeSection === "maps" && contentExpanded && "border border-primary/30",
+          )}
+          title={t("editPanel.sections.maps")}
+          aria-label={t("editPanel.sections.maps")}
+          aria-pressed={activeSection === "maps" && contentExpanded}
+          onClick={() => openSection("maps")}
+        >
+          <MapIcon className="size-4" />
+        </Button>
+
+        <Button
+          type="button"
+          size="icon"
+          variant={isEditMode ? "secondary" : "ghost"}
+          className={cn("size-8", isEditMode && "border border-primary/30")}
+          title={isEditMode ? t("viewMode.exitEdit") : t("viewMode.enterEdit")}
+          aria-label={isEditMode ? t("viewMode.exitEdit") : t("viewMode.enterEdit")}
+          aria-pressed={isEditMode}
+          onClick={onToggleEditMode}
+        >
+          <Pencil className="size-4" />
+        </Button>
+
+        {isEditMode
+          ? editRailSections
+              .filter((item) => !item.hidden)
+              .map(({ id, icon: Icon, labelKey }) => (
+                <Button
+                  key={id}
+                  type="button"
+                  size="icon"
+                  variant={activeSection === id && contentExpanded ? "secondary" : "ghost"}
+                  className={cn(
+                    "size-8",
+                    activeSection === id && contentExpanded && "border border-primary/30",
+                  )}
+                  title={t(labelKey)}
+                  aria-label={t(labelKey)}
+                  aria-pressed={activeSection === id && contentExpanded}
+                  onClick={() => openSection(id)}
+                >
+                  <Icon className="size-4" />
+                </Button>
+              ))
+          : null}
       </div>
     </aside>
   );

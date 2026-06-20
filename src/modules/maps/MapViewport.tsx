@@ -40,6 +40,7 @@ interface MapViewportProps {
   composeNavDrawing?: MapDrawingV2 | null;
   composeNavDrawingRefKey?: string;
   hotspotOverlays?: MapHotspotV1[];
+  hotspotOverlayStyle?: "edit" | "interactive";
   hotspotDrawMode?: boolean;
   locationMarkers?: MapLocatedMarkerV1[];
   locationPinPlacementActive?: boolean;
@@ -63,7 +64,11 @@ function viewportCursor(
   tool: MapStudioTool,
   hotspotDrawMode: boolean,
   locationPinMode: boolean,
+  hasHotspots: boolean,
 ): string {
+  if (viewMode === "interactive" && hasHotspots) {
+    return "cursor-pointer";
+  }
   if (viewMode !== "edit") {
     return "cursor-grab active:cursor-grabbing";
   }
@@ -92,6 +97,7 @@ export function MapViewport({
   composeNavDrawing = null,
   composeNavDrawingRefKey,
   hotspotOverlays = [],
+  hotspotOverlayStyle = "edit",
   hotspotDrawMode = false,
   locationMarkers = [],
   locationPinPlacementActive = false,
@@ -162,6 +168,7 @@ export function MapViewport({
     activeLayerId,
     studioTool: tool,
     hotspotOverlays,
+    hotspotOverlayStyle,
     hotspotDraftBounds,
     locationMarkers: interactiveLocationMarkers,
     locationPinDraft: viewMode === "edit" ? locationPinDraft : null,
@@ -315,7 +322,7 @@ export function MapViewport({
         ref={canvasRef}
         className={cn(
           "block h-full w-full touch-none",
-          viewportCursor(viewMode, tool, hotspotDrawMode, locationPinMode),
+          viewportCursor(viewMode, tool, hotspotDrawMode, locationPinMode, hotspotOverlays.length > 0),
         )}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
