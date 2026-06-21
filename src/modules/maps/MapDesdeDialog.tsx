@@ -35,6 +35,7 @@ interface MapDesdeDialogProps {
   events: TimelineEvent[];
   busy: boolean;
   onSave: (desde: string) => Promise<void>;
+  onSuggest?: () => Promise<void>;
   titleKey?: string;
   descriptionKey?: string;
 }
@@ -92,6 +93,7 @@ export function MapDesdeDialog({
   events,
   busy,
   onSave,
+  onSuggest,
   titleKey = "desde.dialogTitle",
   descriptionKey = "desde.dialogDescription",
 }: MapDesdeDialogProps) {
@@ -207,14 +209,29 @@ export function MapDesdeDialog({
             <p className="text-sm text-destructive">{t(errorKey)}</p>
           ) : null}
 
-          <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t("desde.cancel")}
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-              {t("desde.save")}
-            </Button>
+          <DialogFooter className="mt-4 gap-2 sm:justify-between">
+            <div>
+              {onSuggest && !initialDesde?.trim() ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => void onSuggest()}
+                >
+                  {t("desde.suggest")}
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                {t("desde.cancel")}
+              </Button>
+              <Button type="submit" disabled={busy}>
+                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                {t("desde.save")}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

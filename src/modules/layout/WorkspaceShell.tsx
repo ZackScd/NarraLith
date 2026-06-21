@@ -18,6 +18,9 @@ import { UnsavedChangesDialog } from "@/modules/editor/UnsavedChangesDialog";
 import { FileExplorer } from "@/modules/explorer/FileExplorer";
 import { GlobalNav } from "@/modules/layout/GlobalNav";
 import { ResizableLeftPanel } from "@/modules/layout/ResizableLeftPanel";
+import {
+  MAP_SIDE_PANEL_RAIL_MOUNT_ID,
+} from "@/modules/layout/mapSidePanelMount";
 import { ResizableRightPanel } from "@/modules/layout/ResizableRightPanel";
 import { WorkspaceTopBar } from "@/modules/layout/WorkspaceTopBar";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
@@ -150,6 +153,12 @@ export function WorkspaceShell() {
         >
           <TimelineSidePanel />
         </ResizableRightPanel>
+      ) : null}
+
+      {mainView === "map" ? (
+        <aside className="flex h-full w-10 shrink-0 flex-col overflow-hidden bg-card">
+          <div id={MAP_SIDE_PANEL_RAIL_MOUNT_ID} className="h-full min-h-0 w-full" />
+        </aside>
       ) : null}
 
       <UnsavedChangesDialog />

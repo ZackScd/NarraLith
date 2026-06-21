@@ -41,8 +41,8 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 |------|---------|
 | **Columna izq.** | PARCHES + DIBUJOS HIJO (+ Hotspots, Ubicaciones) — **→ migrar a panel derecho §2bis** |
 | **Columna der.** | CAPAS — **→ sección rail Capas §2bis**; rediseño contenido §7 |
-| **Cabecera** | Selector + «Al abrir» + pin — **→ sección rail Mapas §2bis** |
-| **Barra amarilla** | «Desde» + «Vista en T» separados — **→ fusionar Desde con timeline abajo §2bis.3** |
+| **Cabecera** | Selector + «Al abrir» + pin — **→ §2ter cabecera operativa** (pendiente) |
+| **Barra amarilla** | «Desde» + «Vista en T» separados — **→ Desde a top bar §2ter**; scrubber abajo §2bis.3 |
 | **Pie rojo** | Estudio dibujo — **→ sección rail Estudio §2bis** |
 
 **Conclusión:** no falta funcionalidad; falta **jerarquía visual**, **agrupación** y **coherencia** entre modos interactivo / edición.
@@ -58,7 +58,7 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 | Zona actual (rojo) | Destino |
 |--------------------|---------|
-| Cabecera: selector mapa, «Al abrir», pin ⭐ | Sección **Mapas** del panel derecho |
+| Cabecera: selector mapa, «Al abrir», pin ⭐ | **§2ter** — cabecera `WorkspaceTopBar` (lista, pin, +); «Al abrir» ya en ⚙ |
 | Columna **izq.**: PARCHES, DIBUJOS HIJO (+ Hotspots, Ubicaciones hoy) | Secciones del panel derecho (una por icono) |
 | Barra **inferior** estudio: herramientas, colores, tamaño, opacidad pincel, undo | Sección **Estudio** del panel derecho (o sub-panel) |
 | Botones expandir/recortar lienzo (pie) | Sección **Lienzo** del rail (icono recorte, debajo de Estudio) |
@@ -68,8 +68,8 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 | Zona | Notas |
 |------|-------|
 | Lienzo central | Máximo espacio posible |
-| Cabecera mínima | Título mapa + «Ver mapa interactivo» / salir edición — **sin** selector ni preferencias |
-| **Timeline + Desde** | Pie fijo — ver §2bis.3 |
+| Cabecera mínima | Nombre mapa + acciones en `WorkspaceTopBar` — ver §2ter |
+| **Timeline + Desde** | Pie fijo — scrubber + «Vista en T»; **Desde editable en top bar** (§2ter) |
 
 ### 2bis.2 Barra de navegación (rail) — siempre visible en edición
 
@@ -89,7 +89,7 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 | # | Icono (orientativo) | Sección al pulsar | Contenido (v1) |
 |---|---------------------|-------------------|----------------|
 | **0** | Expandir / contraer | — | Toggle ancho panel (como `PanelRightOpen/Close`) |
-| **1** | Mapas | **Mapas** | Lista/selector mapas, «Al abrir», pin, + nuevo mapa |
+| **1** | ~~Mapas~~ | ~~**Mapas**~~ | **Eliminado del rail** — lista en top bar §2ter |
 | **2** | Capas | **Capas** | `MapLayersPanel` rediseñado §7 (Sketchbook) |
 | **3** | Parches | **Parches** | `MapSecondariesPanel` (secundarios temporales) |
 | **4** | Nav | **Dibujos hijo** | `MapNavDrawingsPanel` |
@@ -97,40 +97,45 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 | **6** | Ubicaciones | **Ubicaciones** | `MapLocationsPanel` |
 | **7** | Estudio | **Herramientas** | Barra dibujo actual (`MapEditStudio`): pinceles, colores, undo |
 | **8** | Lienzo | **Lienzo** | Tamaño actual, expandir/recortar (`MapCanvasSection`) |
+| **—** | Lápiz | Toggle edición | 2.º icono del rail (no numerado arriba) |
+| **—** | ⚙ | **Configuración** | «Al abrir» + autoguardado — anclado abajo del rail |
 
 **Comportamiento:**
 
 - **Una sección activa** a la vez (click icono → muestra su panel; re-click o icono otro → cambia).
 - Rail **siempre visible** en modo edición (incluso panel contenido contraído).
-- Modo **interactivo:** rail **visible** — iconos **Mapas** + **lápiz** (toggle edición); panel Mapas con selector, «Al abrir», pin y + nuevo mapa.
+- Modo **interactivo:** rail **visible** — icono **lápiz** (toggle edición) + ⚙; **sin** sección Mapas (lista en top bar §2ter).
 - Modo **edición:** rail completo (Capas, Parches, …); lápiz resaltado; clic de nuevo → interactivo.
-- Reutilizar stores/patrón `useLayoutStore` (`rightPanelCollapsed`) si encaja.
+- Rail a **altura completa** (`h-screen`) vía `ResizableRightPanel` en shell — ver §2ter.2.
 
 **Referencia código:** `src/modules/editor/EditorSidePanel.tsx`.
 
-### 2bis.3 «Desde» + timeline (amarillo) — fusionar abajo
+### 2bis.3 Timeline en el pie
 
-| Antes | Después |
-|-------|---------|
-| Barra bajo cabecera: «Desde … Editar» + «Vista en T … Cambiar» | **Eliminar** barra separada |
-| Scrubber inferior solo con «Vista en T» | **Una sola franja temporal** en el pie |
+| Antes | Después (v1, ✅) | Después (v2, §2ter) |
+|-------|------------------|---------------------|
+| Barra bajo cabecera: «Desde … Editar» + «Vista en T … Cambiar» | **Eliminada** barra separada | — |
+| Scrubber inferior solo con «Vista en T» | **Una sola franja temporal** en el pie | Igual, **sin** bloque editable Desde inline |
+| — | `MapDesdeField` integrado en `MapTimelineBar` | **Desde** pasa a botón top bar §2ter |
 
-**Pie del mapa (edición + interactivo):**
+**Pie del mapa (objetivo §2ter):**
 
 ```text
-[ Desde: 2025-07-15  Editar ]  ····· scrubber T ·····  [ Vista en T: … ]
-         ↑ integrado en MapTimelineBar / barra única
+[ − ] [ + ]  ····· scrubber T ·····  [ Vista en T: … ]
+         ↑ solo zoom + scrubber; marcador Desde en pista (solo lectura)
 ```
 
-- **Desde** = metadato del mapa, editable inline o dialog en la **misma barra** que el scrubber (no duplicar `MapPreviewTField` arriba).
+- **Desde** = metadato del mapa; editable desde **botón cuadrado** en cabecera (abre `MapDesdeDialog`).
 - **Vista en T** = thumb del scrubber (fuente única de preview T).
-- Relacionado: cierra **M13-UX-02** con decisión concreta del usuario.
+- Relacionado: **M13-UX-02** ✅ (barra amarilla eliminada); **M13-UX-10** ✅ (Desde en top bar).
 
-### 2bis.4 Wireframe objetivo (edición)
+### 2bis.4 Wireframe objetivo (edición) — **supersedido por §2ter.4**
+
+> Wireframe intermedio (SHELL-05…11 ✅). Objetivo vigente: **§2ter.4**.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│ [WorkspaceTopBar] Mapas | a                                  │  ← única cabecera
+│ [WorkspaceTopBar] Mapas | a                                  │  ← iteración previa
 ├──────────────────────────────────────────────┬──┬─────────┤
 │                                              │🗺│ Mapas   │
 │              LIENZO                          │✏│ toggle  │
@@ -139,33 +144,184 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 ├──────────────────────────────────────────────┴──┴─────────┤
 │ Desde 2025-07-15 [Editar]  ═══ scrubber 2000–2029 ═══  T  │
 └─────────────────────────────────────────────────────────────┘
-  * solo iconos visibles en modo edición (lápiz resaltado)
-  ⚙ «Al abrir» + autoguardado (sync ajustes globales)
 ```
+
+---
+
+## 2ter. Cabecera operativa + rail altura completa (2026-06-11)
+
+> **Decisión usuario (capturas anotadas):** evacuar selector, pin, «+ Nuevo mapa» y configuración **Desde** hacia la **cabecera workspace**; el rail lateral debe llegar **hasta arriba** como en la vista manuscrito (`EditorSidePanel` en `ResizableRightPanel`).  
+> **Estado:** ⬜ **Planificado** — **implementado 2026-06-11** (SHELL-12…14, UX-08…10).
+
+### 2ter.1 Motivación
+
+Tras SHELL-01…11 la sección **Mapas** del rail sigue concentrando acciones de uso frecuente (cambiar mapa, fijar, crear). Eso obliga a abrir el panel lateral para tareas que en manuscrito viven en la barra superior. Además el rail queda **cortado** por `WorkspaceTopBar` porque `MapEditSidePanel` vive **dentro** de `MapWorkspace`, no al nivel del shell.
+
+### 2ter.2 Cabecera `WorkspaceTopBar` (vista mapa)
+
+**Sustituir** el título actual `Mapas | [nombre]` (`WorkspaceTopBar.tsx`, `activeMapTitle`).
+
+#### Izquierda — identidad + lista
+
+| Elemento | Comportamiento |
+|----------|----------------|
+| **Nombre del mapa** | Texto truncado (`document.name` / `activeMapTitle`); sin prefijo «Mapas \|» |
+| **Botón cuadrado lista** | Icono tipo `ChevronsUpDown` / `List` / `Map`; abre **Popover** o **DropdownMenu** con todos los mapas |
+| Ítem de lista | Nombre + dimensiones `(2400×1600)`; activo resaltado |
+| Al elegir mapa | Reutilizar `handleMapChange` + guard dibujo sucio (**M13-META-01**) |
+
+**Componente nuevo:** `MapMapListMenu.tsx` (contenido del menú; lógica hoy en `<select>` de `MapMapsSection`).
+
+#### Derecha — acciones (orden fijo)
+
+Contenedor `ml-auto flex items-center gap-1`; botones **`size-7`/`size-8`** cuadrados:
+
+| # | Botón | Icono | Acción | Origen actual |
+|---|-------|-------|--------|---------------|
+| 1 | Configurar **Desde** | `CalendarClock` | Abre `MapDesdeDialog`; tooltip con fecha o «Sin definir» | `MapDesdeField` en `MapTimelineBar` |
+| 2 | **Fijar** | `Star` (filled si pinned) | `handlePinToggle`; `aria-pressed` | `MapMapsSection` |
+| 3 | **Nuevo mapa** | `Plus` | Abre `CreateMapDialog` | `MapMapsSection` |
+
+**Estados:** `creating` → spinner en `+`; sin calendario → Desde disabled; sin mapas → barra mínima (solo `+` o vacío).
+
+#### Puente de estado (técnica)
+
+`WorkspaceTopBar` hoy solo lee `activeMapTitle`. Los handlers viven en `MapWorkspace`.
+
+**Recomendado:** slice **`useMapToolbarStore`** (o ampliar `useMapStore`) que `MapWorkspace` registra al montar y limpia al desmontar:
+
+```ts
+// orientativo
+{ maps, activeMapId, isPinned, creating, calendarReady,
+  onSelectMap, onPinToggle, onCreateMap, onOpenDesdeDialog }
+```
+
+Alternativa: portal de `MapTopBarControls` — menos limpia.
+
+**Archivos:** `WorkspaceTopBar.tsx`, nuevo `MapMapListMenu.tsx`, `MapDesdeToolbarButton.tsx` (extrae trigger de `MapDesdeField`), store toolbar.
+
+### 2ter.3 Rail a altura completa
+
+#### Problema actual
+
+```text
+WorkspaceShell
+├── columna (top bar + GlobalNav + main)
+│   └── MapWorkspace
+│       ├── MapViewport
+│       └── MapEditSidePanel   ← cortado por top bar
+└── ResizableRightPanel        ← solo manuscrito / timeline
+```
+
+#### Objetivo (patrón manuscrito)
+
+```text
+WorkspaceShell
+├── columna (top bar + GlobalNav + main)
+│   └── MapWorkspace           ← solo viewport + timeline + dialogs
+└── ResizableRightPanel (map)
+    └── MapEditSidePanel
+```
+
+**Cambios:**
+
+| Archivo | Acción |
+|---------|--------|
+| `WorkspaceShell.tsx` | Rama `mainView === "map"` con `ResizableRightPanel` + panel |
+| `MapWorkspace.tsx` | Quitar `<MapEditSidePanel>` del flex interno; mantener props/secciones (o extraer `MapEditSidePanelHost`) |
+| `MapEditSidePanel.tsx` | Quitar `py-2` superior; iconos alineados arriba; ⚙ sigue con `mt-auto` |
+
+**Ancho panel:** reutilizar `useLayoutStore.rightPanelWidth` **o** ancho fijo mapa (~296 px expandido = 256 + 40 rail). **Decisión pendiente** (§2ter.6).
+
+#### Sección Mapas del rail
+
+Con selector, pin y crear en top bar, la sección **Mapas queda vacía**.
+
+**Recomendación:** **eliminar** icono 🗺 del rail. Modo interactivo: lápiz + ⚙ únicamente.
+
+### 2ter.4 Wireframe objetivo (v2)
+
+```text
+┌──────────────────────────────────────────────────────────┬──┐
+│ [≡]  Nombre del mapa  [▾]          [📅] [⭐] [+]        │ ≡│  ← rail h-screen
+├──────────────────────────────────────────────────────────┤✏│
+│                                                          │▦│
+│                     LIENZO                               │…│
+│                                                          │✂️│
+│                                                          │⚙│
+├──────────────────────────────────────────────────────────┤  │
+│  [−][+]  ═══════ scrubber timeline ═══════  Vista en T   │  │
+└──────────────────────────────────────────────────────────┴──┘
+     ↑ Top bar solo columna izquierda
+     [📅]=Desde  [⭐]=Fijar  [+]=Nuevo mapa  [▾]=Lista mapas
+```
+
+### 2ter.5 Impacto en componentes existentes
+
+| Componente | Cambio |
+|------------|--------|
+| `MapMapsSection.tsx` | **Deprecar** o vaciar; selector/pin/crear → top bar |
+| `MapDesdeField.tsx` | Dividir: dialog existente + botón toolbar |
+| `MapTimelineBar.tsx` | Dejar de recibir `desdeField`; más espacio para scrubber |
+| `MapEditSidePanel.tsx` | Sin sección `maps`; rail sin icono 🗺 |
+| `useMapEditPanelStore` | `"maps"` deja de ser sección rail útil; default `"layers"` OK |
+
+### 2ter.6 Decisiones pendientes (confirmar antes de codear)
+
+| # | Pregunta | Recomendación |
+|---|----------|---------------|
+| 1 | ¿Eliminar icono 🗺 del rail? | **Sí** |
+| 2 | ¿Ancho panel: `rightPanelWidth` compartido o fijo mapa? | Compartir store layout |
+| 3 | ¿Lista mapas: Popover compacto o Command palette? | Popover + lista scroll |
+| 4 | En **nav view** (`MapNavBreadcrumb`), ¿mostrar las 3 acciones de top bar? | Sí, del mapa raíz |
+
+### 2ter.7 Backlog — cabecera + rail v2
+
+| ID | Prioridad | Entregable | Notas | Estado |
+|----|-----------|------------|-------|--------|
+| M13-SHELL-12 | **P1** | Cabecera mapa: `[nombre] [lista]` + `[Desde][★][+]` | `MapMapListMenu`, `useMapToolbarStore` | ✅ |
+| M13-SHELL-13 | **P1** | Rail mapas **altura completa** vía portal + mount shell | `mapSidePanelMount.ts` | ✅ |
+| M13-SHELL-14 | **P2** | Retirar sección **Mapas** del rail; eliminar `MapMapsSection` | Tras SHELL-12 | ✅ |
+| M13-UX-10 | **P2** | **Desde** editable solo en top bar; timeline sin bloque inline | `MapDesdeToolbarButton` | ✅ |
+
+**i18n nuevo (`maps.json`):** `topBar.openMapList`, `topBar.configureDesde`, `topBar.pinMap`, `topBar.unpinMap`, `topBar.createMap`.
+
+**Orden impl. sugerido:**
+
+```text
+SHELL-12 (toolbar) → SHELL-14 (vaciar Mapas) → UX-10 (quitar Desde del pie) → SHELL-13 (shell layout)
+```
+
+**QA:** cambio mapa con trazos sucios · proyecto sin mapas · pin sync · rail colapsado · salida vista mapa reset toolbar store · nav view + breadcrumb.
+
+---
 
 ### 2bis.5 Backlog — shell panel derecho
 
 | ID | Prioridad | Entregable | Notas | Estado |
 |----|-----------|------------|-------|--------|
 | M13-SHELL-01 | **P0** | `MapEditSidePanel` — rail + panel colapsable (patrón manuscrito) | Nuevo componente; solo modo edición | ✅ |
-| M13-SHELL-02 | **P0** | Mover selector mapa + «Al abrir» + pin → sección **Mapas** | Quita bloque rojo cabecera | ✅ |
+| M13-SHELL-02 | **P0** | Mover selector mapa + pin → sección **Mapas** (intermedio) | ✅ v1; **§2ter** los lleva a top bar | ✅ → §2ter |
 | M13-SHELL-03 | **P0** | Eliminar columna **izq.** fija; paneles → secciones rail | Parches, Nav, Hotspots, Ubicaciones | ✅ |
 | M13-SHELL-04 | **P1** | Mover `MapEditStudio` (barra dibujo) → sección **Estudio** rail | Quita bloque rojo inferior | ✅ |
-| M13-SHELL-05 | **P1** | Cabecera única workspace: `Mapas \| [nombre]` en `WorkspaceTopBar` | Sin segunda barra en `MapWorkspace` | ✅ |
-| M13-SHELL-06 | **P0** | **Desde** integrado en `MapTimelineBar` (§2bis.3) | Elimina barra amarilla; cierra UX-02 | ✅ |
+| M13-SHELL-05 | **P1** | Cabecera workspace con nombre mapa | ✅ v1 `Mapas \| [nombre]`; **§2ter** solo `[nombre]` + lista | ✅ → §2ter |
+| M13-SHELL-06 | **P0** | Desde en timeline (v1) | ✅ barra amarilla eliminada; **§2ter** mueve edición Desde a top bar | ✅ → §2ter |
 | M13-SHELL-07 | **P2** | Expandir/recortar lienzo — sección **Lienzo** en rail (icono recorte, debajo de Estudio) | `MapCanvasSection.tsx` | ✅ |
-| M13-SHELL-08 | **P2** | Modo interactivo: rail visible (Mapas + lápiz); resto solo en edición | Decisión usuario 2026-06-11 | ✅ |
+| M13-SHELL-08 | **P2** | Modo interactivo: rail visible + lápiz | ✅ v1 incluía 🗺; **§2ter** quita icono Mapas | ✅ → §2ter |
 | M13-SHELL-09 | **P3** | Persistir sección rail activa + collapsed en sesión mapa | Opcional UX | ✅ |
 | M13-SHELL-10 | **P1** | Toggle edición: icono **lápiz** en rail (2.º); resaltado en edición | Sustituye botones cabecera | ✅ |
 | M13-SHELL-11 | **P1** | Rail **Configuración** (⚙ abajo): «Al abrir» + autoguardado mapas | Sincronizado con ajustes globales | ✅ |
+| M13-SHELL-12 | **P1** | Cabecera mapa: `[nombre] [lista]` + `[Desde][★][+]` | §2ter.2 | ✅ |
+| M13-SHELL-13 | **P1** | Rail **altura completa** (portal shell) | §2ter.3 | ✅ |
+| M13-SHELL-14 | **P2** | Retirar sección Mapas del rail | §2ter.3 · tras SHELL-12 | ✅ |
 
-**Archivos probables:** nuevo `MapEditSidePanel.tsx`, refactor `MapWorkspace.tsx` layout, `MapTimelineBar.tsx` + `MapDesdeField`, `useLayoutStore` o `useMapStudioStore`.
+**Archivos probables (v2 §2ter):** `WorkspaceShell.tsx`, `WorkspaceTopBar.tsx`, `MapMapListMenu.tsx`, `MapDesdeToolbarButton.tsx`, `useMapToolbarStore`, refactor `MapWorkspace.tsx`.
 
 ---
 
 ## 3. Backlog — UX e información (layout)
 
-> **Actualizado 2026-06-11:** reorganización estructural en **§2bis** (`M13-SHELL-*`). Ítems aquí = refinamientos dentro del nuevo shell.
+> **Actualizado 2026-06-11:** reorganización en **§2bis** (`M13-SHELL-*` ✅) y **§2ter** (cabecera + rail v2 ⬜).
 
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
@@ -176,8 +332,9 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 | M13-UX-05 | **P2** | Badge «TERRENO BASE» poco claro | Copy según sección rail + `activeDrawingRef` | MAP-010 H2 | ✅ |
 | M13-UX-06 | **P1** | Contenido CAPAS denso | §7 Sketchbook **dentro** sección rail Capas | Usuario · §7 | ✅ (LAY-01…04) |
 | M13-UX-07 | **P2** | Opacidad capa vs pincel | Tooltip Capas vs Estudio en rail | Captura | ✅ |
-| M13-UX-08 | **P3** | «+ Nuevo mapa» | Dentro sección Mapas del rail | Captura | ✅ |
-| M13-UX-09 | **P2** | Selector `<select>` | Lista/miniatura en sección Mapas | spec §3ter | ⬜ |
+| M13-UX-08 | ~~P3~~ **→ §2ter** | «+ Nuevo mapa» | Botón cuadrado top bar derecha — SHELL-12 | Captura | ✅ |
+| M13-UX-09 | **P2** | Selector `<select>` | `MapMapListMenu` en top bar (§2ter.2) | spec §3ter | ✅ |
+| M13-UX-10 | **P2** | Desde inline en pie timeline | Botón top bar; pie solo scrubber | Usuario | ✅ |
 
 ---
 
@@ -375,6 +532,9 @@ Oleada 2b — Grupos capas (opcional, caro)
 Oleada 3 — Polish P2
   M13-NAV-02…05 · M13-LOC-03…05 · M13-DRAW-* · M13-LAY-07…09 · M13-UX-*
 
+Oleada 3b — Cabecera operativa + rail v2 (§2ter)
+  M13-SHELL-12 → SHELL-14 → M13-UX-10 → SHELL-13
+
 Oleada 4 — Retomar MAP-012
   Smoke §6 · purga · docs · cierre Fase F
 ```
@@ -409,6 +569,7 @@ Oleada 4 — Retomar MAP-012
 | 2026-06-11 | **Oleada 2b + polish** — T-01/T-02 timeline+parches @ T; SHELL-07/09; NAV-04/05; UX-05/07/08; MS-02; META-02; LOC-01/04; DRAW-01/02/04 |
 | 2026-06-11 | **Vista interactiva** — cabecera `Mapas \| nombre`; rail Mapas+lápiz; SHELL-08/10 revisados |
 | 2026-06-11 | **Cabecera única + config rail** — título en `WorkspaceTopBar`; ⚙ con «Al abrir» + autoguardado (SHELL-05/11) |
+| 2026-06-11 | **§2ter impl.** — cabecera `[nombre][lista]` + `[Desde][★][+]`; rail full-height (portal); SHELL-12…14 · UX-08…10 ✅ |
 
 **Notas libres:** _(añadir aquí ítems nuevos con formato M13-XXX antes de codificar)_
 
@@ -422,4 +583,4 @@ Oleada 4 — Retomar MAP-012
 
 ---
 
-**Última actualización:** 2026-06-11 (cabecera workspace + config rail mapas)
+**Última actualización:** 2026-06-11 (§2ter cabecera operativa + rail altura completa — implementado)

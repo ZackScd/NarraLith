@@ -1,5 +1,13 @@
 {
   "title": "Mapas",
+  "topBar": {
+    "openMapList": "Abrir lista de mapas",
+    "configureDesde": "Configurar fecha Desde",
+    "configureDesdeWithDate": "Configurar Desde ({{date}})",
+    "pinMap": "Fijar mapa al abrir",
+    "unpinMap": "Quitar mapa fijado",
+    "createMap": "Crear nuevo mapa"
+  },
   "editPanel": {
     "title": "Panel de edición del mapa",
     "interactiveTitle": "Panel del mapa",

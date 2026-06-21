@@ -1,5 +1,13 @@
 {
   "title": "Maps",
+  "topBar": {
+    "openMapList": "Open map list",
+    "configureDesde": "Configure Desde date",
+    "configureDesdeWithDate": "Configure Desde ({{date}})",
+    "pinMap": "Pin map on open",
+    "unpinMap": "Unpin map",
+    "createMap": "Create new map"
+  },
   "editPanel": {
     "title": "Map edit panel",
     "interactiveTitle": "Map panel",

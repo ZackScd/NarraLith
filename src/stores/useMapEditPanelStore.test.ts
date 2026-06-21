@@ -23,25 +23,25 @@ describe("useMapEditPanelStore", () => {
     vi.stubGlobal("sessionStorage", mockSessionStorage());
     useMapEditPanelStore.setState({
       mapId: null,
-      contentExpanded: true,
+      contentExpanded: false,
       activeSection: "layers",
     });
   });
 
   it("alterna contentExpanded", () => {
-    expect(useMapEditPanelStore.getState().contentExpanded).toBe(true);
-    useMapEditPanelStore.getState().toggleContentExpanded();
     expect(useMapEditPanelStore.getState().contentExpanded).toBe(false);
     useMapEditPanelStore.getState().toggleContentExpanded();
     expect(useMapEditPanelStore.getState().contentExpanded).toBe(true);
+    useMapEditPanelStore.getState().toggleContentExpanded();
+    expect(useMapEditPanelStore.getState().contentExpanded).toBe(false);
   });
 
   it("openSection activa sección y expande panel", () => {
     useMapEditPanelStore.setState({ contentExpanded: false, activeSection: "layers" });
-    useMapEditPanelStore.getState().openSection("maps");
+    useMapEditPanelStore.getState().openSection("patches");
     expect(useMapEditPanelStore.getState()).toMatchObject({
       contentExpanded: true,
-      activeSection: "maps",
+      activeSection: "patches",
     });
   });
 
@@ -54,7 +54,7 @@ describe("useMapEditPanelStore", () => {
     expect(useMapEditPanelStore.getState()).toMatchObject({
       mapId: "map-b",
       activeSection: "layers",
-      contentExpanded: true,
+      contentExpanded: false,
     });
 
     useMapEditPanelStore.getState().syncForMap("map-a");

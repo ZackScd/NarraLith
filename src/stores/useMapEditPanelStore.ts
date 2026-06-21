@@ -65,14 +65,15 @@ function persistSnapshot(state: MapEditPanelState) {
 
 export const useMapEditPanelStore = create<MapEditPanelState>((set, get) => ({
   mapId: null,
-  contentExpanded: true,
+  contentExpanded: false,
   activeSection: DEFAULT_SECTION,
   syncForMap: (mapId) => {
     const saved = readPersist(mapId);
+    const savedSection = saved?.activeSection ?? DEFAULT_SECTION;
     set({
       mapId,
-      activeSection: saved?.activeSection ?? DEFAULT_SECTION,
-      contentExpanded: saved?.contentExpanded ?? true,
+      activeSection: savedSection === "maps" ? DEFAULT_SECTION : savedSection,
+      contentExpanded: saved?.contentExpanded ?? false,
     });
   },
   setActiveSection: (section) => {
