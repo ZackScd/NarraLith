@@ -7,7 +7,9 @@ export type MapEditPanelSectionId =
   | "nav"
   | "hotspots"
   | "locations"
-  | "studio";
+  | "studio"
+  | "canvas"
+  | "settings";
 
 const STORAGE_KEY = "narralith.mapEditPanel.v1";
 const DEFAULT_SECTION: MapEditPanelSectionId = "layers";

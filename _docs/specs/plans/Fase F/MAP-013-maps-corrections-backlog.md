@@ -61,7 +61,7 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 | Cabecera: selector mapa, «Al abrir», pin ⭐ | Sección **Mapas** del panel derecho |
 | Columna **izq.**: PARCHES, DIBUJOS HIJO (+ Hotspots, Ubicaciones hoy) | Secciones del panel derecho (una por icono) |
 | Barra **inferior** estudio: herramientas, colores, tamaño, opacidad pincel, undo | Sección **Estudio** del panel derecho (o sub-panel) |
-| Botones expandir/recortar lienzo (pie) | Sección **Mapa / lienzo** o dentro de Mapas — **afinar luego** |
+| Botones expandir/recortar lienzo (pie) | Sección **Lienzo** del rail (icono recorte, debajo de Estudio) |
 
 **Permanece en layout principal (no rojo):**
 
@@ -96,6 +96,7 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 | **5** | Hotspots | **Hotspots** | `MapHotspotsPanel` |
 | **6** | Ubicaciones | **Ubicaciones** | `MapLocationsPanel` |
 | **7** | Estudio | **Herramientas** | Barra dibujo actual (`MapEditStudio`): pinceles, colores, undo |
+| **8** | Lienzo | **Lienzo** | Tamaño actual, expandir/recortar (`MapCanvasSection`) |
 
 **Comportamiento:**
 
@@ -129,16 +130,17 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│ Mapas | a                                    (cabecera fina) │
+│ [WorkspaceTopBar] Mapas | a                                  │  ← única cabecera
 ├──────────────────────────────────────────────┬──┬─────────┤
 │                                              │🗺│ Mapas   │
 │              LIENZO                          │✏│ toggle  │
 │                                              │▦ │ Capas*  │
-│                                              │… │ …*      │
+│                                              │⚙│ config  │
 ├──────────────────────────────────────────────┴──┴─────────┤
 │ Desde 2025-07-15 [Editar]  ═══ scrubber 2000–2029 ═══  T  │
 └─────────────────────────────────────────────────────────────┘
   * solo iconos visibles en modo edición (lápiz resaltado)
+  ⚙ «Al abrir» + autoguardado (sync ajustes globales)
 ```
 
 ### 2bis.5 Backlog — shell panel derecho
@@ -149,12 +151,13 @@ Patrón: igual que manuscrito contraído (`EditorSidePanel` — iconos verticale
 | M13-SHELL-02 | **P0** | Mover selector mapa + «Al abrir» + pin → sección **Mapas** | Quita bloque rojo cabecera | ✅ |
 | M13-SHELL-03 | **P0** | Eliminar columna **izq.** fija; paneles → secciones rail | Parches, Nav, Hotspots, Ubicaciones | ✅ |
 | M13-SHELL-04 | **P1** | Mover `MapEditStudio` (barra dibujo) → sección **Estudio** rail | Quita bloque rojo inferior | ✅ |
-| M13-SHELL-05 | **P1** | Cabecera mínima: `Mapas \| [nombre]` | Sin selector ni botones; toggle edición en rail | ✅ |
+| M13-SHELL-05 | **P1** | Cabecera única workspace: `Mapas \| [nombre]` en `WorkspaceTopBar` | Sin segunda barra en `MapWorkspace` | ✅ |
 | M13-SHELL-06 | **P0** | **Desde** integrado en `MapTimelineBar` (§2bis.3) | Elimina barra amarilla; cierra UX-02 | ✅ |
-| M13-SHELL-07 | **P2** | Expandir/recortar lienzo — ubicación final (Mapas vs menú ⋮) | Usuario afinará después | ✅ |
+| M13-SHELL-07 | **P2** | Expandir/recortar lienzo — sección **Lienzo** en rail (icono recorte, debajo de Estudio) | `MapCanvasSection.tsx` | ✅ |
 | M13-SHELL-08 | **P2** | Modo interactivo: rail visible (Mapas + lápiz); resto solo en edición | Decisión usuario 2026-06-11 | ✅ |
 | M13-SHELL-09 | **P3** | Persistir sección rail activa + collapsed en sesión mapa | Opcional UX | ✅ |
 | M13-SHELL-10 | **P1** | Toggle edición: icono **lápiz** en rail (2.º); resaltado en edición | Sustituye botones cabecera | ✅ |
+| M13-SHELL-11 | **P1** | Rail **Configuración** (⚙ abajo): «Al abrir» + autoguardado mapas | Sincronizado con ajustes globales | ✅ |
 
 **Archivos probables:** nuevo `MapEditSidePanel.tsx`, refactor `MapWorkspace.tsx` layout, `MapTimelineBar.tsx` + `MapDesdeField`, `useLayoutStore` o `useMapStudioStore`.
 
@@ -316,7 +319,7 @@ Sustituye el contador de trazos.
 | M13-DRAW-01 | **P2** | Barra estudio ancha | Paleta compacta **en sección Estudio del rail** (SHELL-04) | Captura | ✅ |
 | M13-DRAW-02 | **P2** | Modos pan/dibujo/hotspot/pin mezclados | Modo exclusivo; indicador en rail Estudio o lienzo | Usuario | ✅ |
 | M13-DRAW-03 | **P3** | Presión tableta MAP-005 | Revisar spec §3bis | MAP-005 | ⏸ |
-| M13-DRAW-04 | **P2** | Expandir/recortar en pie | M13-SHELL-07 — menú Mapas o ⋮ cabecera | Captura | ✅ |
+| M13-DRAW-04 | **P2** | Expandir/recortar en pie | M13-SHELL-07 — sección rail Lienzo | Captura | ✅ |
 
 ---
 
@@ -325,7 +328,7 @@ Sustituye el contador de trazos.
 | ID | Prioridad | Problema | Dirección | Origen | Estado |
 |----|-----------|----------|-----------|--------|--------|
 | M13-META-01 | **P2** | Cambiar mapa con dibujo sucio — dialog OK pero fácil perder contexto T | Confirmar qué se guarda (T por mapa ya existe) + copy | MAP-002 | ⬜ |
-| M13-META-02 | **P2** | «Al abrir» poco discoverable junto al selector | Tooltip / onboarding mínimo | MAP-002 | ✅ |
+| M13-META-02 | **P2** | «Al abrir» poco discoverable junto al selector | Sección **Configuración** del rail (SHELL-11) | MAP-002 | ✅ |
 | M13-META-03 | **P3** | Asistente parches solapados §4.3.2 | v1.1 — fuera MAP-013 | MAP-008 | ⏸ |
 
 ---
@@ -405,6 +408,7 @@ Oleada 4 — Retomar MAP-012
 | 2026-06-11 | **Grupos capas** — M13-LAY-05…09: `groups[]` + `groupId`, carpeta UI, opacidad/visible compuesta, DnD, colapsar |
 | 2026-06-11 | **Oleada 2b + polish** — T-01/T-02 timeline+parches @ T; SHELL-07/09; NAV-04/05; UX-05/07/08; MS-02; META-02; LOC-01/04; DRAW-01/02/04 |
 | 2026-06-11 | **Vista interactiva** — cabecera `Mapas \| nombre`; rail Mapas+lápiz; SHELL-08/10 revisados |
+| 2026-06-11 | **Cabecera única + config rail** — título en `WorkspaceTopBar`; ⚙ con «Al abrir» + autoguardado (SHELL-05/11) |
 
 **Notas libres:** _(añadir aquí ítems nuevos con formato M13-XXX antes de codificar)_
 
@@ -418,4 +422,4 @@ Oleada 4 — Retomar MAP-012
 
 ---
 
-**Última actualización:** 2026-06-11 (vista interactiva: cabecera fina + rail Mapas/lápiz)
+**Última actualización:** 2026-06-11 (cabecera workspace + config rail mapas)

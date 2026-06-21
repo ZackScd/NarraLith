@@ -13,6 +13,7 @@ export interface PendingEditorLocationPin {
 
 interface MapStoreV2 {
   activeMapId: string | null;
+  activeMapTitle: string | null;
   viewMode: MapViewMode;
   activeDrawingRef: MapDrawingRef;
   navStack: MapNavFrame[];
@@ -27,12 +28,14 @@ interface MapStoreV2 {
   resetNavStack: () => void;
   setPreviewTimeTRaw: (raw: string | null, mapId?: string | null) => void;
   setPendingEditorLocationPin: (payload: PendingEditorLocationPin | null) => void;
+  setActiveMapTitle: (title: string | null) => void;
   resetMapSessionState: (previewDefault?: string | null) => void;
   reset: () => void;
 }
 
 const initial = {
   activeMapId: null as string | null,
+  activeMapTitle: null as string | null,
   viewMode: "interactive" as MapViewMode,
   activeDrawingRef: DEFAULT_MAP_DRAWING_REF,
   navStack: [] as MapNavFrame[],
@@ -111,6 +114,7 @@ export const useMapStore = create<MapStoreV2>((set) => ({
       };
     }),
   setPendingEditorLocationPin: (payload) => set({ pendingEditorLocationPin: payload }),
+  setActiveMapTitle: (title) => set({ activeMapTitle: title }),
   resetMapSessionState: (previewDefault) =>
     set({
       previewTimeTRaw: previewDefault ?? null,

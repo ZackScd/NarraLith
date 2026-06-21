@@ -36,7 +36,9 @@ import { MapDesdeField } from "@/modules/maps/MapDesdeField";
 import { MapEditSidePanel } from "@/modules/maps/MapEditSidePanel";
 import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
+import { MapCanvasSection } from "@/modules/maps/MapCanvasSection";
 import { MapMapsSection } from "@/modules/maps/MapMapsSection";
+import { MapModuleSettingsSection } from "@/modules/maps/MapModuleSettingsSection";
 import { MapNavBreadcrumb } from "@/modules/maps/MapNavBreadcrumb";
 import { MapNavDrawingsPanel } from "@/modules/maps/MapNavDrawingsPanel";
 import { HotspotTargetDialog, MapHotspotsPanel } from "@/modules/maps/MapHotspotsPanel";
@@ -61,6 +63,7 @@ export function MapWorkspace() {
   const setPreviewTimeTRaw = useMapStore((s) => s.setPreviewTimeTRaw);
   const pendingEditorLocationPin = useMapStore((s) => s.pendingEditorLocationPin);
   const setPendingEditorLocationPin = useMapStore((s) => s.setPendingEditorLocationPin);
+  const setActiveMapTitle = useMapStore((s) => s.setActiveMapTitle);
   const rootPath = useProjectStore((s) => s.activeProject?.rootPath ?? "");
   const activeDrawingRefKey = drawingRefKey(activeDrawingRef);
   const sessionDrawingRefKeyRef = useRef(activeDrawingRefKey);
@@ -309,6 +312,11 @@ export function MapWorkspace() {
       syncMapEditPanel(activeMapId);
     }
   }, [activeMapId, syncMapEditPanel]);
+
+  useEffect(() => {
+    setActiveMapTitle(document?.name ?? null);
+    return () => setActiveMapTitle(null);
+  }, [document?.name, setActiveMapTitle]);
 
   usePersistMapDrawingDraft({
     enabled: isEditMode && Boolean(rootPath) && Boolean(activeMapId),
@@ -693,18 +701,6 @@ export function MapWorkspace() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <header className="flex shrink-0 border-b border-border/60 px-4 py-2">
-        <h1 className="min-w-0 truncate text-sm">
-          <span className="font-semibold text-foreground">{t("title")}</span>
-          {document ? (
-            <>
-              <span className="mx-2 font-normal text-muted-foreground">|</span>
-              <span className="font-medium text-foreground">{document.name}</span>
-            </>
-          ) : null}
-        </h1>
-      </header>
-
       {activeMapId && document && isNavView ? (
         <MapNavBreadcrumb
           mapName={document.name}
@@ -780,20 +776,17 @@ export function MapWorkspace() {
                   <MapMapsSection
                     maps={maps}
                     activeMapId={activeMapId}
-                    openPreference={openPreference}
                     isPinned={isPinned}
                     creating={creating}
-                    canvasWidth={isEditMode ? document.width : undefined}
-                    canvasHeight={isEditMode ? document.height : undefined}
-                    canvasBusy={isEditMode ? canvasBusy : undefined}
                     onMapChange={handleMapChange}
-                    onPreferenceChange={handlePreferenceChange}
                     onPinToggle={handlePinToggle}
                     onCreateMap={() => setCreateOpen(true)}
-                    onExpandCanvas={
-                      isEditMode ? () => openCanvasDialog("expand") : undefined
-                    }
-                    onCropCanvas={isEditMode ? () => openCanvasDialog("crop") : undefined}
+                  />
+                }
+                settingsSection={
+                  <MapModuleSettingsSection
+                    openPreference={openPreference}
+                    onPreferenceChange={handlePreferenceChange}
                   />
                 }
                 layersSection={
@@ -951,6 +944,17 @@ export function MapWorkspace() {
                       canRedo={drawingSession.canRedo}
                       onUndo={drawingSession.undo}
                       onRedo={drawingSession.redo}
+                    />
+                  ) : null
+                }
+                canvasSection={
+                  isEditMode ? (
+                    <MapCanvasSection
+                      width={document.width}
+                      height={document.height}
+                      busy={canvasBusy}
+                      onExpand={() => openCanvasDialog("expand")}
+                      onCrop={() => openCanvasDialog("crop")}
                     />
                   ) : null
                 }

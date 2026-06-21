@@ -12,8 +12,13 @@
       "nav": "Child drawings",
       "hotspots": "Hotspots",
       "locations": "Locations",
-      "studio": "Studio"
+      "studio": "Studio",
+      "canvas": "Canvas",
+      "settings": "Settings"
     }
+  },
+  "moduleSettings": {
+    "openPreferenceHint": "Project preference when opening the maps module."
   },
   "loadFailed": "Could not load the map.",
   "loadingMaps": "Loading maps…",
@@ -77,6 +82,7 @@
     "cancel": "Cancel",
     "expandSubmit": "Expand",
     "cropSubmit": "Crop",
+    "sectionHint": "Expand adds pixels to the right and bottom without scaling content. Crop reduces the area and removes strokes outside the border.",
     "errors": {
       "expand_zero": "Enter how many pixels to add in width or height.",
       "crop_not_smaller": "Crop must reduce at least one dimension.",

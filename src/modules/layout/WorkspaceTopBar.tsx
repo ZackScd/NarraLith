@@ -43,6 +43,7 @@ import { requestCloseEditorTab, useEditorStore } from "@/stores/useEditorStore";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
 import { useLayoutStore } from "@/stores/useLayoutStore";
 import { useProjectStore } from "@/stores/useProjectStore";
+import { useMapStore } from "@/stores/useMapStore";
 import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
 
 const GLOBAL_NAV_WIDTH = 48;
@@ -162,6 +163,7 @@ function EditorTabItem({
 export function WorkspaceTopBar() {
   const { t } = useTranslation("explorer");
   const { t: tEditor } = useTranslation("editor");
+  const { t: tMaps } = useTranslation("maps");
 
   const explorerOpen = useLayoutStore((s) => s.explorerOpen);
   const explorerWidth = useLayoutStore((s) => s.explorerWidth);
@@ -169,6 +171,7 @@ export function WorkspaceTopBar() {
 
   const mainView = useWorkspaceStore((s) => s.mainView);
   const activeProject = useProjectStore((s) => s.activeProject);
+  const activeMapTitle = useMapStore((s) => s.activeMapTitle);
 
   const tree = useFileTreeStore((s) => s.tree);
   const viewMode = useFileTreeStore((s) => s.viewMode);
@@ -241,6 +244,7 @@ export function WorkspaceTopBar() {
   };
 
   const isEditorView = mainView === "editor";
+  const isMapView = mainView === "map";
   const showExplorerColumn = isEditorView && explorerOpen;
   const isSearchVisible = searchOpen || searchQuery.length > 0;
 
@@ -383,7 +387,17 @@ export function WorkspaceTopBar() {
       ) : null}
 
       <div className="flex min-w-0 flex-1 items-center gap-2 px-2">
-        {isEditorView && tabOrder.length > 0 ? (
+        {isMapView ? (
+          <h1 className="min-w-0 truncate px-1 text-sm">
+            <span className="font-semibold text-foreground">{tMaps("title")}</span>
+            {activeMapTitle ? (
+              <>
+                <span className="mx-2 font-normal text-muted-foreground">|</span>
+                <span className="font-medium text-foreground">{activeMapTitle}</span>
+              </>
+            ) : null}
+          </h1>
+        ) : isEditorView && tabOrder.length > 0 ? (
           <div className="flex min-w-0 flex-1 items-stretch gap-1">
             {tabStripOverflows ? (
               <button

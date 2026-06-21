@@ -12,8 +12,13 @@
       "nav": "Dibujos hijo",
       "hotspots": "Hotspots",
       "locations": "Ubicaciones",
-      "studio": "Estudio"
+      "studio": "Estudio",
+      "canvas": "Lienzo",
+      "settings": "Configuración"
     }
+  },
+  "moduleSettings": {
+    "openPreferenceHint": "Preferencia del proyecto al abrir el módulo mapas."
   },
   "loadFailed": "No se pudo cargar el mapa.",
   "loadingMaps": "Cargando mapas…",
@@ -77,6 +82,7 @@
     "cancel": "Cancelar",
     "expandSubmit": "Expandir",
     "cropSubmit": "Recortar",
+    "sectionHint": "Expandir añade píxeles a la derecha y abajo sin escalar el contenido. Recortar reduce el área y elimina trazos fuera del borde.",
     "errors": {
       "expand_zero": "Indica cuántos píxeles añadir en ancho o alto.",
       "crop_not_smaller": "El recorte debe reducir al menos una dimensión.",
