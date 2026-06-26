@@ -18,9 +18,7 @@ import { UnsavedChangesDialog } from "@/modules/editor/UnsavedChangesDialog";
 import { FileExplorer } from "@/modules/explorer/FileExplorer";
 import { GlobalNav } from "@/modules/layout/GlobalNav";
 import { ResizableLeftPanel } from "@/modules/layout/ResizableLeftPanel";
-import {
-  MAP_SIDE_PANEL_RAIL_MOUNT_ID,
-} from "@/modules/layout/mapSidePanelMount";
+import { MAP_SIDE_PANEL_RAIL_MOUNT_ID } from "@/modules/layout/mapSidePanelMount";
 import { ResizableRightPanel } from "@/modules/layout/ResizableRightPanel";
 import { WorkspaceTopBar } from "@/modules/layout/WorkspaceTopBar";
 import { useFileTreeStore } from "@/stores/useFileTreeStore";
@@ -87,79 +85,81 @@ export function WorkspaceShell() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <WorkspaceTopBar />
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <GlobalNav
-            editorViewMode={viewMode === "all" ? "manuscript" : viewMode}
-            onEditorViewMode={(mode) => setViewMode(mode)}
-            mainView={mainView}
-            onMainViewChange={handleMainViewChange}
-            onOpenHistory={() => {
-              trackAction("workspace", "versionsOpen", {});
-              setVersionsOpen(true);
-            }}
-            onOpenSettings={() => {
-              trackAction("workspace", "settingsOpen", {});
-              trackAction("settings", "open", {});
-              setSettingsOpen(true);
-            }}
-          />
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
+      <WorkspaceTopBar />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <GlobalNav
+              editorViewMode={viewMode === "all" ? "manuscript" : viewMode}
+              onEditorViewMode={(mode) => setViewMode(mode)}
+              mainView={mainView}
+              onMainViewChange={handleMainViewChange}
+              onOpenHistory={() => {
+                trackAction("workspace", "versionsOpen", {});
+                setVersionsOpen(true);
+              }}
+              onOpenSettings={() => {
+                trackAction("workspace", "settingsOpen", {});
+                trackAction("settings", "open", {});
+                setSettingsOpen(true);
+              }}
+            />
 
-          {explorerOpen && mainView === "editor" ? (
-            <ResizableLeftPanel width={explorerWidth} onWidthChange={setExplorerWidth}>
-              <FileExplorer />
-            </ResizableLeftPanel>
-          ) : null}
+            {explorerOpen && mainView === "editor" ? (
+              <ResizableLeftPanel width={explorerWidth} onWidthChange={setExplorerWidth}>
+                <FileExplorer />
+              </ResizableLeftPanel>
+            ) : null}
 
-          <main
-            className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${
-              mainView === "map" || mainView === "calendar" ? "" : "p-4"
-            }`}
-          >
-            {mainView === "calendar" ? (
-              <CalendarWorkspace />
-            ) : mainView === "timeline" ? (
-              <TimelineView />
-            ) : mainView === "consistency" ? (
-              <ConsistencyPanel />
-            ) : mainView === "map" ? (
-              <MapWorkspace />
-            ) : mainView === "graph" ? (
-              <GraphView />
-            ) : (
-              <EditorCanvas />
-            )}
-          </main>
+            <main
+              className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${
+                mainView === "map" || mainView === "calendar" ? "" : "p-4"
+              }`}
+            >
+              {mainView === "calendar" ? (
+                <CalendarWorkspace />
+              ) : mainView === "timeline" ? (
+                <TimelineView />
+              ) : mainView === "consistency" ? (
+                <ConsistencyPanel />
+              ) : mainView === "map" ? (
+                <MapWorkspace />
+              ) : mainView === "graph" ? (
+                <GraphView />
+              ) : (
+                <EditorCanvas />
+              )}
+            </main>
+          </div>
         </div>
+
+        {mainView === "editor" ? (
+          <ResizableRightPanel
+            width={rightPanelWidth}
+            onWidthChange={setRightPanelWidth}
+            collapsed={rightPanelCollapsed}
+          >
+            <EditorSidePanel />
+          </ResizableRightPanel>
+        ) : null}
+
+        {mainView === "timeline" ? (
+          <ResizableRightPanel
+            width={rightPanelWidth}
+            onWidthChange={setRightPanelWidth}
+            collapsed={rightPanelCollapsed}
+          >
+            <TimelineSidePanel />
+          </ResizableRightPanel>
+        ) : null}
+
+        {mainView === "map" ? (
+          <aside className="flex h-full w-10 shrink-0 flex-col overflow-hidden bg-card">
+            <div id={MAP_SIDE_PANEL_RAIL_MOUNT_ID} className="h-full min-h-0 w-full" />
+          </aside>
+        ) : null}
       </div>
-
-      {mainView === "editor" ? (
-        <ResizableRightPanel
-          width={rightPanelWidth}
-          onWidthChange={setRightPanelWidth}
-          collapsed={rightPanelCollapsed}
-        >
-          <EditorSidePanel />
-        </ResizableRightPanel>
-      ) : null}
-
-      {mainView === "timeline" ? (
-        <ResizableRightPanel
-          width={rightPanelWidth}
-          onWidthChange={setRightPanelWidth}
-          collapsed={rightPanelCollapsed}
-        >
-          <TimelineSidePanel />
-        </ResizableRightPanel>
-      ) : null}
-
-      {mainView === "map" ? (
-        <aside className="flex h-full w-10 shrink-0 flex-col overflow-hidden bg-card">
-          <div id={MAP_SIDE_PANEL_RAIL_MOUNT_ID} className="h-full min-h-0 w-full" />
-        </aside>
-      ) : null}
 
       <UnsavedChangesDialog />
       <MapUnsavedChangesDialog />

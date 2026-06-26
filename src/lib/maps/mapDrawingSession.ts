@@ -1,7 +1,9 @@
 import { MAP_STUDIO_MIN_POINT_DISTANCE } from "@/lib/maps/mapBrushes";
 import { documentDistance } from "@/lib/maps/mapDrawCoords";
 import { resolveLayerEffectiveState } from "@/lib/maps/mapLayerGroups";
+import { getLayerStrokes, isImageLayer } from "@/lib/maps/mapImageLayers";
 import type {
+  MapDrawingImageLayerV2,
   MapDrawingLayerV2,
   MapDrawingV2,
   MapStrokePointV2,
@@ -36,6 +38,15 @@ export type MapLayerPatch = Partial<
   Pick<MapDrawingLayerV2, "name" | "visible" | "opacity" | "locked">
 >;
 
+export const MAP_DRAWING_DEFAULT_BACKGROUND = "#ffffff";
+
+export function patchDrawingBackground(
+  drawing: MapDrawingV2,
+  backgroundColor: string | null,
+): MapDrawingV2 {
+  return { ...drawing, backgroundColor };
+}
+
 export function cloneDrawing(drawing: MapDrawingV2): MapDrawingV2 {
   return structuredClone(drawing);
 }
@@ -56,10 +67,11 @@ export function normalizeLayerName(name: string, fallbackIndex: number): string 
 /** Primera capa dibujable o, si ninguna, la primera del stack (MAP-006 D3). */
 export function resolveDefaultActiveLayerId(drawing: MapDrawingV2): string | null {
   const drawable = drawing.layers.find((layer) => {
+    if (isImageLayer(layer)) return false;
     const effective = resolveLayerEffectiveState(layer, drawing.groups);
     return effective.visible && !effective.locked;
   });
-  return drawable?.id ?? drawing.layers[0]?.id ?? null;
+  return drawable?.id ?? drawing.layers.find((layer) => !isImageLayer(layer))?.id ?? null;
 }
 
 /** Capa activa explícita o fallback a la primera dibujable (MAP-006 D3). */
@@ -71,11 +83,13 @@ export function resolveActiveLayer(
     const selected = drawing.layers.find((layer) => layer.id === activeLayerId);
     if (selected) {
       const effective = resolveLayerEffectiveState(selected, drawing.groups);
+      if (isImageLayer(selected)) return null;
       return effective.visible && !effective.locked ? selected : null;
     }
   }
   return (
     drawing.layers.find((layer) => {
+      if (isImageLayer(layer)) return false;
       const effective = resolveLayerEffectiveState(layer, drawing.groups);
       return effective.visible && !effective.locked;
     }) ?? null
@@ -119,7 +133,7 @@ export function ensureActiveLayerId(
 }
 
 export function countLayerStrokes(layer: MapDrawingLayerV2): number {
-  return layer.strokes.length;
+  return getLayerStrokes(layer).length;
 }
 
 export function addLayer(
@@ -128,12 +142,42 @@ export function addLayer(
 ): { drawing: MapDrawingV2; layerId: string } {
   const layerId = createLayerId();
   const layer: MapDrawingLayerV2 = {
+    kind: "vector",
     id: layerId,
     name: normalizeLayerName(name ?? "", drawing.layers.length + 1),
     visible: true,
     opacity: 1,
     locked: false,
     strokes: [],
+  };
+  return {
+    drawing: { ...drawing, layers: [...drawing.layers, layer] },
+    layerId,
+  };
+}
+
+export function addImageLayer(
+  drawing: MapDrawingV2,
+  assetPath: string,
+  naturalWidth: number,
+  naturalHeight: number,
+  name?: string,
+): { drawing: MapDrawingV2; layerId: string } {
+  const layerId = createLayerId();
+  const x = (drawing.width - naturalWidth) / 2;
+  const y = (drawing.height - naturalHeight) / 2;
+  const layer: MapDrawingImageLayerV2 = {
+    kind: "image",
+    id: layerId,
+    name: normalizeLayerName(name ?? "", drawing.layers.length + 1),
+    visible: true,
+    opacity: 1,
+    locked: false,
+    assetPath,
+    x,
+    y,
+    width: naturalWidth,
+    height: naturalHeight,
   };
   return {
     drawing: { ...drawing, layers: [...drawing.layers, layer] },
@@ -267,9 +311,10 @@ export function pushStrokeToLayer(
 ): MapDrawingV2 {
   return {
     ...drawing,
-    layers: drawing.layers.map((layer) =>
-      layer.id === layerId ? { ...layer, strokes: [...layer.strokes, stroke] } : layer,
-    ),
+    layers: drawing.layers.map((layer) => {
+      if (layer.id !== layerId || isImageLayer(layer)) return layer;
+      return { ...layer, strokes: [...getLayerStrokes(layer), stroke] };
+    }),
   };
 }
 
@@ -280,8 +325,8 @@ export function removeStrokeFromLayer(
 ): { drawing: MapDrawingV2; removed: MapStrokeV2 | null } {
   let removed: MapStrokeV2 | null = null;
   const layers = drawing.layers.map((layer) => {
-    if (layer.id !== layerId) return layer;
-    const strokes = layer.strokes.filter((stroke) => {
+    if (layer.id !== layerId || isImageLayer(layer)) return layer;
+    const strokes = getLayerStrokes(layer).filter((stroke) => {
       if (stroke.id === strokeId) {
         removed = stroke;
         return false;

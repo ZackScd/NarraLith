@@ -137,8 +137,8 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-011** | 🔄 | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) · impl ✅ · afinado → MAP-013 | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
 | **MAP-012** | ⏸ | Smoke Era III + purga legacy — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) · **pospuesto** tras MAP-013 + MAP-014 | Medio | [`maps-design.md`](maps-design.md) §2 |
 | **MAP-013** | 🔄 | Correcciones UX + comportamiento módulo mapas — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) · oleadas 0–2 + polish P2 ✅ | Alto | [`maps-design.md`](maps-design.md) §2–§8 |
-| **MAP-014** | 📋 | Panel herramientas **flotante** (reemplaza rail MAP-013 §2bis) — [plan](plans/Fase%20F/MAP-014-floating-tools-panel.md) | Medio–Alto | [`maps-design.md`](maps-design.md) §8.5 |
-| **MAP-015** | 📋 | Ventana capas unificada + Fondo + imagen capa + sin import crear — [plan](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) | Alto | [`maps-design.md`](maps-design.md) §3.2.1 · §4.1 |
+| **MAP-014** | ✅ | Panel contenido **flotante** + rail fijo — [plan](plans/Fase%20F/MAP-014-floating-tools-panel.md) | Medio–Alto | [`maps-design.md`](maps-design.md) §8.5 |
+| **MAP-015** | 🔄 | Ventana capas unificada + Fondo — [plan](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) · F1–2 ✅ | Alto | [`maps-design.md`](maps-design.md) §3.2.1 · §4.1 |
 | **MAP-016** | 📋 | Nav+hijo unificados · rubber banding · ventana flotante hijo — [plan](plans/Fase%20F/MAP-016-nav-hotspots-replan.md) | Alto | [`maps-design.md`](maps-design.md) §5.5–5.6 |
 | **MAP-017** | 📋 | Timeline mapa = diseño proyecto + eje sparse + ubicaciones constantes — [plan](plans/Fase%20F/MAP-017-map-timeline-view.md) | Alto | [`maps-design.md`](maps-design.md) §4.4 |
 

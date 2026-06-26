@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Image as ImageIcon,
   Folder,
   FolderPlus,
   Lock,
@@ -22,7 +23,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { countLayerStrokes } from "@/lib/maps/mapDrawingSession";
+import {
+  countLayerStrokes,
+  MAP_DRAWING_DEFAULT_BACKGROUND,
+} from "@/lib/maps/mapDrawingSession";
+import { isImageLayer } from "@/lib/maps/mapImageLayers";
 import {
   buildLayerPanelRows,
   panelRowDragId,
@@ -60,6 +65,8 @@ interface MapLayersPanelProps {
   ) => void;
   onPatchGroup: (groupId: string, patch: LayerGroupPatch) => void;
   onReorderPanelRow: (fromDragId: string, toDragId: string) => void;
+  onPatchBackground: (backgroundColor: string | null) => void;
+  onImportImageLayer?: () => void | Promise<void | boolean>;
 }
 
 export function MapLayersPanel({
@@ -74,6 +81,8 @@ export function MapLayersPanel({
   onPatchLayer,
   onPatchGroup,
   onReorderPanelRow,
+  onPatchBackground,
+  onImportImageLayer,
   embedded = false,
 }: MapLayersPanelProps) {
   const { t } = useTranslation("maps");
@@ -85,6 +94,8 @@ export function MapLayersPanel({
   const [editingName, setEditingName] = useState("");
 
   const panelRows = useMemo(() => buildLayerPanelRows(drawing), [drawing]);
+  const backgroundVisible = drawing.backgroundColor != null;
+  const backgroundColor = drawing.backgroundColor ?? MAP_DRAWING_DEFAULT_BACKGROUND;
 
   const beginLayerRename = useCallback((layerId: string, currentName: string) => {
     setEditingGroupId(null);
@@ -216,7 +227,13 @@ export function MapLayersPanel({
               beginLayerRename(layer.id, layer.name);
             }}
           >
-            <MapLayerThumbnail layer={layer} />
+            {isImageLayer(layer) ? (
+              <span className="flex size-8 shrink-0 items-center justify-center rounded border border-border/50 bg-muted/40">
+                <ImageIcon className="size-3.5 text-muted-foreground" />
+              </span>
+            ) : (
+              <MapLayerThumbnail layer={layer} />
+            )}
             {editingLayerId === layer.id ? (
               <input
                 className="h-7 min-w-0 flex-1 rounded border border-input bg-background px-1.5 text-xs"
@@ -393,6 +410,19 @@ export function MapLayersPanel({
           <span className="sr-only">{t("studio.layers.title")}</span>
         )}
         <div className="flex items-center gap-1">
+          {onImportImageLayer ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="size-7"
+              title={t("layersWindow.addImageLayer")}
+              aria-label={t("layersWindow.addImageLayer")}
+              onClick={() => void onImportImageLayer()}
+            >
+              <ImageIcon className="size-4" />
+            </Button>
+          ) : null}
           <Button
             type="button"
             size="icon"
@@ -446,6 +476,57 @@ export function MapLayersPanel({
           })}
         </ul>
       </MapLayerListDnDProvider>
+
+      <div className="shrink-0 border-t border-border/60 p-1.5">
+        <div className="flex items-center gap-1 rounded-md border border-border/40 bg-muted/20 px-1 py-1">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-6"
+            title={
+              backgroundVisible
+                ? t("studio.layers.background.hide")
+                : t("studio.layers.background.show")
+            }
+            aria-pressed={backgroundVisible}
+            onClick={() =>
+              onPatchBackground(
+                backgroundVisible ? null : backgroundColor || MAP_DRAWING_DEFAULT_BACKGROUND,
+              )
+            }
+          >
+            {backgroundVisible ? (
+              <Eye className="size-3" />
+            ) : (
+              <EyeOff className="size-3 text-muted-foreground" />
+            )}
+          </Button>
+          <label
+            className={cn(
+              "relative size-6 shrink-0 overflow-hidden rounded-full border border-border/80",
+              !backgroundVisible && "opacity-40",
+            )}
+          >
+            <span
+              className="absolute inset-0"
+              style={{ backgroundColor }}
+              aria-hidden
+            />
+            <input
+              type="color"
+              value={backgroundColor}
+              disabled={!backgroundVisible}
+              className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+              aria-label={t("studio.layers.background.pickColor")}
+              onChange={(event) => onPatchBackground(event.target.value)}
+            />
+          </label>
+          <span className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground">
+            {t("studio.layers.background.name")}
+          </span>
+        </div>
+      </div>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>

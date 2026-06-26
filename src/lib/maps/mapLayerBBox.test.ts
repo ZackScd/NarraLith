@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { computeLayerContentBBox } from "@/lib/maps/mapLayerBBox";
-import type { MapDrawingLayerV2 } from "@/lib/types/maps";
+import type { MapDrawingVectorLayerV2, MapStrokeV2 } from "@/lib/types/maps";
 
-function layerWithStrokes(
-  strokes: MapDrawingLayerV2["strokes"],
-): MapDrawingLayerV2 {
+function layerWithStrokes(strokes: MapStrokeV2[]): MapDrawingVectorLayerV2 {
   return {
     id: "layer-1",
     name: "Test",

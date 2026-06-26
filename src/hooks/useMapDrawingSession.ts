@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 
+import { invokeCommand } from "@/lib/ipc";
 import {
   fingerprintMapDrawing,
   isDrawingDirtyAgainstBaseline,
@@ -10,10 +12,13 @@ import {
   type MapDrawingDraft,
 } from "@/lib/maps/mapDrawingDraft";
 import {
+  addImageLayer,
   addLayer,
   cloneDrawing,
+  countLayerStrokes,
   ensureActiveLayerId,
   MAP_UNDO_MAX_DEPTH,
+  patchDrawingBackground,
   pushStrokeToLayer,
   removeLayer,
   removeStrokeFromLayer,
@@ -37,7 +42,7 @@ import {
 } from "@/lib/maps/mapLayerGroups";
 import { strokeHadPressure } from "@/lib/maps/mapDrawingStats";
 import { trackAction } from "@/lib/action-audit/trackAction";
-import type { MapDrawingV2, MapStrokeV2 } from "@/lib/types/maps";
+import type { MapDrawingV2, MapLayerImageImportResultV1, MapStrokeV2 } from "@/lib/types/maps";
 
 export { MAP_UNDO_MAX_DEPTH };
 
@@ -242,8 +247,8 @@ export function useMapDrawingSession({
   const deleteLayer = useCallback(
     (layerId: string) => {
       if (!drawing) return false;
-      const strokeCount =
-        drawing.layers.find((layer) => layer.id === layerId)?.strokes.length ?? 0;
+      const layer = drawing.layers.find((item) => item.id === layerId);
+      const strokeCount = layer ? countLayerStrokes(layer) : 0;
       try {
         const next = removeLayer(drawing, layerId);
         const nextActiveLayerId = ensureActiveLayerId(next, activeLayerIdRef.current);
@@ -353,6 +358,49 @@ export function useMapDrawingSession({
     },
     [drawing, mutateDrawing],
   );
+
+  const patchBackgroundColor = useCallback(
+    (backgroundColor: string | null) => {
+      if (!drawing) return;
+      mutateDrawing(() => patchDrawingBackground(drawing, backgroundColor));
+    },
+    [drawing, mutateDrawing],
+  );
+
+  const importImageLayer = useCallback(async () => {
+    if (!drawing || !mapId) return false;
+    const selected = await open({
+      multiple: false,
+      filters: [
+        {
+          name: "Image",
+          extensions: ["png", "jpg", "jpeg", "webp"],
+        },
+      ],
+    });
+    if (!selected || typeof selected !== "string") return false;
+    try {
+      const imported = await invokeCommand<MapLayerImageImportResultV1>(
+        "import_map_layer_image_cmd",
+        { mapId, sourcePath: selected },
+      );
+      const result = addImageLayer(
+        drawing,
+        imported.assetPath,
+        imported.width,
+        imported.height,
+      );
+      mutateDrawing(() => result.drawing, { nextActiveLayerId: result.layerId });
+      trackAction("map", "layerCreate", {
+        mapId,
+        layerId: result.layerId,
+        index: result.drawing.layers.length - 1,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }, [drawing, mapId, mutateDrawing]);
 
   const commitStroke = useCallback(
     (stroke: MapStrokeV2) => {
@@ -474,6 +522,8 @@ export function useMapDrawingSession({
     createLayer,
     deleteLayer,
     patchLayer,
+    patchBackgroundColor,
+    importImageLayer,
     moveLayerToIndex,
     createGroup,
     deleteGroup,

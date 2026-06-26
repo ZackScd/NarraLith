@@ -20,6 +20,11 @@ export { PanelIconToggle } from "./PanelIconToggle";
 export { PanelSectionHeader } from "./PanelSectionHeader";
 export { PanelAccordionTrigger } from "./PanelAccordionTrigger";
 export { PanelDraftFooter } from "./PanelDraftFooter";
+export {
+  FloatingPanelFrame,
+  type FloatingPanelFrameHandle,
+  type FloatingPanelFrameProps,
+} from "./FloatingPanelFrame";
 
 export * from "./calendar";
 export * from "./manuscript";

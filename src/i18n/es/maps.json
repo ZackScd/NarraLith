@@ -13,6 +13,7 @@
     "interactiveTitle": "Panel del mapa",
     "expand": "Expandir panel",
     "collapse": "Contraer panel",
+    "closeWindow": "Cerrar ventana",
     "sections": {
       "maps": "Mapas",
       "layers": "Capas",
@@ -23,6 +24,49 @@
       "studio": "Estudio",
       "canvas": "Lienzo",
       "settings": "Configuración"
+    }
+  },
+  "layersWindow": {
+    "tabs": {
+      "layers": "Capas",
+      "patches": "Parches",
+      "nav": "Dibujos hijo",
+      "combined": "capas/parches"
+    },
+    "tabEmpty": "Contenido no disponible en esta vista.",
+    "background": {
+      "name": "Fondo"
+    },
+    "patches": {
+      "showInactive": "Mostrar inactivos en T",
+      "sortManual": "Orden manual",
+      "sortBase": "Base al inicio",
+      "sortChrono": "Orden cronológico",
+      "combine": "Combinar con capas"
+    },
+    "addImageLayer": "Importar imagen como capa",
+    "combined": {
+      "principal": "Principal (terreno base)",
+      "loadingLayers": "Cargando capas…"
+    },
+    "image": {
+      "badge": "img"
+    },
+    "nav": {
+      "panelAria": "Dibujos hijo y hotspots del mapa {{mapId}}",
+      "hint": "Lápiz: editar dibujo hijo en ventana flotante. Icono mapa: redibujar zona hotspot en el padre.",
+      "empty": "Aún no hay dibujos hijo. Activa «Dibujar zona» para crear uno.",
+      "noZone": "Sin zona hotspot",
+      "zoneSummary": "{{label}} — {{width}}×{{height}}",
+      "orphanHotspot": "Hotspot sin dibujo hijo vinculado",
+      "deletePair": "Eliminar dibujo hijo y hotspot",
+      "deletePairMessage": "¿Eliminar «{{name}}» y su zona hotspot vinculada?",
+      "editDrawing": "Editar dibujo hijo (ventana flotante)",
+      "editZone": "Redibujar zona hotspot en el mapa padre",
+      "windowOpen": "Ventana de edición abierta",
+      "shapePolygon": "Polígono",
+      "shapeRect": "Rectángulo",
+      "shapeCircle": "Círculo"
     }
   },
   "moduleSettings": {
@@ -188,12 +232,12 @@
   "hotspot": {
     "panelTitle": "Hotspots",
     "panelAria": "Hotspots del mapa {{mapId}}",
-    "drawZone": "Dibujar zona clickable",
+    "drawZone": "Dibujar zona (nuevo hijo)",
     "drawHint": "Arrastra en el lienzo para definir el área. Solo en el terreno base.",
     "interactiveHint": "En modo edición solo se dibujan zonas. En mapa interactivo, clic en zona → navegar al dibujo hijo.",
     "targetNavLabel": "Destino: {{name}}",
     "zoneSize": "Zona: {{width}}×{{height}} px",
-    "empty": "Sin hotspots. Dibuja una zona y elige un dibujo hijo destino.",
+    "empty": "Sin dibujos hijo. Usa «Dibujar zona» para crear hijo y hotspot.",
     "delete": "Eliminar hotspot",
     "deleteTitle": "Eliminar hotspot",
     "deleteMessage": "¿Eliminar «{{name}}»?",
@@ -206,7 +250,36 @@
     "labelOptional": "Etiqueta (opcional)",
     "labelPlaceholder": "Ej. Entrada al templo",
     "createNavInline": "Crear dibujo hijo…",
-    "save": "Guardar hotspot"
+    "save": "Guardar hotspot",
+    "lasso": {
+      "drawHint": "Clic para colocar el origen y luego añadir vértices. Clic cerca del origen o Enter para cerrar. Solo terreno base.",
+      "origin": "Origen",
+      "distance": "{{px}} px",
+      "closeHint": "Clic para cerrar"
+    },
+    "tools": {
+      "lasso": "Lazo (polígono)",
+      "rect": "Rectángulo",
+      "circle": "Círculo"
+    },
+    "zoneEdit": {
+      "drawHint": "Redibuja la zona en el mapa padre. El dibujo hijo vinculado no cambia.",
+      "panelHint": "Redibujando zona — completa el gesto en el lienzo padre o cancela el modo dibujo."
+    },
+    "circle": {
+      "drawHint": "Arrastra desde el centro para definir el radio. Solo terreno base."
+    },
+    "navChild": {
+      "title": "Nuevo dibujo hijo",
+      "description": "Zona poligonal con {{count}} vértices. Nombra el dibujo hijo vinculado a este hotspot.",
+      "descriptionRect": "Zona rectangular {{width}}×{{height}} px. Nombra el dibujo hijo vinculado a este hotspot.",
+      "descriptionCircle": "Zona circular (radio {{radius}} px). Nombra el dibujo hijo vinculado a este hotspot.",
+      "create": "Crear hijo + hotspot"
+    }
+  },
+  "navChildWindow": {
+    "ariaLabel": "Ventana dibujo hijo: {{name}}",
+    "editBadge": "edición"
   },
   "location": {
     "panelTitle": "Ubicaciones",
@@ -337,7 +410,13 @@
       "hideGroup": "Ocultar carpeta",
       "showGroup": "Mostrar carpeta",
       "lockGroup": "Bloquear carpeta",
-      "unlockGroup": "Desbloquear carpeta"
+      "unlockGroup": "Desbloquear carpeta",
+      "background": {
+        "name": "Fondo",
+        "show": "Mostrar color de fondo",
+        "hide": "Fondo transparente",
+        "pickColor": "Color de fondo del dibujo"
+      }
     }
   },
   "errors": {

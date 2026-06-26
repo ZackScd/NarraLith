@@ -13,6 +13,7 @@
     "interactiveTitle": "Map panel",
     "expand": "Expand panel",
     "collapse": "Collapse panel",
+    "closeWindow": "Close window",
     "sections": {
       "maps": "Maps",
       "layers": "Layers",
@@ -23,6 +24,49 @@
       "studio": "Studio",
       "canvas": "Canvas",
       "settings": "Settings"
+    }
+  },
+  "layersWindow": {
+    "tabs": {
+      "layers": "Layers",
+      "patches": "Patches",
+      "nav": "Child drawings",
+      "combined": "layers/patches"
+    },
+    "tabEmpty": "Content is not available in this view.",
+    "background": {
+      "name": "Background"
+    },
+    "patches": {
+      "showInactive": "Show inactive at T",
+      "sortManual": "Manual order",
+      "sortBase": "Base first",
+      "sortChrono": "Chronological order",
+      "combine": "Combine with layers"
+    },
+    "addImageLayer": "Import image as layer",
+    "combined": {
+      "principal": "Principal (base terrain)",
+      "loadingLayers": "Loading layers…"
+    },
+    "image": {
+      "badge": "img"
+    },
+    "nav": {
+      "panelAria": "Child drawings and hotspots for map {{mapId}}",
+      "hint": "Pencil: edit child drawing in a floating window. Map icon: re-draw hotspot zone on the parent.",
+      "empty": "No child drawings yet. Activate «Draw zone» to create one.",
+      "noZone": "Missing hotspot zone",
+      "zoneSummary": "{{label}} — {{width}}×{{height}}",
+      "orphanHotspot": "Hotspot without linked child drawing",
+      "deletePair": "Delete child drawing and hotspot",
+      "deletePairMessage": "Delete «{{name}}» and its linked hotspot zone?",
+      "editDrawing": "Edit child drawing (floating window)",
+      "editZone": "Re-draw hotspot zone on parent map",
+      "windowOpen": "Edit window open",
+      "shapePolygon": "Polygon",
+      "shapeRect": "Rectangle",
+      "shapeCircle": "Circle"
     }
   },
   "moduleSettings": {
@@ -188,12 +232,12 @@
   "hotspot": {
     "panelTitle": "Hotspots",
     "panelAria": "Hotspots for map {{mapId}}",
-    "drawZone": "Draw clickable zone",
+    "drawZone": "Draw zone (new child)",
     "drawHint": "Drag on the canvas to define the area. Base terrain only.",
     "interactiveHint": "In edit mode you draw zones only. In interactive mode, click a zone to navigate to the child drawing.",
     "targetNavLabel": "Target: {{name}}",
     "zoneSize": "Zone: {{width}}×{{height}} px",
-    "empty": "No hotspots. Draw a zone and pick a child drawing target.",
+    "empty": "No child drawings. Use «Draw zone» to create a child and its hotspot.",
     "delete": "Delete hotspot",
     "deleteTitle": "Delete hotspot",
     "deleteMessage": "Delete «{{name}}»?",
@@ -206,7 +250,36 @@
     "labelOptional": "Label (optional)",
     "labelPlaceholder": "e.g. Temple entrance",
     "createNavInline": "Create child drawing…",
-    "save": "Save hotspot"
+    "save": "Save hotspot",
+    "lasso": {
+      "drawHint": "Click to place origin, then add vertices. Click near origin or press Enter to close. Base terrain only.",
+      "origin": "Origin",
+      "distance": "{{px}} px",
+      "closeHint": "Click to close"
+    },
+    "tools": {
+      "lasso": "Lasso (polygon)",
+      "rect": "Rectangle",
+      "circle": "Circle"
+    },
+    "zoneEdit": {
+      "drawHint": "Re-draw the zone on the parent map. The linked child drawing is unchanged.",
+      "panelHint": "Re-drawing zone — complete the gesture on the parent canvas or cancel draw mode."
+    },
+    "circle": {
+      "drawHint": "Drag from the center to set the radius. Base terrain only."
+    },
+    "navChild": {
+      "title": "New child drawing",
+      "description": "Polygon zone with {{count}} vertices. Name the child drawing linked to this hotspot.",
+      "descriptionRect": "Rectangle zone {{width}}×{{height}} px. Name the child drawing linked to this hotspot.",
+      "descriptionCircle": "Circle zone (radius {{radius}} px). Name the child drawing linked to this hotspot.",
+      "create": "Create child + hotspot"
+    }
+  },
+  "navChildWindow": {
+    "ariaLabel": "Child drawing window: {{name}}",
+    "editBadge": "edit"
   },
   "location": {
     "panelTitle": "Locations",
@@ -337,7 +410,13 @@
       "hideGroup": "Hide folder",
       "showGroup": "Show folder",
       "lockGroup": "Lock folder",
-      "unlockGroup": "Unlock folder"
+      "unlockGroup": "Unlock folder",
+      "background": {
+        "name": "Background",
+        "show": "Show background color",
+        "hide": "Transparent background",
+        "pickColor": "Drawing background color"
+      }
     }
   },
   "errors": {

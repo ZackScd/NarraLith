@@ -96,6 +96,7 @@ pub fn run() {
             commands::maps::expand_map_canvas_cmd,
             commands::maps::crop_map_canvas_cmd,
             commands::maps::read_project_image_cmd,
+            commands::maps::import_map_layer_image_cmd,
             commands::maps::get_maps_session_cmd,
             commands::maps::set_open_preference_cmd,
             commands::maps::set_default_on_open_cmd,

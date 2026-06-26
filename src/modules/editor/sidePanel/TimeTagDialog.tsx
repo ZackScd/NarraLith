@@ -1,8 +1,12 @@
-import { BookmarkPlus, Clock, GripHorizontal, Save, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BookmarkPlus, Clock, Save } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
+import {
+  FloatingPanelFrame,
+  type FloatingPanelFrameHandle,
+} from "@/components/workspace-ui/FloatingPanelFrame";
 import { Button } from "@/components/ui/button";
 import { effectiveCalendarForYear } from "@/lib/calendar/effectiveCalendar";
 import {
@@ -41,23 +45,6 @@ import { TimeTagTimelinePreview } from "./TimeTagTimelinePreview";
 const DIALOG_MIN_WIDTH = 240;
 const DIALOG_MIN_HEIGHT = 360;
 const DIALOG_HORIZONTAL_PADDING = 24;
-const VIEWPORT_MARGIN = 8;
-
-function clampPosition(
-  x: number,
-  y: number,
-  dialogWidth: number,
-): { x: number; y: number } {
-  const w = typeof window !== "undefined" ? window.innerWidth : 1024;
-  const h = typeof window !== "undefined" ? window.innerHeight : 720;
-  const width = Math.max(DIALOG_MIN_WIDTH, dialogWidth);
-  const maxX = Math.max(VIEWPORT_MARGIN, w - width - VIEWPORT_MARGIN);
-  const maxY = Math.max(VIEWPORT_MARGIN, h - DIALOG_MIN_HEIGHT - VIEWPORT_MARGIN);
-  return {
-    x: Math.min(Math.max(VIEWPORT_MARGIN, x), maxX),
-    y: Math.min(Math.max(VIEWPORT_MARGIN, y), maxY),
-  };
-}
 
 export function TimeTagDialog() {
   const { t } = useTranslation("editor");
@@ -345,36 +332,23 @@ function DialogBody({
     [lastAdded, events],
   );
 
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<FloatingPanelFrameHandle>(null);
   const visibleRowRef = useRef<HTMLDivElement>(null);
   const sizerRowRef = useRef<HTMLDivElement>(null);
-  const dragOriginRef = useRef<{ x: number; y: number; px: number; py: number } | null>(
-    null,
-  );
   const [pickerRowWidth, setPickerRowWidth] = useState(0);
-
-  const getDialogWidth = useCallback(
-    () => dialogRef.current?.offsetWidth ?? DIALOG_MIN_WIDTH,
-    [],
-  );
-
-  const reclampPosition = useCallback(() => {
-    setPosition(clampPosition(position.x, position.y, getDialogWidth()));
-  }, [getDialogWidth, position.x, position.y, setPosition]);
 
   useEffect(() => {
     const el = calendar.hoursEnabled ? visibleRowRef.current : sizerRowRef.current;
     if (!el) return;
     const update = () => {
       setPickerRowWidth(el.scrollWidth);
-      reclampPosition();
+      frameRef.current?.reclampPosition();
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
   }, [
-    reclampPosition,
     calendar.hoursEnabled,
     monthLength,
     monthName,
@@ -444,40 +418,6 @@ function DialogBody({
     </>
   );
 
-  const onPointerDownDrag = (e: React.PointerEvent) => {
-    e.preventDefault();
-    dragOriginRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      px: position.x,
-      py: position.y,
-    };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    const origin = dragOriginRef.current;
-    if (!origin) return;
-    setPosition(
-      clampPosition(
-        origin.px + (e.clientX - origin.x),
-        origin.py + (e.clientY - origin.y),
-        getDialogWidth(),
-      ),
-    );
-  };
-
-  const onPointerUp = (e: React.PointerEvent) => {
-    if (dragOriginRef.current) {
-      try {
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {
-        /* ignore */
-      }
-      dragOriginRef.current = null;
-    }
-  };
-
   const dialogWidth =
     pickerRowWidth > 0
       ? Math.max(DIALOG_MIN_WIDTH, pickerRowWidth + DIALOG_HORIZONTAL_PADDING)
@@ -494,39 +434,19 @@ function DialogBody({
   };
 
   return (
-    <div
-      ref={dialogRef}
-      role="dialog"
-      aria-modal="false"
-      aria-label={mode === "edit" ? t("timeTag.editTitle") : t("panel.timeDialogTitle")}
-      className="fixed z-50 flex w-fit min-w-[240px] flex-col rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl"
-      style={{ left: position.x, top: position.y, width: dialogWidth }}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+    <FloatingPanelFrame
+      ref={frameRef}
+      position={position}
+      onPositionChange={setPosition}
+      title={mode === "edit" ? t("timeTag.editTitle") : t("panel.timeDialogTitle")}
+      ariaLabel={mode === "edit" ? t("timeTag.editTitle") : t("panel.timeDialogTitle")}
+      onClose={onClose}
+      closeAriaLabel={t("panel.timeDialogClose")}
+      minWidth={DIALOG_MIN_WIDTH}
+      minHeight={DIALOG_MIN_HEIGHT}
+      width={dialogWidth}
+      bodyClassName="gap-3 px-3 py-3"
     >
-      <header
-        className="flex cursor-grab items-center justify-between gap-2 rounded-t-lg border-b border-border/60 bg-card/70 px-3 py-2 active:cursor-grabbing"
-        onPointerDown={onPointerDownDrag}
-      >
-        <div className="flex items-center gap-2 text-xs font-medium text-foreground">
-          <GripHorizontal className="size-3.5 text-muted-foreground" />
-          <span>{mode === "edit" ? t("timeTag.editTitle") : t("panel.timeDialogTitle")}</span>
-        </div>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="size-6"
-          onClick={onClose}
-          aria-label={t("panel.timeDialogClose")}
-          title={t("panel.timeDialogClose")}
-        >
-          <X className="size-3.5" />
-        </Button>
-      </header>
-
-      <div className="relative flex flex-col gap-3 px-3 py-3">
         <div className="min-w-0 overflow-hidden">
           <TimeTagYearRow
             calendar={calendar}
@@ -606,7 +526,6 @@ function DialogBody({
             {commitOnSave ? t("panel.timeInsert") : t("panel.timeSave")}
           </Button>
         </div>
-      </div>
-    </div>
+    </FloatingPanelFrame>
   );
 }

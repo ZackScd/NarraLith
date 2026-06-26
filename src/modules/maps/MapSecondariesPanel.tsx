@@ -1,8 +1,10 @@
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { sortSecondariesForPanel } from "@/lib/maps/mapSecondaryPanelSort";
+import { useMapLayersWindowStore } from "@/stores/useMapLayersWindowStore";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,7 @@ import type { MapDrawingRef, MapSecondarySummaryV1 } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
 
 import { CreateSecondaryDialog } from "./CreateSecondaryDialog";
+import { MapPatchesToolbar } from "./MapPatchesToolbar";
 import { MapSecondaryMetaDialog } from "./MapSecondaryMetaDialog";
 
 interface MapSecondariesPanelProps {
@@ -74,6 +77,25 @@ export function MapSecondariesPanel({
   const principalVisibleAtT =
     previewActive && secondaries.every((item) => !isVisibleAtPreviewT(item));
 
+  const showInactiveAtT = useMapLayersWindowStore((s) => s.showInactiveAtT);
+  const patchSortMode = useMapLayersWindowStore((s) => s.patchSortMode);
+  const toggleShowInactiveAtT = useMapLayersWindowStore((s) => s.toggleShowInactiveAtT);
+  const cyclePatchSortMode = useMapLayersWindowStore((s) => s.cyclePatchSortMode);
+  const toggleCombinedCapasParches = useMapLayersWindowStore((s) => s.toggleCombinedCapasParches);
+
+  const sortedSecondaries = useMemo(
+    () => sortSecondariesForPanel(secondaries, patchSortMode, calendar),
+    [calendar, patchSortMode, secondaries],
+  );
+
+  const listedSecondaries = useMemo(
+    () =>
+      sortedSecondaries.filter(
+        (item) => showInactiveAtT || !previewActive || isVisibleAtPreviewT(item),
+      ),
+    [isVisibleAtPreviewT, previewActive, showInactiveAtT, sortedSecondaries],
+  );
+
   const formatRange = (item: MapSecondarySummaryV1) => {
     const start = formatMapDesdeDisplay(item.tiempoInicio, calendar);
     const end = item.tiempoFin ? formatMapDesdeDisplay(item.tiempoFin, calendar) : null;
@@ -91,28 +113,29 @@ export function MapSecondariesPanel({
       )}
       aria-label={t("secondary.panelAria", { mapId })}
     >
-      <div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
-        {!embedded ? (
+      {!embedded ? (
+        <div className="border-b border-border/60 px-3 py-2">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t("secondary.panelTitle")}
           </h2>
-        ) : (
-          <span className="sr-only">{t("secondary.panelTitle")}</span>
-        )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          disabled={busy}
-          title={t("secondary.add")}
-          onClick={() => setCreateOpen(true)}
-        >
-          <Plus className="size-4" />
-        </Button>
-      </div>
+        </div>
+      ) : (
+        <span className="sr-only">{t("secondary.panelTitle")}</span>
+      )}
 
-      <div className="overflow-y-auto p-2">
+      <MapPatchesToolbar
+        busy={busy}
+        sortMode={patchSortMode}
+        showInactiveAtT={showInactiveAtT}
+        combinedActive={false}
+        showCombineButton
+        onCreate={() => setCreateOpen(true)}
+        onToggleInactive={toggleShowInactiveAtT}
+        onCycleSort={cyclePatchSortMode}
+        onToggleCombine={toggleCombinedCapasParches}
+      />
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
         <button
           type="button"
           className={cn(
@@ -133,7 +156,7 @@ export function MapSecondariesPanel({
           <span className="text-muted-foreground">{t("secondary.principalHint")}</span>
         </button>
 
-        {secondaries.map((item) => {
+        {listedSecondaries.map((item) => {
           const isActive =
             activeDrawingRef.kind === "secondary" && activeDrawingRef.id === item.id;
           const visibleAtT = isVisibleAtPreviewT(item);

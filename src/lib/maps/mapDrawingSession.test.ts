@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { getLayerStrokes } from "@/lib/maps/mapImageLayers";
+import type { MapDrawingVectorLayerV2 } from "@/lib/types/maps";
+
 import {
   addLayer,
   appendPointToStroke,
@@ -166,7 +169,7 @@ describe("cloneDrawing", () => {
   it("clona sin compartir referencias", () => {
     const drawing = sampleDrawing();
     const copy = cloneDrawing(drawing);
-    copy.layers[0]!.strokes.push({
+    (copy.layers[0] as MapDrawingVectorLayerV2).strokes.push({
       id: "s1",
       tool: "brush",
       brush: "pen",
@@ -175,7 +178,7 @@ describe("cloneDrawing", () => {
       baseOpacity: 1,
       points: [{ x: 1, y: 1 }],
     });
-    expect(drawing.layers[0]!.strokes).toHaveLength(0);
+    expect(getLayerStrokes(drawing.layers[0]!)).toHaveLength(0);
   });
 });
 
@@ -191,6 +194,6 @@ describe("pushStrokeToLayer", () => {
       points: [{ x: 1, y: 1 }],
     };
     const next = pushStrokeToLayer(sampleDrawing(), "layer-1", stroke);
-    expect(next.layers[0]!.strokes).toHaveLength(1);
+    expect(getLayerStrokes(next.layers[0]!)).toHaveLength(1);
   });
 });

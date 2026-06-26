@@ -111,6 +111,22 @@ struct ResolvedInitial {
     reason: InitialMapReason,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum MapLayerKind {
+    #[default]
+    Vector,
+    Image,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapLayerImageImportV1 {
+    pub asset_path: String,
+    pub width: u32,
+    pub height: u32,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MapDrawingLayerGroupV2 {
@@ -129,6 +145,8 @@ pub struct MapDrawingV2 {
     pub version: u32,
     pub width: u32,
     pub height: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub background_color: Option<String>,
     pub layers: Vec<MapDrawingLayerV2>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<MapDrawingLayerGroupV2>,
@@ -142,9 +160,22 @@ pub struct MapDrawingLayerV2 {
     pub visible: bool,
     pub opacity: f64,
     pub locked: bool,
+    #[serde(default)]
+    pub kind: MapLayerKind,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub strokes: Vec<MapStrokeV2>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asset_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -204,6 +235,48 @@ pub struct MapHotspotV1 {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct MapHotspotPointV2 {
+    pub x: f64,
+    pub y: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum MapHotspotShapeV2 {
+    Polygon { points: Vec<MapHotspotPointV2> },
+    Rect {
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    },
+    Circle {
+        cx: f64,
+        cy: f64,
+        radius: f64,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapHotspotV2 {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    pub host_drawing_ref: MapHostDrawingRef,
+    pub shape: MapHotspotShapeV2,
+    pub target_nav_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MapHotspotsFileV2 {
+    pub version: u32,
+    pub hotspots: Vec<MapHotspotV2>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct MapHotspotsFileV1 {
     pub version: u32,
     pub hotspots: Vec<MapHotspotV1>,
@@ -220,6 +293,15 @@ impl MapsIndexV2 {
             open_preference: OpenPreference::LastViewed,
             last_viewed_map_id: None,
             maps: Vec::new(),
+        }
+    }
+}
+
+impl MapHotspotsFileV2 {
+    fn empty() -> Self {
+        Self {
+            version: 2,
+            hotspots: Vec::new(),
         }
     }
 }
@@ -712,12 +794,9 @@ pub fn delete_map_nav(project_root: &Path, map_id: &str, nav_id: &str) -> Result
     Ok(())
 }
 
-pub fn get_map_hotspots(project_root: &Path, map_id: &str) -> Result<MapHotspotsFileV1, AppError> {
+pub fn get_map_hotspots(project_root: &Path, map_id: &str) -> Result<MapHotspotsFileV2, AppError> {
     let path = map_dir(project_root, map_id)?.join(HOTSPOTS_FILENAME);
-    if !path.is_file() {
-        return Ok(MapHotspotsFileV1::empty());
-    }
-    let file: MapHotspotsFileV1 = read_json(&path)?;
+    let file = read_hotspots_file(&path)?;
     validate_hotspots_file(&file, project_root, map_id)?;
     Ok(file)
 }
@@ -725,9 +804,9 @@ pub fn get_map_hotspots(project_root: &Path, map_id: &str) -> Result<MapHotspots
 pub fn save_map_hotspots(
     project_root: &Path,
     map_id: &str,
-    file: &MapHotspotsFileV1,
+    file: &MapHotspotsFileV2,
 ) -> Result<(), AppError> {
-    if file.version != 1 {
+    if file.version != 2 {
         return Err(AppError::new("error.maps.schema_version_unsupported"));
     }
     validate_hotspots_file(file, project_root, map_id)?;
@@ -737,6 +816,53 @@ pub fn save_map_hotspots(
     let now = timestamp_now();
     upsert_index_entry(project_root, map_id, &doc.name, &now, None)?;
     Ok(())
+}
+
+fn read_hotspots_file(path: &Path) -> Result<MapHotspotsFileV2, AppError> {
+    if !path.is_file() {
+        return Ok(MapHotspotsFileV2::empty());
+    }
+    let value: serde_json::Value = read_json(path)?;
+    let version = value
+        .get("version")
+        .and_then(|item| item.as_u64())
+        .unwrap_or(1) as u32;
+    match version {
+        1 => {
+            let file: MapHotspotsFileV1 = serde_json::from_value(value)
+                .map_err(|err| AppError::with_details("error.maps.invalid_json", err.to_string()))?;
+            Ok(migrate_hotspots_file_v1_to_v2(file))
+        }
+        2 => serde_json::from_value(value)
+            .map_err(|err| AppError::with_details("error.maps.invalid_json", err.to_string())),
+        _ => Err(AppError::new("error.maps.schema_version_unsupported")),
+    }
+}
+
+fn migrate_hotspots_file_v1_to_v2(file: MapHotspotsFileV1) -> MapHotspotsFileV2 {
+    MapHotspotsFileV2 {
+        version: 2,
+        hotspots: file
+            .hotspots
+            .into_iter()
+            .map(migrate_hotspot_v1_to_v2)
+            .collect(),
+    }
+}
+
+fn migrate_hotspot_v1_to_v2(hotspot: MapHotspotV1) -> MapHotspotV2 {
+    MapHotspotV2 {
+        id: hotspot.id,
+        label: hotspot.label,
+        host_drawing_ref: hotspot.host_drawing_ref,
+        shape: MapHotspotShapeV2::Rect {
+            x: hotspot.bounds.x,
+            y: hotspot.bounds.y,
+            width: hotspot.bounds.width,
+            height: hotspot.bounds.height,
+        },
+        target_nav_id: hotspot.target_nav_id,
+    }
 }
 
 pub fn get_map_location_pins(
@@ -802,7 +928,7 @@ pub fn create_blank_map(
         updated_at: now.clone(),
     };
     write_json(&map_dir.join(MAP_FILENAME), &doc)?;
-    write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV1::empty())?;
+    write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV2::empty())?;
     write_json(
         &map_dir.join(LOCATION_PINS_FILENAME),
         &MapLocationPinsFileV1::empty(),
@@ -883,7 +1009,7 @@ pub fn create_map_from_image(
         updated_at: now.clone(),
     };
     write_json(&map_dir.join(MAP_FILENAME), &doc)?;
-    write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV1::empty())?;
+    write_json(&map_dir.join(HOTSPOTS_FILENAME), &MapHotspotsFileV2::empty())?;
     write_json(
         &map_dir.join(LOCATION_PINS_FILENAME),
         &MapLocationPinsFileV1::empty(),
@@ -1339,11 +1465,11 @@ fn validate_nav_file(
 }
 
 fn validate_hotspots_file(
-    file: &MapHotspotsFileV1,
+    file: &MapHotspotsFileV2,
     project_root: &Path,
     map_id: &str,
 ) -> Result<(), AppError> {
-    if file.version != 1 {
+    if file.version != 2 {
         return Err(AppError::new("error.maps.schema_version_unsupported"));
     }
     let doc = get_map_document(project_root, map_id)?;
@@ -1360,9 +1486,57 @@ fn validate_hotspots_file(
         if !nav_path.is_file() {
             return Err(AppError::new("error.maps.nav_not_found"));
         }
-        validate_hotspot_bounds(&hotspot.bounds, max_x, max_y)?;
+        validate_hotspot_shape(&hotspot.shape, max_x, max_y)?;
     }
     Ok(())
+}
+
+fn validate_hotspot_shape(
+    shape: &MapHotspotShapeV2,
+    max_x: f64,
+    max_y: f64,
+) -> Result<(), AppError> {
+    match shape {
+        MapHotspotShapeV2::Rect {
+            x,
+            y,
+            width,
+            height,
+        } => validate_hotspot_bounds(
+            &MapHotspotBoundsV1 {
+                x: *x,
+                y: *y,
+                width: *width,
+                height: *height,
+            },
+            max_x,
+            max_y,
+        ),
+        MapHotspotShapeV2::Circle { cx, cy, radius } => {
+            if *radius <= 0.0 {
+                return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+            }
+            if *cx - *radius < 0.0
+                || *cy - *radius < 0.0
+                || *cx + *radius > max_x
+                || *cy + *radius > max_y
+            {
+                return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+            }
+            Ok(())
+        }
+        MapHotspotShapeV2::Polygon { points } => {
+            if points.len() < 3 {
+                return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+            }
+            for point in points {
+                if point.x < 0.0 || point.y < 0.0 || point.x > max_x || point.y > max_y {
+                    return Err(AppError::new("error.maps.hotspot_invalid_bounds"));
+                }
+            }
+            Ok(())
+        }
+    }
 }
 
 fn validate_location_pins_file(
@@ -1530,20 +1704,67 @@ fn copy_import_to_map_assets(source: &Path, map_dir: &Path) -> Result<String, Ap
     Ok(format!("assets/base.{ext}"))
 }
 
+fn copy_import_to_map_assets_named(
+    source: &Path,
+    map_dir: &Path,
+    name_prefix: &str,
+) -> Result<String, AppError> {
+    validate_image_file(source)?;
+    let ext = source
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_else(|| "png".to_string());
+    let ext = if ext == "jpeg" { "jpg".to_string() } else { ext };
+    let assets_dir = map_dir.join("assets");
+    fs::create_dir_all(&assets_dir).map_err(|e| AppError::database(e.to_string()))?;
+    let unique = format!("{name_prefix}-{:08x}", unix_ms_now() as u32);
+    let dest = assets_dir.join(format!("{unique}.{ext}"));
+    fs::copy(source, &dest).map_err(|e| AppError::database(e.to_string()))?;
+    Ok(format!("assets/{unique}.{ext}"))
+}
+
+pub fn import_map_layer_image(
+    project_root: &Path,
+    map_id: &str,
+    source_path: &str,
+) -> Result<MapLayerImageImportV1, AppError> {
+    let map_dir = map_dir(project_root, map_id)?;
+    let source = resolve_external_image_path(source_path)?;
+    let (width, height) = read_image_dimensions(&source)?;
+    let asset_path = copy_import_to_map_assets_named(&source, &map_dir, "layer")?;
+    Ok(MapLayerImageImportV1 {
+        asset_path,
+        width,
+        height,
+    })
+}
+
+fn vector_layer(id: &str, name: &str) -> MapDrawingLayerV2 {
+    MapDrawingLayerV2 {
+        id: id.to_string(),
+        name: name.to_string(),
+        visible: true,
+        opacity: 1.0,
+        locked: false,
+        kind: MapLayerKind::Vector,
+        strokes: Vec::new(),
+        group_id: None,
+        asset_path: None,
+        x: None,
+        y: None,
+        width: None,
+        height: None,
+    }
+}
+
 fn default_principal_drawing(width: u32, height: u32) -> MapDrawingV2 {
     MapDrawingV2 {
         version: 2,
         width,
         height,
-        layers: vec![MapDrawingLayerV2 {
-            id: "layer-1".to_string(),
-            name: "Capa 1".to_string(),
-            visible: true,
-            opacity: 1.0,
-            locked: false,
-            strokes: Vec::new(),
-            group_id: None,
-        }],
+        background_color: None,
+        layers: vec![vector_layer("layer-1", "Capa 1")],
         groups: Vec::new(),
     }
 }
@@ -2234,24 +2455,13 @@ mod tests {
             version: 2,
             width: 800,
             height: 600,
+            background_color: None,
             layers: vec![
-                MapDrawingLayerV2 {
-                    id: "layer-a".to_string(),
-                    name: "A".to_string(),
-                    visible: true,
-                    opacity: 1.0,
-                    locked: false,
-                    strokes: vec![],
-                    group_id: None,
-                },
+                vector_layer("layer-a", "A"),
                 MapDrawingLayerV2 {
                     id: "layer-a".to_string(),
                     name: "B".to_string(),
-                    visible: true,
-                    opacity: 1.0,
-                    locked: false,
-                    strokes: vec![],
-                    group_id: None,
+                    ..vector_layer("layer-a", "A")
                 },
             ],
             groups: Vec::new(),
@@ -2265,14 +2475,10 @@ mod tests {
             version: 2,
             width: 800,
             height: 600,
+            background_color: None,
             layers: vec![MapDrawingLayerV2 {
-                id: "layer-1".to_string(),
-                name: "Capa".to_string(),
-                visible: true,
                 opacity: 1.5,
-                locked: false,
-                strokes: vec![],
-                group_id: None,
+                ..vector_layer("layer-1", "Capa")
             }],
             groups: Vec::new(),
         };
@@ -2471,13 +2677,13 @@ mod tests {
         assert_eq!(listed.len(), 1);
         assert_eq!(listed[0].name, "Ciudad");
 
-        let hotspots = MapHotspotsFileV1 {
-            version: 1,
-            hotspots: vec![MapHotspotV1 {
+        let hotspots = MapHotspotsFileV2 {
+            version: 2,
+            hotspots: vec![MapHotspotV2 {
                 id: "hs-test".to_string(),
                 label: Some("Entrada".to_string()),
                 host_drawing_ref: MapHostDrawingRef::Principal,
-                bounds: MapHotspotBoundsV1 {
+                shape: MapHotspotShapeV2::Rect {
                     x: 10.0,
                     y: 20.0,
                     width: 100.0,
@@ -2526,7 +2732,7 @@ mod tests {
         assert_eq!(nav_after_crop.drawing.width, 1000);
         assert_eq!(nav_after_crop.drawing.height, 700);
 
-        save_map_hotspots(root, &summary.id, &MapHotspotsFileV1::empty()).unwrap();
+        save_map_hotspots(root, &summary.id, &MapHotspotsFileV2::empty()).unwrap();
         delete_map_nav(root, &summary.id, &nav.id).unwrap();
         assert!(list_map_nav(root, &summary.id).unwrap().is_empty());
     }
@@ -2561,18 +2767,56 @@ mod tests {
     }
 
     #[test]
+    fn read_hotspots_migrates_v1_bounds_to_v2_shape() {
+        let tmp = test_root();
+        let root = tmp.path();
+        let summary = create_blank_map(root, "HotspotMigrate", 1200, 800).unwrap();
+        let nav = create_map_nav(root, &summary.id, "Target").unwrap();
+        let legacy = MapHotspotsFileV1 {
+            version: 1,
+            hotspots: vec![MapHotspotV1 {
+                id: "hs-legacy".to_string(),
+                label: None,
+                host_drawing_ref: MapHostDrawingRef::Principal,
+                bounds: MapHotspotBoundsV1 {
+                    x: 5.0,
+                    y: 6.0,
+                    width: 40.0,
+                    height: 30.0,
+                },
+                target_nav_id: nav.id,
+            }],
+        };
+        let path = map_dir(root, &summary.id).unwrap().join(HOTSPOTS_FILENAME);
+        write_json_atomic(&path, &legacy).unwrap();
+
+        let loaded = get_map_hotspots(root, &summary.id).unwrap();
+        assert_eq!(loaded.version, 2);
+        assert_eq!(loaded.hotspots.len(), 1);
+        assert_eq!(
+            loaded.hotspots[0].shape,
+            MapHotspotShapeV2::Rect {
+                x: 5.0,
+                y: 6.0,
+                width: 40.0,
+                height: 30.0,
+            }
+        );
+    }
+
+    #[test]
     fn save_map_hotspots_rejects_bounds_outside_canvas() {
         let tmp = test_root();
         let root = tmp.path();
         let summary = create_blank_map(root, "HotspotBounds", 1200, 800).unwrap();
         let nav = create_map_nav(root, &summary.id, "Target").unwrap();
-        let hotspots = MapHotspotsFileV1 {
-            version: 1,
-            hotspots: vec![MapHotspotV1 {
+        let hotspots = MapHotspotsFileV2 {
+            version: 2,
+            hotspots: vec![MapHotspotV2 {
                 id: "hs-bad".to_string(),
                 label: None,
                 host_drawing_ref: MapHostDrawingRef::Principal,
-                bounds: MapHotspotBoundsV1 {
+                shape: MapHotspotShapeV2::Rect {
                     x: 1100.0,
                     y: 0.0,
                     width: 200.0,

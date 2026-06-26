@@ -6,10 +6,16 @@ import { formatMapDesdeDisplay } from "@/lib/maps/mapDesde";
 import { drawLocationMarkers, drawLocationPinDraft } from "@/lib/maps/mapLocationMarkers";
 import { mapAssetProjectPath } from "@/lib/maps/mapAssetPath";
 import { paintStrokeLayer } from "@/lib/maps/mapStrokeBuffer";
+import { collectDrawingImageAssetPaths } from "@/lib/maps/mapImageLayerRender";
+import {
+  drawHotspotShape,
+  rectShapeFromBounds,
+  type HotspotOverlayStyle,
+} from "@/lib/maps/mapHotspotShape";
 import { drawMapStrokes } from "@/lib/maps/mapStrokeRender";
 import { renderAudit } from "@/lib/render-audit";
 import { UI_EVENTS } from "@/lib/render-audit/events";
-import type { MapDocumentV1, MapDrawingV2, MapHotspotBoundsV1, MapHotspotV1, MapStrokeV2 } from "@/lib/types/maps";
+import type { MapDocumentV1, MapDrawingV2, MapHotspotBoundsV1, MapHotspotShapeV2, MapHotspotV2, MapStrokeV2 } from "@/lib/types/maps";
 import type { MapLocatedMarkerV1 } from "@/lib/types/mapLocations";
 import type { MapViewMode } from "@/stores/useMapStore";
 import type { MapStudioTool } from "@/stores/useMapStudioStore";
@@ -27,14 +33,15 @@ export interface MapViewportPaintOptions {
   activeDrawingRefKey?: string;
   previewStroke?: MapStrokeV2 | null;
   activeLayerId?: string | null;
-  /** Sustituye principal + overlays por dibujo nav (MAP-010). */
-  composeNavDrawing?: MapDrawingV2 | null;
-  composeNavDrawingRefKey?: string;
-  hotspotOverlays?: MapHotspotV1[];
+  hotspotOverlays?: MapHotspotV2[];
   hotspotDraftBounds?: MapHotspotBoundsV1 | null;
+  hotspotDraftShape?: MapHotspotShapeV2 | null;
+  hotspotHighlightId?: string | null;
   hotspotOverlayStyle?: HotspotOverlayStyle;
   locationMarkers?: MapLocatedMarkerV1[];
   locationPinDraft?: { x: number; y: number } | null;
+  /** Caché de bitmaps de capas imagen (clave = assetPath). */
+  layerImages?: ReadonlyMap<string, HTMLImageElement>;
 }
 
 export interface MapViewportState {
@@ -60,20 +67,18 @@ interface UseMapViewportOptions {
   previewTimeTRaw?: string | null;
   activeSecondaryIds?: string[];
   secondaryCount?: number;
-  navDepth?: number;
-  activeNavId?: string | null;
-  navStackIds?: string[];
+  openNavWindowCount?: number;
   hostHotspotCount?: number;
-  composeNavDrawing?: MapDrawingV2 | null;
-  composeNavDrawingRefKey?: string;
   viewMode: MapViewMode;
   previewStroke?: MapStrokeV2 | null;
   activeLayerId?: string | null;
   studioTool?: MapStudioTool;
   /** Clic en interactivo (coords documento). true = consumido (p. ej. hotspot). */
   onInteractiveClick?: (worldX: number, worldY: number) => boolean;
-  hotspotOverlays?: MapHotspotV1[];
+  hotspotOverlays?: MapHotspotV2[];
   hotspotDraftBounds?: MapHotspotBoundsV1 | null;
+  hotspotDraftShape?: MapHotspotShapeV2 | null;
+  hotspotHighlightId?: string | null;
   hotspotOverlayStyle?: HotspotOverlayStyle;
   locationMarkers?: MapLocatedMarkerV1[];
   locationPinDraft?: { x: number; y: number } | null;
@@ -164,37 +169,49 @@ function drawGrid(
   }
 }
 
-export type HotspotOverlayStyle = "edit" | "interactive";
+export type { HotspotOverlayStyle };
 
 function drawHotspotOverlays(
   ctx: CanvasRenderingContext2D,
-  hotspots: MapHotspotV1[],
+  hotspots: MapHotspotV2[],
   draftBounds: MapHotspotBoundsV1 | null | undefined,
+  draftShape: MapHotspotShapeV2 | null | undefined,
   style: HotspotOverlayStyle = "edit",
+  highlightHotspotId?: string | null,
 ): void {
-  const drawRect = (bounds: MapHotspotBoundsV1, stroke: string, fill: string) => {
-    ctx.fillStyle = fill;
-    ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = style === "interactive" ? 1.5 : 2;
-    ctx.setLineDash(style === "interactive" ? [6, 4] : []);
-    ctx.strokeRect(bounds.x + 0.5, bounds.y + 0.5, bounds.width - 1, bounds.height - 1);
-    ctx.setLineDash([]);
-  };
-
   for (const hotspot of hotspots) {
+    const isHighlight = highlightHotspotId === hotspot.id;
     if (style === "interactive") {
-      drawRect(
-        hotspot.bounds,
-        "rgba(59, 130, 246, 0.55)",
-        "rgba(59, 130, 246, 0.1)",
+      drawHotspotShape(
+        ctx,
+        hotspot.shape,
+        isHighlight ? "rgba(234, 179, 8, 0.95)" : "rgba(59, 130, 246, 0.55)",
+        isHighlight ? "rgba(234, 179, 8, 0.22)" : "rgba(59, 130, 246, 0.1)",
+        style,
       );
     } else {
-      drawRect(hotspot.bounds, "rgba(59, 130, 246, 0.95)", "rgba(59, 130, 246, 0.18)");
+      drawHotspotShape(
+        ctx,
+        hotspot.shape,
+        isHighlight ? "rgba(234, 179, 8, 0.95)" : "rgba(59, 130, 246, 0.95)",
+        isHighlight ? "rgba(234, 179, 8, 0.28)" : "rgba(59, 130, 246, 0.18)",
+        style,
+      );
     }
   }
-  if (draftBounds && draftBounds.width > 0 && draftBounds.height > 0) {
-    drawRect(draftBounds, "rgba(234, 179, 8, 0.95)", "rgba(234, 179, 8, 0.2)");
+  const draft =
+    draftShape ??
+    (draftBounds && draftBounds.width > 0 && draftBounds.height > 0
+      ? rectShapeFromBounds(draftBounds)
+      : null);
+  if (draft) {
+    drawHotspotShape(
+      ctx,
+      draft,
+      "rgba(234, 179, 8, 0.95)",
+      "rgba(234, 179, 8, 0.2)",
+      style,
+    );
   }
 }
 
@@ -208,6 +225,27 @@ function drawLocationOverlays(
   }
   if (draftPoint) {
     drawLocationPinDraft(ctx, draftPoint.x, draftPoint.y);
+  }
+}
+
+function paintDrawingSurface(
+  ctx: CanvasRenderingContext2D,
+  drawing: MapDrawingV2,
+  baseImage: HTMLImageElement | null,
+  allowLegacyBaseImage: boolean,
+): void {
+  const { width, height, backgroundColor } = drawing;
+  if (backgroundColor) {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, height);
+    return;
+  }
+  if (allowLegacyBaseImage && baseImage) {
+    ctx.drawImage(baseImage, 0, 0, width, height);
+    return;
+  }
+  if (allowLegacyBaseImage) {
+    drawGrid(ctx, width, height);
   }
 }
 
@@ -232,42 +270,7 @@ export function paintMapViewport(
   ctx.translate(viewport.panX, viewport.panY);
   ctx.scale(viewport.zoom, viewport.zoom);
 
-  ctx.fillStyle = canvasBackgroundColor();
-  ctx.fillRect(0, 0, document.width, document.height);
-
-  if (baseImage) {
-    ctx.drawImage(baseImage, 0, 0, document.width, document.height);
-  } else {
-    drawGrid(ctx, document.width, document.height);
-  }
-
-  const navDrawing = options.composeNavDrawing;
-  if (navDrawing) {
-    const navRefKey = options.composeNavDrawingRefKey ?? "nav:unknown";
-    const navLayer = paintStrokeLayer(mapId, navRefKey, document, (bufferCtx) => {
-      const isActive = activeDrawingRefKey === navRefKey;
-      drawMapStrokes(
-        bufferCtx,
-        navDrawing,
-        isActive ? options.previewStroke : null,
-        isActive ? options.activeLayerId : null,
-      );
-    });
-    ctx.drawImage(navLayer, 0, 0);
-    drawLocationOverlays(
-      ctx,
-      options.locationMarkers ?? [],
-      options.locationPinDraft,
-    );
-    drawHotspotOverlays(
-      ctx,
-      options.hotspotOverlays ?? [],
-      options.hotspotDraftBounds,
-      options.hotspotOverlayStyle ?? "edit",
-    );
-    ctx.restore();
-    return;
-  }
+  paintDrawingSurface(ctx, principalDrawing, baseImage, true);
 
   const principalLayer = paintStrokeLayer(mapId, "principal", document, (bufferCtx) => {
     const isActive = activeDrawingRefKey === "principal";
@@ -276,11 +279,13 @@ export function paintMapViewport(
       principalDrawing,
       isActive ? options.previewStroke : null,
       isActive ? options.activeLayerId : null,
+      options.layerImages,
     );
   });
   ctx.drawImage(principalLayer, 0, 0);
 
   for (const overlay of options.overlayDrawings ?? []) {
+    paintDrawingSurface(ctx, overlay.drawing, null, false);
     const strokeLayer = paintStrokeLayer(mapId, overlay.drawingRefKey, document, (bufferCtx) => {
       const isActive = activeDrawingRefKey === overlay.drawingRefKey;
       drawMapStrokes(
@@ -288,6 +293,7 @@ export function paintMapViewport(
         overlay.drawing,
         isActive ? options.previewStroke : null,
         isActive ? options.activeLayerId : null,
+        options.layerImages,
       );
     });
     ctx.drawImage(strokeLayer, 0, 0);
@@ -302,7 +308,9 @@ export function paintMapViewport(
     ctx,
     options.hotspotOverlays ?? [],
     options.hotspotDraftBounds,
+    options.hotspotDraftShape,
     options.hotspotOverlayStyle ?? "edit",
+    options.hotspotHighlightId,
   );
 
   ctx.restore();
@@ -339,12 +347,8 @@ export function useMapViewport({
   previewTimeTRaw = null,
   activeSecondaryIds = [],
   secondaryCount = 0,
-  navDepth = 0,
-  activeNavId = null,
-  navStackIds = [],
+  openNavWindowCount = 0,
   hostHotspotCount = 0,
-  composeNavDrawing = null,
-  composeNavDrawingRefKey,
   viewMode,
   previewStroke = null,
   activeLayerId = null,
@@ -352,6 +356,8 @@ export function useMapViewport({
   onInteractiveClick,
   hotspotOverlays = [],
   hotspotDraftBounds = null,
+  hotspotDraftShape = null,
+  hotspotHighlightId = null,
   hotspotOverlayStyle = "edit",
   locationMarkers = [],
   locationPinDraft = null,
@@ -371,6 +377,7 @@ export function useMapViewport({
     panY: 0,
   });
   const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null);
+  const [layerImages, setLayerImages] = useState<Map<string, HTMLImageElement>>(new Map());
   const panSession = useRef<{
     pointerId: number;
     startX: number;
@@ -385,9 +392,8 @@ export function useMapViewport({
   } | null>(null);
   const spacePressed = useRef(false);
 
-  const activeEditingDrawing = composeNavDrawing
-    ? composeNavDrawing
-    : activeDrawingRefKey === "principal"
+  const activeEditingDrawing =
+    activeDrawingRefKey === "principal"
       ? principalDrawing
       : overlayDrawings.find((layer) => layer.drawingRefKey === activeDrawingRefKey)?.drawing ??
         principalDrawing;
@@ -413,9 +419,7 @@ export function useMapViewport({
         activeDrawingRef: activeDrawingRefKey,
         activeSecondaryIds,
         secondaryCount,
-        navDepth,
-        activeNavId,
-        navStackIds,
+        openNavWindowCount,
         hostHotspotCount,
         locationCountAtT,
         unpinnedKeysAtT,
@@ -428,14 +432,12 @@ export function useMapViewport({
     [
       activeDrawingRefKey,
       activeEditingDrawing.layers,
-      activeNavId,
       activeSecondaryIds,
       document.desde,
       hostHotspotCount,
       locationCountAtT,
       mapId,
-      navDepth,
-      navStackIds,
+      openNavWindowCount,
       pinnedKeysTotal,
       previewTimeTRaw,
       secondaryCount,
@@ -462,24 +464,26 @@ export function useMapViewport({
         activeDrawingRefKey,
         previewStroke,
         activeLayerId,
-        composeNavDrawing,
-        composeNavDrawingRefKey,
         hotspotOverlays,
         hotspotDraftBounds,
+        hotspotDraftShape,
         hotspotOverlayStyle,
+        hotspotHighlightId,
         locationMarkers,
         locationPinDraft,
+        layerImages,
       },
     );
   }, [
     activeDrawingRefKey,
     activeLayerId,
     baseImage,
-    composeNavDrawing,
-    composeNavDrawingRefKey,
+    layerImages,
     containerSize,
     document,
     hotspotDraftBounds,
+    hotspotDraftShape,
+    hotspotHighlightId,
     hotspotOverlayStyle,
     hotspotOverlays,
     locationMarkers,
@@ -540,6 +544,41 @@ export function useMapViewport({
   }, [document.baseImageRel, mapId]);
 
   useEffect(() => {
+    let cancelled = false;
+    const assetPaths = new Set<string>([
+      ...collectDrawingImageAssetPaths(principalDrawing),
+      ...overlayDrawings.flatMap((overlay) => collectDrawingImageAssetPaths(overlay.drawing)),
+    ]);
+
+    if (assetPaths.size === 0) {
+      setLayerImages((prev) => (prev.size === 0 ? prev : new Map()));
+      return;
+    }
+
+    void Promise.all(
+      [...assetPaths].map(async (assetPath) => {
+        const image = await loadBaseImage(mapId, assetPath);
+        return [assetPath, image] as const;
+      }),
+    )
+      .then((entries) => {
+        if (cancelled) return;
+        const next = new Map<string, HTMLImageElement>();
+        for (const [assetPath, image] of entries) {
+          if (image) next.set(assetPath, image);
+        }
+        setLayerImages(next);
+      })
+      .catch(() => {
+        if (!cancelled) setLayerImages(new Map());
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapId, overlayDrawings, principalDrawing]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
@@ -576,9 +615,7 @@ export function useMapViewport({
         activeDrawingRef: activeDrawingRefKey,
         activeSecondaryIds,
         secondaryCount,
-        navDepth,
-        activeNavId,
-        navStackIds,
+        openNavWindowCount,
         hostHotspotCount,
         visibleLayers,
         strokeCount,
@@ -597,13 +634,11 @@ export function useMapViewport({
     activeDrawingRefKey,
     activeEditingDrawing,
     activeLayerId,
-    activeNavId,
     activeSecondaryIds,
     document.desde,
     hostHotspotCount,
     mapId,
-    navDepth,
-    navStackIds,
+    openNavWindowCount,
     previewTimeTRaw,
     secondaryCount,
   ]);

@@ -6,13 +6,14 @@ import {
   resolveDefaultMapDesde,
   type MapDesdeDefaultResult,
 } from "@/lib/maps/mapDesde";
+import { countMapStrokes } from "@/lib/maps/mapDrawingStats";
 import { mapErrorKey } from "@/lib/maps/mapErrors";
 import type {
   MapCreateDraft,
   MapDocumentV1,
   MapDrawingRef,
   MapDrawingV2,
-  MapHotspotV1,
+  MapHotspotV2,
   MapNavDrawingFileV1,
   MapNavSummaryV1,
   MapSecondaryDrawingFileV1,
@@ -43,7 +44,7 @@ interface ActiveSnapshot {
   secondaryFiles: Record<string, MapSecondaryDrawingFileV1>;
   navDrawings: MapNavSummaryV1[];
   navFiles: Record<string, MapNavDrawingFileV1>;
-  hotspots: MapHotspotV1[];
+  hotspots: MapHotspotV2[];
   locationPins: MapLocationPinV1[];
   errorKey: string | null;
 }
@@ -116,7 +117,7 @@ export function useMapProject() {
         invokeCommand<MapDrawingV2>("get_map_drawing_cmd", { mapId: activeMapId }),
         invokeCommand<MapSecondarySummaryV1[]>("list_map_secondaries_cmd", { mapId: activeMapId }),
         invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", { mapId: activeMapId }),
-        invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>("get_map_hotspots_cmd", {
+        invokeCommand<{ version: 2; hotspots: MapHotspotV2[] }>("get_map_hotspots_cmd", {
           mapId: activeMapId,
         }),
         invokeCommand<{ version: 1; pins: MapLocationPinV1[] }>("get_map_location_pins_cmd", {
@@ -174,7 +175,7 @@ export function useMapProject() {
             mapId: activeMapId,
           }),
           invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", { mapId: activeMapId }),
-          invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>("get_map_hotspots_cmd", {
+          invokeCommand<{ version: 2; hotspots: MapHotspotV2[] }>("get_map_hotspots_cmd", {
             mapId: activeMapId,
           }),
           invokeCommand<{ version: 1; pins: MapLocationPinV1[] }>("get_map_location_pins_cmd", {
@@ -352,10 +353,10 @@ export function useMapProject() {
         const fromMode = useMapStore.getState().viewMode;
         const summary = await invokeCommand<MapSummaryV2>("create_map_cmd", {
           name: draft.name,
-          mode: draft.mode,
-          width: draft.mode === "blank" ? draft.width : null,
-          height: draft.mode === "blank" ? draft.height : null,
-          sourcePath: draft.mode === "import" ? draft.importPath : null,
+          mode: "blank",
+          width: draft.width,
+          height: draft.height,
+          sourcePath: null,
         });
         useMapStore.getState().setActiveMap(summary.id);
         if (fromMode !== "interactive") {
@@ -366,7 +367,7 @@ export function useMapProject() {
           });
         }
         trackAction("map", "create", {
-          mode: draft.mode,
+          mode: "blank",
           width: summary.width,
           height: summary.height,
           mapId: summary.id,
@@ -393,7 +394,7 @@ export function useMapProject() {
               mapId: summary.id,
             }),
             invokeCommand<MapNavSummaryV1[]>("list_map_nav_cmd", { mapId: summary.id }),
-            invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>("get_map_hotspots_cmd", {
+            invokeCommand<{ version: 2; hotspots: MapHotspotV2[] }>("get_map_hotspots_cmd", {
               mapId: summary.id,
             }),
             invokeCommand<{ version: 1; pins: MapLocationPinV1[] }>("get_map_location_pins_cmd", {
@@ -436,11 +437,8 @@ export function useMapProject() {
     async (addRight: number, addBottom: number) => {
       if (!activeMapId) return null;
       const strokesBefore =
-        activeSnapshot?.key === activeKey
-          ? activeSnapshot.drawing?.layers.reduce(
-              (n, layer) => n + layer.strokes.length,
-              0,
-            ) ?? 0
+        activeSnapshot?.key === activeKey && activeSnapshot.drawing
+          ? countMapStrokes(activeSnapshot.drawing)
           : 0;
       setCanvasBusy(true);
       try {
@@ -593,8 +591,7 @@ export function useMapProject() {
     async (secondaryId: string) => {
       if (!activeMapId) return;
       const cached = activeSnapshot?.secondaryFiles[secondaryId];
-      const strokeCount =
-        cached?.drawing.layers.reduce((n, layer) => n + layer.strokes.length, 0) ?? undefined;
+      const strokeCount = cached?.drawing ? countMapStrokes(cached.drawing) : undefined;
       await invokeCommand("delete_map_secondary_cmd", { mapId: activeMapId, secondaryId });
       trackAction("map", "secondaryDelete", {
         mapId: activeMapId,
@@ -713,7 +710,7 @@ export function useMapProject() {
 
   const loadHotspots = useCallback(async () => {
     if (!activeMapId) return [];
-    const file = await invokeCommand<{ version: 1; hotspots: MapHotspotV1[] }>(
+    const file = await invokeCommand<{ version: 2; hotspots: MapHotspotV2[] }>(
       "get_map_hotspots_cmd",
       { mapId: activeMapId },
     );
@@ -725,11 +722,11 @@ export function useMapProject() {
   }, [activeKey, activeMapId]);
 
   const saveHotspots = useCallback(
-    async (hotspots: MapHotspotV1[]) => {
+    async (hotspots: MapHotspotV2[]) => {
       if (!activeMapId) return;
       await invokeCommand("save_map_hotspots_cmd", {
         mapId: activeMapId,
-        file: { version: 1, hotspots },
+        file: { version: 2, hotspots },
       });
       await loadHotspots();
       await loadSession();
@@ -825,11 +822,8 @@ export function useMapProject() {
     async (newWidth: number, newHeight: number) => {
       if (!activeMapId) return null;
       const strokesBefore =
-        activeSnapshot?.key === activeKey
-          ? activeSnapshot.drawing?.layers.reduce(
-              (n, layer) => n + layer.strokes.length,
-              0,
-            ) ?? 0
+        activeSnapshot?.key === activeKey && activeSnapshot.drawing
+          ? countMapStrokes(activeSnapshot.drawing)
           : 0;
       setCanvasBusy(true);
       try {
@@ -841,9 +835,11 @@ export function useMapProject() {
         await refreshActiveMap();
         const strokesAfter =
           useMapStore.getState().activeMapId === activeMapId
-            ? (await invokeCommand<MapDrawingV2>("get_map_drawing_cmd", {
-                mapId: activeMapId,
-              })).layers.reduce((n, layer) => n + layer.strokes.length, 0)
+            ? countMapStrokes(
+                await invokeCommand<MapDrawingV2>("get_map_drawing_cmd", {
+                  mapId: activeMapId,
+                }),
+              )
             : strokesBefore;
         trackAction("map", "cropCanvas", {
           mapId: activeMapId,

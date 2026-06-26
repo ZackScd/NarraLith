@@ -2,14 +2,20 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useMapDrawGesture } from "@/hooks/useMapDrawGesture";
+import { useHotspotDrawGesture } from "@/hooks/useHotspotDrawGesture";
+import { useMapHotspotCircleGesture } from "@/hooks/useMapHotspotCircleGesture";
 import { useMapHotspotRectGesture } from "@/hooks/useMapHotspotRectGesture";
 import { useMapLocationPinGesture } from "@/hooks/useMapLocationPinGesture";
 import { getDrawBlockReason } from "@/lib/maps/mapDrawingSession";
+import { circleShapeFromDraft, type MapHotspotCircleDraft } from "@/lib/maps/mapHotspotCircle";
+import { rectShapeFromBounds } from "@/lib/maps/mapHotspotShape";
 import type {
   MapDocumentV1,
   MapDrawingV2,
   MapHotspotBoundsV1,
-  MapHotspotV1,
+  MapHotspotPointV2,
+  MapHotspotShapeV2,
+  MapHotspotV2,
   MapStrokeV2,
 } from "@/lib/types/maps";
 import type { MapLocatedMarkerV1 } from "@/lib/types/mapLocations";
@@ -22,7 +28,10 @@ import {
   useMapStudioStore,
   type MapStudioTool,
 } from "@/stores/useMapStudioStore";
+import { useMapHotspotDrawStore } from "@/stores/useMapHotspotDrawStore";
 import { cn } from "@/lib/utils";
+
+import { MapHotspotDrawOverlay } from "./MapHotspotDrawOverlay";
 
 interface MapViewportProps {
   mapId: string;
@@ -33,15 +42,14 @@ interface MapViewportProps {
   previewTimeTRaw?: string | null;
   activeSecondaryIds?: string[];
   secondaryCount?: number;
-  navDepth?: number;
-  activeNavId?: string | null;
-  navStackIds?: string[];
+  openNavWindowCount?: number;
   hostHotspotCount?: number;
-  composeNavDrawing?: MapDrawingV2 | null;
-  composeNavDrawingRefKey?: string;
-  hotspotOverlays?: MapHotspotV1[];
+  allowHostHotspotTools?: boolean;
+  hotspotOverlays?: MapHotspotV2[];
   hotspotOverlayStyle?: "edit" | "interactive";
   hotspotDrawMode?: boolean;
+  hotspotZoneEditActive?: boolean;
+  hotspotHighlightId?: string | null;
   locationMarkers?: MapLocatedMarkerV1[];
   locationPinPlacementActive?: boolean;
   locationPinMoveActive?: boolean;
@@ -57,6 +65,8 @@ interface MapViewportProps {
   onCommitStroke: (stroke: MapStrokeV2) => void;
   onInteractiveClick?: (worldX: number, worldY: number) => boolean;
   onHotspotRectComplete?: (bounds: MapHotspotBoundsV1) => void;
+  onHotspotCircleComplete?: (circle: MapHotspotCircleDraft) => void;
+  onHotspotPolygonComplete?: (points: MapHotspotPointV2[]) => void;
 }
 
 function viewportCursor(
@@ -90,15 +100,14 @@ export function MapViewport({
   previewTimeTRaw = null,
   activeSecondaryIds = [],
   secondaryCount = 0,
-  navDepth = 0,
-  activeNavId = null,
-  navStackIds = [],
+  openNavWindowCount = 0,
   hostHotspotCount = 0,
-  composeNavDrawing = null,
-  composeNavDrawingRefKey,
+  allowHostHotspotTools = true,
   hotspotOverlays = [],
   hotspotOverlayStyle = "edit",
   hotspotDrawMode = false,
+  hotspotZoneEditActive = false,
+  hotspotHighlightId = null,
   locationMarkers = [],
   locationPinPlacementActive = false,
   locationPinMoveActive = false,
@@ -114,8 +123,11 @@ export function MapViewport({
   onCommitStroke,
   onInteractiveClick,
   onHotspotRectComplete,
+  onHotspotCircleComplete,
+  onHotspotPolygonComplete,
 }: MapViewportProps) {
   const { t } = useTranslation("maps");
+  const hotspotDrawTool = useMapHotspotDrawStore((s) => s.tool);
   const tool = useMapStudioStore((s) => s.tool);
   const brushId = useMapStudioStore((s) => s.brushId);
   const color = useMapStudioStore((s) => s.color);
@@ -123,6 +135,7 @@ export function MapViewport({
   const baseOpacity = useMapStudioStore((s) => s.baseOpacity);
   const [layerNotice, setLayerNotice] = useState<string | null>(null);
   const [hotspotDraftBounds, setHotspotDraftBounds] = useState<MapHotspotBoundsV1 | null>(null);
+  const [hotspotDraftShape, setHotspotDraftShape] = useState<MapHotspotShapeV2 | null>(null);
   const [locationPinDraft, setLocationPinDraft] = useState<{ x: number; y: number } | null>(null);
 
   const locationPinMode = locationPinPlacementActive || locationPinMoveActive;
@@ -130,11 +143,10 @@ export function MapViewport({
     viewMode === "interactive" ? locationMarkers : [];
 
   const activeEditingDrawing =
-    composeNavDrawing ??
-    (activeDrawingRefKey === "principal"
+    activeDrawingRefKey === "principal"
       ? principalDrawing
       : overlayDrawings.find((layer) => layer.drawingRefKey === activeDrawingRefKey)?.drawing ??
-        principalDrawing);
+        principalDrawing;
 
   const drawBlockReason = getDrawBlockReason(activeEditingDrawing, activeLayerId);
   const canDraw = drawBlockReason === null && !hotspotDrawMode && !locationPinMode;
@@ -157,12 +169,8 @@ export function MapViewport({
     previewTimeTRaw,
     activeSecondaryIds,
     secondaryCount,
-    navDepth,
-    activeNavId,
-    navStackIds,
+    openNavWindowCount,
     hostHotspotCount,
-    composeNavDrawing,
-    composeNavDrawingRefKey,
     viewMode,
     previewStroke,
     activeLayerId,
@@ -170,6 +178,8 @@ export function MapViewport({
     hotspotOverlays,
     hotspotOverlayStyle,
     hotspotDraftBounds,
+    hotspotDraftShape: hotspotDraftShape,
+    hotspotHighlightId,
     locationMarkers: interactiveLocationMarkers,
     locationPinDraft: viewMode === "edit" ? locationPinDraft : null,
     locationCountAtT,
@@ -179,28 +189,66 @@ export function MapViewport({
       viewMode === "interactive" ? onInteractiveClick : undefined,
   });
 
+  const hotspotZoneActive =
+    viewMode === "edit" && hotspotDrawMode && !locationPinMode && allowHostHotspotTools;
+
   const hotspotRect = useMapHotspotRectGesture({
-    enabled: viewMode === "edit" && hotspotDrawMode && !locationPinMode && navDepth === 0,
+    enabled: hotspotZoneActive && hotspotDrawTool === "rect",
     viewport,
     canvasWidth: document.width,
     canvasHeight: document.height,
-    onDraftChange: setHotspotDraftBounds,
+    onDraftChange: (bounds) => {
+      setHotspotDraftBounds(bounds);
+      setHotspotDraftShape(
+        bounds && bounds.width > 0 && bounds.height > 0
+          ? rectShapeFromBounds(bounds)
+          : null,
+      );
+    },
     onComplete: (bounds) => {
       setHotspotDraftBounds(null);
+      setHotspotDraftShape(null);
       onHotspotRectComplete?.(bounds);
+    },
+  });
+
+  const hotspotCircle = useMapHotspotCircleGesture({
+    enabled: hotspotZoneActive && hotspotDrawTool === "circle",
+    viewport,
+    canvasWidth: document.width,
+    canvasHeight: document.height,
+    onDraftChange: (draft) => {
+      setHotspotDraftShape(draft ? circleShapeFromDraft(draft) : null);
+    },
+    onComplete: (circle) => {
+      setHotspotDraftShape(null);
+      onHotspotCircleComplete?.(circle);
+    },
+  });
+
+  const hotspotLasso = useHotspotDrawGesture({
+    enabled: hotspotZoneActive && hotspotDrawTool === "lasso",
+    viewport,
+    canvasWidth: document.width,
+    canvasHeight: document.height,
+    onComplete: (points) => {
+      onHotspotPolygonComplete?.(points);
     },
   });
 
   useEffect(() => {
     if (!hotspotDrawMode) {
       setHotspotDraftBounds(null);
+      setHotspotDraftShape(null);
+      hotspotLasso.clearDraft();
+      hotspotCircle.clearDraft();
     }
-  }, [hotspotDrawMode]);
+  }, [hotspotCircle.clearDraft, hotspotDrawMode, hotspotLasso.clearDraft]);
 
   const locationPinGesture = useMapLocationPinGesture({
     placementMode:
-      viewMode === "edit" && navDepth === 0 && locationPinPlacementActive,
-    moveMode: viewMode === "edit" && navDepth === 0 && locationPinMoveActive,
+      viewMode === "edit" && allowHostHotspotTools && locationPinPlacementActive,
+    moveMode: viewMode === "edit" && allowHostHotspotTools && locationPinMoveActive,
     viewport,
     canvasWidth: document.width,
     canvasHeight: document.height,
@@ -257,42 +305,58 @@ export function MapViewport({
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (locationPinGesture.handlePointerDown(event)) return;
+      if (hotspotLasso.handlePointerDown(event)) return;
+      if (hotspotCircle.handlePointerDown(event)) return;
       if (hotspotRect.handlePointerDown(event)) return;
       if (handleDrawDown(event)) return;
       handlePanDown(event);
     },
-    [handleDrawDown, handlePanDown, hotspotRect, locationPinGesture],
+    [handleDrawDown, handlePanDown, hotspotCircle, hotspotLasso, hotspotRect, locationPinGesture],
   );
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (locationPinGesture.handlePointerMove(event)) return;
+      if (hotspotLasso.handlePointerMove(event)) return;
+      if (hotspotCircle.handlePointerMove(event)) return;
       if (hotspotRect.handlePointerMove(event)) return;
       if (handleDrawMove(event)) return;
       handlePanMove(event);
     },
-    [handleDrawMove, handlePanMove, hotspotRect, locationPinGesture],
+    [handleDrawMove, handlePanMove, hotspotCircle, hotspotLasso, hotspotRect, locationPinGesture],
   );
 
   const handlePointerUp = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (locationPinGesture.handlePointerUp(event)) return;
+      if (hotspotLasso.handlePointerUp(event)) return;
+      if (hotspotCircle.handlePointerUp(event)) return;
       if (hotspotRect.handlePointerUp(event)) return;
       if (handleDrawUp(event)) return;
       handlePanUp(event);
     },
-    [handleDrawUp, handlePanUp, hotspotRect, locationPinGesture],
+    [handleDrawUp, handlePanUp, hotspotCircle, hotspotLasso, hotspotRect, locationPinGesture],
   );
 
   const handlePointerCancel = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (locationPinGesture.handlePointerCancel(event)) return;
+      if (hotspotLasso.handlePointerCancel(event)) return;
+      if (hotspotCircle.handlePointerCancel(event)) return;
       if (hotspotRect.handlePointerCancel(event)) return;
       if (handleDrawCancel(event)) return;
       handlePanUp(event);
     },
-    [handleDrawCancel, handlePanUp, hotspotRect, locationPinGesture],
+    [handleDrawCancel, handlePanUp, hotspotCircle, hotspotLasso, hotspotRect, locationPinGesture],
   );
+
+  const hotspotDrawHint = hotspotZoneEditActive
+    ? t("hotspot.zoneEdit.drawHint")
+    : hotspotDrawTool === "lasso"
+      ? t("hotspot.lasso.drawHint")
+      : hotspotDrawTool === "circle"
+        ? t("hotspot.circle.drawHint")
+        : t("hotspot.drawHint");
 
   return (
     <div
@@ -309,10 +373,11 @@ export function MapViewport({
         </p>
       ) : null}
       {hotspotDrawMode ? (
-        <p className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-md bg-primary/90 px-3 py-1.5 text-xs text-primary-foreground shadow-sm">
-          {t("hotspot.drawHint")}
+        <p className="pointer-events-none absolute left-1/2 top-3 z-10 max-w-md -translate-x-1/2 rounded-md bg-primary/90 px-3 py-1.5 text-center text-xs text-primary-foreground shadow-sm">
+          {hotspotDrawHint}
         </p>
       ) : null}
+      <MapHotspotDrawOverlay draft={hotspotLasso.draft} viewport={viewport} />
       {locationPinMode ? (
         <p className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-md bg-amber-500/90 px-3 py-1.5 text-xs text-amber-950 shadow-sm">
           {locationPinPlacementActive ? t("location.placeHintBanner") : t("location.moveHintBanner")}

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { clampFloatingPosition } from "@/lib/ui/clampFloatingPosition";
+
 export interface TimeDraft {
   day: number;
   month: number;
@@ -52,17 +54,12 @@ const DEFAULT_DRAFT: TimeDraft = { day: 1, month: 1, year: 0, hour: null };
 const PREVIEW_WIDTH = 520;
 const PREVIEW_HEIGHT = 168;
 const PREVIEW_OFFSET_Y = 16;
-const VIEWPORT_MARGIN = 8;
 
 function clampPreviewPosition(x: number, y: number): { x: number; y: number } {
-  const w = typeof window !== "undefined" ? window.innerWidth : 1024;
-  const h = typeof window !== "undefined" ? window.innerHeight : 720;
-  const maxX = Math.max(VIEWPORT_MARGIN, w - PREVIEW_WIDTH - VIEWPORT_MARGIN);
-  const maxY = Math.max(VIEWPORT_MARGIN, h - PREVIEW_HEIGHT - VIEWPORT_MARGIN);
-  return {
-    x: Math.min(Math.max(VIEWPORT_MARGIN, x), maxX),
-    y: Math.min(Math.max(VIEWPORT_MARGIN, y), maxY),
-  };
+  return clampFloatingPosition(x, y, {
+    width: PREVIEW_WIDTH,
+    height: PREVIEW_HEIGHT,
+  });
 }
 
 export const useTimeTagDialogStore = create<TimeTagDialogState>((set) => ({

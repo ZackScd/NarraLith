@@ -8,6 +8,7 @@ import {
   validateMapDrawingDraft,
 } from "@/lib/maps/mapDrawingDraft";
 import { fingerprintMapDrawing } from "@/lib/maps/mapDrawingBaseline";
+import { getLayerStrokes } from "@/lib/maps/mapImageLayers";
 import {
   MAP_UNDO_MAX_DEPTH,
   type MapDrawingUndoOp,
@@ -57,7 +58,7 @@ function sampleDraft(strokes = 1) {
       {
         kind: "addStroke" as const,
         layerId: "layer-1",
-        stroke: drawing.layers[0]!.strokes[0]!,
+        stroke: getLayerStrokes(drawing.layers[0]!)[0]!,
       },
     ],
     redoOps: [] as MapDrawingUndoOp[],

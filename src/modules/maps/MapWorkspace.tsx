@@ -7,13 +7,14 @@ import { useMapAutosave } from "@/hooks/useMapAutosave";
 import { useMapProject } from "@/hooks/useMapProject";
 import { useProjectLocations } from "@/hooks/useProjectLocations";
 import { useProjectTimeline } from "@/hooks/useProjectTimeline";
-import { useMapNav } from "@/hooks/useMapNav";
+import { useMapNavWindowsStore } from "@/stores/useMapNavWindowsStore";
 import { useMapDrawingSession } from "@/hooks/useMapDrawingSession";
 import { useMapSaveShortcut } from "@/hooks/useMapSaveShortcut";
 import { useMapDrawingGuardRegistration, guardMapDrawingNavigation } from "@/hooks/useMapDrawingGuardRegistration";
 import { usePersistMapDrawingDraft } from "@/hooks/usePersistMapDrawingDraft";
 import { trackAction } from "@/lib/action-audit/trackAction";
 import { resolveInteractiveHotspotHit } from "@/lib/maps/mapInteractiveNavClick";
+import { openNavWindowFromHotspot } from "@/lib/maps/mapNavWindowFromHotspot";
 import { createHotspotId } from "@/lib/maps/mapHotspotIds";
 import { createLocationPinId } from "@/lib/maps/mapLocationPinIds";
 import {
@@ -21,36 +22,43 @@ import {
   mergeOccurrencesWithPins,
 } from "@/lib/maps/mapLocationAtT";
 import { PRINCIPAL_HOST_DRAWING_REF } from "@/lib/maps/mapHostDrawingRef";
+import {
+  drawToolForShapeKind,
+  type PendingNavChildZone,
+  shapeFromPendingNavChildZone,
+} from "@/lib/maps/mapNavChildZone";
+import type { MapHotspotCircleDraft } from "@/lib/maps/mapHotspotCircle";
+import { useMapHotspotDrawStore } from "@/stores/useMapHotspotDrawStore";
 import { resolveMapPreviewT, type MapPreviewTSource } from "@/lib/maps/mapPreviewT";
 import { filterVisibleSecondaries } from "@/lib/maps/mapSecondaryVisibility";
 import type { ProjectLocationOccurrenceV1 } from "@/lib/types/mapLocations";
-import type { MapCreateDraft, MapDrawingRef, MapHotspotBoundsV1, MapNavSummaryV1, OpenPreference } from "@/lib/types/maps";
+import type { MapCreateDraft, MapDrawingRef, MapHotspotBoundsV1, MapHotspotPointV2, OpenPreference } from "@/lib/types/maps";
 import { DEFAULT_MAP_DRAWING_REF, drawingRefKey, parseDrawingRefKey } from "@/lib/types/maps";
 import { formatMapDesdeDisplay } from "@/lib/maps/mapDesde";
-import {
-  MAP_SIDE_PANEL_CONTENT_MOUNT_ID,
-  MAP_SIDE_PANEL_RAIL_MOUNT_ID,
-} from "@/modules/layout/mapSidePanelMount";
+import { MAP_SIDE_PANEL_RAIL_MOUNT_ID } from "@/modules/layout/mapSidePanelMount";
+import { MapFloatingToolsPanel } from "@/modules/maps/MapFloatingToolsPanel";
+import { MapCombinedLayersPanel } from "@/modules/maps/MapCombinedLayersPanel";
+import { MapLayersFloatingWindow } from "@/modules/maps/MapLayersFloatingWindow";
+import { MapNavHotspotsUnifiedPanel } from "@/modules/maps/MapNavHotspotsUnifiedPanel";
 import {
   MapCanvasSizeDialog,
   type MapCanvasSizeMode,
 } from "@/modules/maps/MapCanvasSizeDialog";
+import { CreateNavChildDialog } from "@/modules/maps/CreateNavChildDialog";
 import { CreateMapDialog } from "@/modules/maps/CreateMapDialog";
 import { MapEditStudio } from "@/modules/maps/MapEditStudio";
 import { MapLayersPanel } from "@/modules/maps/MapLayersPanel";
 import { MapCanvasSection } from "@/modules/maps/MapCanvasSection";
-import { MapEditSidePanel } from "@/modules/maps/MapEditSidePanel";
 import { useMapStudioShortcuts } from "@/hooks/useMapStudioShortcuts";
 import { MapModuleSettingsSection } from "@/modules/maps/MapModuleSettingsSection";
-import { MapNavBreadcrumb } from "@/modules/maps/MapNavBreadcrumb";
-import { MapNavDrawingsPanel } from "@/modules/maps/MapNavDrawingsPanel";
-import { HotspotTargetDialog, MapHotspotsPanel } from "@/modules/maps/MapHotspotsPanel";
+import { MapNavChildWindow } from "@/modules/maps/MapNavChildWindow";
 import { MapLocationsPanel } from "@/modules/maps/MapLocationsPanel";
 import { MapSecondariesPanel } from "@/modules/maps/MapSecondariesPanel";
 import { MapTimelineBar } from "@/modules/maps/MapTimelineBar";
 import { MapViewport } from "@/modules/maps/MapViewport";
 import { useMapStore } from "@/stores/useMapStore";
-import { useMapEditPanelStore } from "@/stores/useMapEditPanelStore";
+import { useMapFloatingToolsStore } from "@/stores/useMapFloatingToolsStore";
+import { useMapLayersWindowStore } from "@/stores/useMapLayersWindowStore";
 import { useMapToolbarStore } from "@/stores/useMapToolbarStore";
 import { useCalendarStore } from "@/stores/useCalendarStore";
 import { useProjectStore } from "@/stores/useProjectStore";
@@ -122,22 +130,17 @@ export function MapWorkspace() {
   const [navBusy, setNavBusy] = useState(false);
   const [hotspotBusy, setHotspotBusy] = useState(false);
   const [hotspotDrawMode, setHotspotDrawMode] = useState(false);
-  const [pendingHotspotBounds, setPendingHotspotBounds] = useState<MapHotspotBoundsV1 | null>(
-    null,
-  );
-  const [hotspotTargetOpen, setHotspotTargetOpen] = useState(false);
+  const [editingHotspotId, setEditingHotspotId] = useState<string | null>(null);
+  const [pendingNavChildZone, setPendingNavChildZone] = useState<PendingNavChildZone | null>(null);
+  const [navChildDialogOpen, setNavChildDialogOpen] = useState(false);
   const [locationPinBusy, setLocationPinBusy] = useState(false);
   const [locationPlacementTarget, setLocationPlacementTarget] =
     useState<ProjectLocationOccurrenceV1 | null>(null);
   const [locationMovePinId, setLocationMovePinId] = useState<string | null>(null);
   const [railMount, setRailMount] = useState<HTMLElement | null>(null);
-  const [contentMount, setContentMount] = useState<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
     setRailMount(globalThis.document?.getElementById(MAP_SIDE_PANEL_RAIL_MOUNT_ID) ?? null);
-    setContentMount(
-      globalThis.document?.getElementById(MAP_SIDE_PANEL_CONTENT_MOUNT_ID) ?? null,
-    );
   }, [activeMapId, document?.id, drawing]);
 
   const activeSummary = maps.find((map) => map.id === activeMapId);
@@ -146,28 +149,19 @@ export function MapWorkspace() {
   const isEditMode = viewMode === "edit";
   const mapAutosaveEnabled = useSettingsStore((s) => s.mapAutosaveEnabled);
 
-  const { navStack, navDepth, activeNavId, activeNavFrame, pushFromHotspot, popNav } =
-    useMapNav({
-      mapId: activeMapId,
-      navDrawings,
-      loadNavFile,
-    });
-
-  const isNavView = navDepth > 0;
-  const activeNavFile = activeNavId ? navFiles[activeNavId] : null;
-
-  useEffect(() => {
-    if (!activeNavFrame || !activeMapId) return;
-    void loadNavFile(activeNavFrame.navId);
-  }, [activeMapId, activeNavFrame, loadNavFile]);
+  const openNavWindows = useMapNavWindowsStore((s) => s.openWindows);
+  const openNavWindow = useMapNavWindowsStore((s) => s.openWindow);
+  const closeNavWindow = useMapNavWindowsStore((s) => s.closeWindow);
+  const setNavWindowPosition = useMapNavWindowsStore((s) => s.setWindowPosition);
+  const focusNavWindow = useMapNavWindowsStore((s) => s.focusWindow);
+  const syncNavWindowsForMap = useMapNavWindowsStore((s) => s.syncForMap);
+  const closeNavWindowsByMode = useMapNavWindowsStore((s) => s.closeByMode);
 
   const hostHotspotCount = useMemo(
     () =>
       hotspots.filter((item) => item.hostDrawingRef.kind === "principal").length,
     [hotspots],
   );
-
-  const navStackIds = useMemo(() => navStack.map((frame) => frame.navId), [navStack]);
 
   const principalHotspots = useMemo(
     () => hotspots.filter((item) => item.hostDrawingRef.kind === "principal"),
@@ -297,9 +291,8 @@ export function MapWorkspace() {
   }, [activeDrawingRef, loadNavFile]);
 
   const overlayDrawings = useMemo(
-    () => {
-      if (isNavView) return [];
-      return visibleSecondaries
+    () =>
+      visibleSecondaries
         .map((item) => {
           const file = secondaryFiles[item.id];
           if (!file) return null;
@@ -313,18 +306,27 @@ export function MapWorkspace() {
             drawing: isActiveEditing ? drawingSession.drawing! : file.drawing,
           };
         })
-        .filter((item): item is NonNullable<typeof item> => item !== null);
-    },
-    [activeDrawingRef, drawingSession.drawing, isEditMode, isNavView, secondaryFiles, visibleSecondaries],
+        .filter((item): item is NonNullable<typeof item> => item !== null),
+    [activeDrawingRef, drawingSession.drawing, isEditMode, secondaryFiles, visibleSecondaries],
   );
 
-  const syncMapEditPanel = useMapEditPanelStore((s) => s.syncForMap);
+  const syncMapFloatingTools = useMapFloatingToolsStore((s) => s.syncForMap);
+  const syncMapLayersWindow = useMapLayersWindowStore((s) => s.syncForMap);
+  const isLayersWindowOpen = useMapFloatingToolsStore(
+    (s) => s.isOpen && s.activeSection === "layers",
+  );
+
+  useEffect(() => {
+    useMapFloatingToolsStore.getState().close();
+  }, []);
 
   useEffect(() => {
     if (activeMapId) {
-      syncMapEditPanel(activeMapId);
+      syncMapFloatingTools(activeMapId);
+      syncMapLayersWindow(activeMapId);
+      syncNavWindowsForMap(activeMapId);
     }
-  }, [activeMapId, syncMapEditPanel]);
+  }, [activeMapId, syncMapFloatingTools, syncMapLayersWindow, syncNavWindowsForMap]);
 
   useEffect(() => {
     setActiveMapTitle(document?.name ?? null);
@@ -379,88 +381,197 @@ export function MapWorkspace() {
       ? drawingSession.drawing
       : drawing!;
 
-  const composeNavDrawing =
-    isNavView && activeNavFile
-      ? isEditMode &&
-        activeDrawingRef.kind === "nav" &&
-        activeDrawingRef.id === activeNavId &&
-        drawingSession.drawing
-        ? drawingSession.drawing
-        : activeNavFile.drawing
-      : null;
-
-  const composeNavDrawingRefKey = activeNavId ? `nav:${activeNavId}` : undefined;
-
   const handleInteractiveClick = useCallback(
     (worldX: number, worldY: number) => {
       const hit = resolveInteractiveHotspotHit(
         viewMode,
-        isNavView,
         worldX,
         worldY,
         hotspots,
       );
-      if (!hit) return false;
-      void pushFromHotspot(hit);
+      if (!hit || !activeMapId) return false;
+      void openNavWindowFromHotspot({
+        mapId: activeMapId,
+        hotspot: hit,
+        navDrawings,
+        loadNavFile,
+      });
       return true;
     },
-    [hotspots, isNavView, pushFromHotspot, viewMode],
+    [activeMapId, hotspots, loadNavFile, navDrawings, viewMode],
   );
 
-  const handleHotspotRectComplete = useCallback((bounds: MapHotspotBoundsV1) => {
-    setHotspotDrawMode(false);
-    setPendingHotspotBounds(bounds);
-    setHotspotTargetOpen(true);
-  }, []);
-
-  const handleCreateNavDrawing = useCallback(
-    async (name: string): Promise<MapNavSummaryV1 | null> => {
-      setNavBusy(true);
-      try {
-        const file = await createNav(name);
-        trackAction("map", "navSelect", {
-          mapId: activeMapId,
-          drawingRef: `nav:${file.id}`,
-          previousRef: drawingRefKey(activeDrawingRef),
-        });
-        setActiveDrawingRef({ kind: "nav", id: file.id });
-        return { id: file.id, name: file.name, updatedAt: file.updatedAt };
-      } finally {
-        setNavBusy(false);
-      }
-    },
-    [activeDrawingRef, activeMapId, createNav, setActiveDrawingRef],
+  const openEditNavIds = useMemo(
+    () => openNavWindows.filter((item) => item.mode === "edit").map((item) => item.navId),
+    [openNavWindows],
   );
 
-  const handleConfirmHotspot = useCallback(
-    async (draft: { bounds: MapHotspotBoundsV1; targetNavId: string; label?: string }) => {
+  const handleUpdateHotspotZone = useCallback(
+    async (hotspotId: string, zone: PendingNavChildZone) => {
       if (!activeMapId) return;
       setHotspotBusy(true);
       try {
+        const shape = shapeFromPendingNavChildZone(zone);
+        const next = hotspots.map((item) =>
+          item.id === hotspotId ? { ...item, shape } : item,
+        );
+        await saveHotspots(next);
+        trackAction("map", "hotspotUpdate", {
+          mapId: activeMapId,
+          hotspotId,
+          shapeKind: zone.kind,
+          ...(zone.kind === "polygon"
+            ? { vertexCount: zone.points.length }
+            : zone.kind === "rect"
+              ? { bounds: zone.bounds }
+              : { radius: zone.circle.radius }),
+        });
+      } finally {
+        setHotspotBusy(false);
+      }
+    },
+    [activeMapId, hotspots, saveHotspots],
+  );
+
+  const handleZoneGestureComplete = useCallback(
+    (zone: PendingNavChildZone) => {
+      setHotspotDrawMode(false);
+      if (editingHotspotId) {
+        void handleUpdateHotspotZone(editingHotspotId, zone);
+        setEditingHotspotId(null);
+        return;
+      }
+      setPendingNavChildZone(zone);
+      setNavChildDialogOpen(true);
+    },
+    [editingHotspotId, handleUpdateHotspotZone],
+  );
+
+  const handleHotspotRectComplete = useCallback(
+    (bounds: MapHotspotBoundsV1) => {
+      handleZoneGestureComplete({ kind: "rect", bounds });
+    },
+    [handleZoneGestureComplete],
+  );
+
+  const handleHotspotPolygonComplete = useCallback(
+    (points: MapHotspotPointV2[]) => {
+      handleZoneGestureComplete({ kind: "polygon", points });
+    },
+    [handleZoneGestureComplete],
+  );
+
+  const handleHotspotCircleComplete = useCallback(
+    (circle: MapHotspotCircleDraft) => {
+      handleZoneGestureComplete({ kind: "circle", circle });
+    },
+    [handleZoneGestureComplete],
+  );
+
+  const handleOpenEditWindow = useCallback(
+    async (navId: string) => {
+      await loadNavFile(navId);
+      openNavWindow(navId, "edit", { mapId: activeMapId ?? undefined });
+      focusNavWindow(navId);
+      trackAction("map", "navSelect", {
+        mapId: activeMapId,
+        drawingRef: `nav:${navId}`,
+        previousRef: drawingRefKey(activeDrawingRef),
+      });
+    },
+    [activeDrawingRef, activeMapId, focusNavWindow, loadNavFile, openNavWindow],
+  );
+
+  const handleStartEditZone = useCallback(
+    (hotspotId: string) => {
+      const hotspot = hotspots.find((item) => item.id === hotspotId);
+      if (!hotspot) return;
+      setLocationPlacementTarget(null);
+      setLocationMovePinId(null);
+      setEditingHotspotId(hotspotId);
+      useMapHotspotDrawStore.getState().setTool(drawToolForShapeKind(hotspot.shape.kind));
+      setHotspotDrawMode(true);
+      trackAction("map", "hotspotZoneEditStart", {
+        mapId: activeMapId,
+        hotspotId,
+        shapeKind: hotspot.shape.kind,
+      });
+    },
+    [activeMapId, hotspots],
+  );
+
+  const handleCreateNavChildWithZone = useCallback(
+    async (name: string) => {
+      if (!activeMapId || !pendingNavChildZone) return;
+      setNavBusy(true);
+      setHotspotBusy(true);
+      try {
+        const file = await createNav(name);
         const hotspotId = createHotspotId();
+        const shape = shapeFromPendingNavChildZone(pendingNavChildZone);
         const next = [
           ...hotspots,
           {
             id: hotspotId,
-            label: draft.label,
+            label: name,
             hostDrawingRef: PRINCIPAL_HOST_DRAWING_REF,
-            bounds: draft.bounds,
-            targetNavId: draft.targetNavId,
+            shape,
+            targetNavId: file.id,
           },
         ];
         await saveHotspots(next);
         trackAction("map", "hotspotCreate", {
           mapId: activeMapId,
           hotspotId,
-          targetNavId: draft.targetNavId,
-          bounds: draft.bounds,
+          targetNavId: file.id,
+          shapeKind: pendingNavChildZone.kind,
+          ...(pendingNavChildZone.kind === "polygon"
+            ? { vertexCount: pendingNavChildZone.points.length }
+            : pendingNavChildZone.kind === "rect"
+              ? { bounds: pendingNavChildZone.bounds }
+              : { radius: pendingNavChildZone.circle.radius }),
         });
-        setPendingHotspotBounds(null);
+        trackAction("map", "navSelect", {
+          mapId: activeMapId,
+          drawingRef: `nav:${file.id}`,
+          previousRef: drawingRefKey(activeDrawingRef),
+        });
+        setPendingNavChildZone(null);
       } finally {
+        setNavBusy(false);
         setHotspotBusy(false);
       }
     },
-    [activeMapId, hotspots, saveHotspots],
+    [
+      activeDrawingRef,
+      activeMapId,
+      createNav,
+      hotspots,
+      pendingNavChildZone,
+      saveHotspots,
+    ],
+  );
+
+  const handleDeleteNavWithHotspot = useCallback(
+    async (navId: string) => {
+      if (!activeMapId) return;
+      setNavBusy(true);
+      setHotspotBusy(true);
+      try {
+        const linkedHotspots = hotspots.filter((item) => item.targetNavId === navId);
+        if (linkedHotspots.length > 0) {
+          await saveHotspots(hotspots.filter((item) => item.targetNavId !== navId));
+        }
+        await deleteNav(navId);
+        if (activeDrawingRef.kind === "nav" && activeDrawingRef.id === navId) {
+          setActiveDrawingRef({ kind: "principal" });
+        }
+      } finally {
+        setNavBusy(false);
+        setHotspotBusy(false);
+      }
+    },
+    [activeDrawingRef, activeMapId, deleteNav, hotspots, saveHotspots, setActiveDrawingRef],
   );
 
   const handleDeleteHotspot = useCallback(
@@ -561,6 +672,14 @@ export function MapWorkspace() {
 
   const previewStroke = isEditMode ? drawingSession.currentStroke : null;
 
+  useEffect(() => {
+    for (const entry of openNavWindows) {
+      if (!navFiles[entry.navId]) {
+        void loadNavFile(entry.navId);
+      }
+    }
+  }, [loadNavFile, navFiles, openNavWindows]);
+
   const handleCreate = async (draft: MapCreateDraft) => {
     await createMap(draft);
   };
@@ -587,7 +706,8 @@ export function MapWorkspace() {
           await loadSecondaryFile(ref.id);
         }
         if (ref.kind === "nav") {
-          await loadNavFile(ref.id);
+          await handleOpenEditWindow(ref.id);
+          return;
         }
         setActiveDrawingRef(ref);
         if (ref.kind === "secondary") {
@@ -596,16 +716,10 @@ export function MapWorkspace() {
             drawingRef: drawingRefKey(ref),
             previousRef,
           });
-        } else if (ref.kind === "nav") {
-          trackAction("map", "navSelect", {
-            mapId: activeMapId,
-            drawingRef: drawingRefKey(ref),
-            previousRef,
-          });
         }
       }, "mapSwitch");
     },
-    [activeDrawingRef, activeMapId, loadNavFile, loadSecondaryFile, setActiveDrawingRef],
+    [activeDrawingRef, activeMapId, handleOpenEditWindow, loadSecondaryFile, setActiveDrawingRef],
   );
 
   const handleCreateSecondary = useCallback(
@@ -736,6 +850,7 @@ export function MapWorkspace() {
   const handleEnterEdit = () => {
     if (!activeMapId) return;
     const fromMode = viewMode;
+    closeNavWindowsByMode("interactive");
     setViewMode("edit");
     trackAction("map", "setViewMode", { mapId: activeMapId, mode: "edit", fromMode });
   };
@@ -763,15 +878,6 @@ export function MapWorkspace() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      {activeMapId && document && isNavView ? (
-        <MapNavBreadcrumb
-          mapName={document.name}
-          navStack={navStack}
-          onPop={() => popNav()}
-          onPopToDepth={(depth) => popNav(depth)}
-        />
-      ) : null}
-
       <div className="flex min-h-0 flex-1 flex-col">
         {loading && maps.length === 0 ? (
           <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -803,20 +909,18 @@ export function MapWorkspace() {
                 overlayDrawings={overlayDrawings}
                 activeDrawingRefKey={activeDrawingRefKey}
                 previewTimeTRaw={previewT}
-                activeSecondaryIds={isNavView ? [] : activeSecondaryIds}
+                activeSecondaryIds={activeSecondaryIds}
                 secondaryCount={secondaries.length}
-                navDepth={navDepth}
-                activeNavId={activeNavId}
-                navStackIds={navStackIds}
+                openNavWindowCount={openNavWindows.length}
                 hostHotspotCount={hostHotspotCount}
-                composeNavDrawing={composeNavDrawing}
-                composeNavDrawingRefKey={composeNavDrawingRefKey}
-                hotspotOverlays={!isNavView ? principalHotspots : []}
+                hotspotOverlays={principalHotspots}
                 hotspotOverlayStyle={isEditMode ? "edit" : "interactive"}
-                hotspotDrawMode={hotspotDrawMode && !isNavView}
+                hotspotDrawMode={hotspotDrawMode}
+                hotspotZoneEditActive={Boolean(editingHotspotId)}
+                hotspotHighlightId={editingHotspotId}
                 locationMarkers={locationMarkers}
-                locationPinPlacementActive={Boolean(locationPlacementTarget) && !isNavView}
-                locationPinMoveActive={Boolean(locationMovePinId) && !isNavView}
+                locationPinPlacementActive={Boolean(locationPlacementTarget)}
+                locationPinMoveActive={Boolean(locationMovePinId)}
                 locationCountAtT={locationMarkers.length}
                 unpinnedKeysAtT={unpinnedLocationKeysAtT.length}
                 pinnedKeysTotal={locationPins.length}
@@ -829,10 +933,8 @@ export function MapWorkspace() {
                 onCommitStroke={drawingSession.commitStroke}
                 onInteractiveClick={handleInteractiveClick}
                 onHotspotRectComplete={handleHotspotRectComplete}
-              />
-              <div
-                id={MAP_SIDE_PANEL_CONTENT_MOUNT_ID}
-                className="flex h-full min-h-0 shrink-0"
+                onHotspotCircleComplete={handleHotspotCircleComplete}
+                onHotspotPolygonComplete={handleHotspotPolygonComplete}
               />
             </div>
             {calendar ? (
@@ -858,50 +960,53 @@ export function MapWorkspace() {
       </div>
 
       {railMount && activeMapId && document && drawing ? (
-        <MapEditSidePanel
+        <MapFloatingToolsPanel
           isEditMode={isEditMode}
-          isNavView={isNavView}
           onToggleEditMode={handleToggleEditMode}
           railMount={railMount}
-          contentMount={contentMount}
-              settingsSection={
-                <MapModuleSettingsSection
-                  openPreference={openPreference}
-                  onPreferenceChange={handlePreferenceChange}
-                />
-              }
-              layersSection={
-                isEditMode && drawingSession.drawing ? (
-                  <MapLayersPanel
-                    embedded
-                    mapId={activeMapId}
-                    drawing={drawingSession.drawing}
-                    activeLayerId={drawingSession.activeLayerId}
-                    onSelectLayer={drawingSession.selectActiveLayer}
-                    onCreateLayer={() => {
-                      drawingSession.createLayer(
-                        t("studio.layers.defaultName", {
-                          index: drawingSession.drawing!.layers.length + 1,
-                        }),
-                      );
-                    }}
-                    onCreateGroup={() =>
-                      drawingSession.createGroup(
-                        t("studio.layers.defaultGroupName", {
-                          index: (drawingSession.drawing!.groups?.length ?? 0) + 1,
-                        }),
-                      )
-                    }
-                    onDeleteLayer={drawingSession.deleteLayer}
-                    onDeleteGroup={drawingSession.deleteGroup}
-                    onPatchLayer={drawingSession.patchLayer}
-                    onPatchGroup={drawingSession.patchGroup}
-                    onReorderPanelRow={drawingSession.reorderPanelRow}
-                  />
-                ) : null
-              }
-              patchesSection={
-                isEditMode ? (
+          settingsSection={
+            <MapModuleSettingsSection
+              openPreference={openPreference}
+              onPreferenceChange={handlePreferenceChange}
+            />
+          }
+          layersWindow={
+            isLayersWindowOpen && isEditMode ? (
+              <MapLayersFloatingWindow
+                ariaLabel={t("editPanel.title")}
+                layersTab={
+                  drawingSession.drawing ? (
+                    <MapLayersPanel
+                      embedded
+                      mapId={activeMapId}
+                      drawing={drawingSession.drawing}
+                      activeLayerId={drawingSession.activeLayerId}
+                      onSelectLayer={drawingSession.selectActiveLayer}
+                      onCreateLayer={() => {
+                        drawingSession.createLayer(
+                          t("studio.layers.defaultName", {
+                            index: drawingSession.drawing!.layers.length + 1,
+                          }),
+                        );
+                      }}
+                      onCreateGroup={() =>
+                        drawingSession.createGroup(
+                          t("studio.layers.defaultGroupName", {
+                            index: (drawingSession.drawing!.groups?.length ?? 0) + 1,
+                          }),
+                        )
+                      }
+                      onDeleteLayer={drawingSession.deleteLayer}
+                      onDeleteGroup={drawingSession.deleteGroup}
+                      onPatchLayer={drawingSession.patchLayer}
+                      onPatchGroup={drawingSession.patchGroup}
+                      onReorderPanelRow={drawingSession.reorderPanelRow}
+                      onPatchBackground={drawingSession.patchBackgroundColor}
+                      onImportImageLayer={drawingSession.importImageLayer}
+                    />
+                  ) : null
+                }
+                patchesTab={
                   <MapSecondariesPanel
                     embedded
                     mapId={activeMapId}
@@ -937,109 +1042,115 @@ export function MapWorkspace() {
                       }
                     }}
                   />
-                ) : null
-              }
-              navSection={
-                isEditMode && !isNavView ? (
-                  <MapNavDrawingsPanel
-                    embedded
-                    mapId={activeMapId}
-                    navDrawings={navDrawings}
-                    activeDrawingRef={activeDrawingRef}
-                    busy={navBusy}
-                    onSelectDrawing={handleSelectDrawing}
-                    onCreate={async (name) => {
-                      await handleCreateNavDrawing(name);
-                    }}
-                    onDelete={async (navId) => {
-                      setNavBusy(true);
-                      try {
-                        await deleteNav(navId);
-                        if (activeDrawingRef.kind === "nav" && activeDrawingRef.id === navId) {
-                          setActiveDrawingRef({ kind: "principal" });
+                }
+                navTab={
+                  <MapNavHotspotsUnifiedPanel
+                      embedded
+                      mapId={activeMapId}
+                      navDrawings={navDrawings}
+                      hotspots={principalHotspots}
+                      openEditNavIds={openEditNavIds}
+                      editingHotspotId={editingHotspotId}
+                      drawMode={hotspotDrawMode}
+                      busy={navBusy || hotspotBusy}
+                      onOpenEditWindow={handleOpenEditWindow}
+                      onStartEditZone={handleStartEditZone}
+                      onDeleteNav={handleDeleteNavWithHotspot}
+                      onToggleDrawMode={(active) => {
+                        setHotspotDrawMode(active);
+                        if (!active) setEditingHotspotId(null);
+                        if (active) {
+                          setLocationPlacementTarget(null);
+                          setLocationMovePinId(null);
                         }
-                      } finally {
-                        setNavBusy(false);
+                      }}
+                      onDeleteHotspot={handleDeleteHotspot}
+                    />
+                }
+                combinedView={
+                  drawing ? (
+                    <MapCombinedLayersPanel
+                      mapDesde={document.desde}
+                      previewT={previewT}
+                      calendar={calendar}
+                      secondaries={secondaries}
+                      secondaryFiles={secondaryFiles}
+                      principalDrawing={
+                        activeDrawingRef.kind === "principal" && drawingSession.drawing
+                          ? drawingSession.drawing
+                          : drawing
                       }
-                    }}
-                  />
-                ) : null
-              }
-              hotspotsSection={
-                isEditMode && !isNavView ? (
-                  <MapHotspotsPanel
-                    embedded
-                    mapId={activeMapId}
-                    hotspots={principalHotspots}
-                    navDrawings={navDrawings}
-                    drawMode={hotspotDrawMode}
-                    busy={hotspotBusy}
-                    onToggleDrawMode={(active) => {
-                      setHotspotDrawMode(active);
-                      if (active) {
-                        setLocationPlacementTarget(null);
-                        setLocationMovePinId(null);
-                      }
-                    }}
-                    onDeleteHotspot={handleDeleteHotspot}
-                  />
-                ) : null
-              }
-              locationsSection={
-                isEditMode && !isNavView ? (
-                  <MapLocationsPanel
-                    embedded
-                    mapId={activeMapId}
-                    previewT={previewT}
-                    occurrencesAtT={occurrencesAtT}
-                    unpinnedAtT={unpinnedOccurrencesAtT}
-                    pins={locationPins}
-                    placementTarget={locationPlacementTarget}
-                    movePinId={locationMovePinId}
-                    busy={locationPinBusy}
-                    onStartPlacement={(occurrence) => {
-                      setHotspotDrawMode(false);
-                      setLocationMovePinId(null);
-                      setLocationPlacementTarget(occurrence);
-                    }}
-                    onCancelPlacement={() => setLocationPlacementTarget(null)}
-                    onStartMove={(pinId) => {
-                      setHotspotDrawMode(false);
-                      setLocationPlacementTarget(null);
-                      setLocationMovePinId(pinId);
-                    }}
-                    onCancelMove={() => setLocationMovePinId(null)}
-                    onDeletePin={handleDeleteLocationPin}
-                  />
-                ) : null
-              }
-              studioSection={
-                isEditMode ? (
-                  <MapEditStudio
-                    embedded
-                    mapId={activeMapId}
-                    canvasBusy={canvasBusy}
-                    isDirty={drawingSession.isDirty}
-                    saveStatus={drawingSession.saveStatus}
-                    canUndo={drawingSession.canUndo}
-                    canRedo={drawingSession.canRedo}
-                    onUndo={drawingSession.undo}
-                    onRedo={drawingSession.redo}
-                  />
-                ) : null
-              }
-              canvasSection={
-                isEditMode ? (
-                  <MapCanvasSection
-                    width={document.width}
-                    height={document.height}
-                    busy={canvasBusy}
-                    onExpand={() => openCanvasDialog("expand")}
-                    onCrop={() => openCanvasDialog("crop")}
-                  />
-                ) : null
-              }
-          />
+                      activeDrawingRef={activeDrawingRef}
+                      activeLayerId={drawingSession.activeLayerId}
+                      busy={secondaryBusy}
+                      defaultTiempoInicio={previewT}
+                      onSelectDrawing={handleSelectDrawing}
+                      onSelectLayer={drawingSession.selectActiveLayer}
+                      onCreate={handleCreateSecondary}
+                      onLoadSecondary={(secondaryId) => {
+                        void loadSecondaryFile(secondaryId);
+                      }}
+                    />
+                  ) : null
+                }
+              />
+            ) : null
+          }
+          locationsSection={
+            isEditMode ? (
+              <MapLocationsPanel
+                embedded
+                mapId={activeMapId}
+                previewT={previewT}
+                occurrencesAtT={occurrencesAtT}
+                unpinnedAtT={unpinnedOccurrencesAtT}
+                pins={locationPins}
+                placementTarget={locationPlacementTarget}
+                movePinId={locationMovePinId}
+                busy={locationPinBusy}
+                onStartPlacement={(occurrence) => {
+                  setHotspotDrawMode(false);
+                  setLocationMovePinId(null);
+                  setLocationPlacementTarget(occurrence);
+                }}
+                onCancelPlacement={() => setLocationPlacementTarget(null)}
+                onStartMove={(pinId) => {
+                  setHotspotDrawMode(false);
+                  setLocationPlacementTarget(null);
+                  setLocationMovePinId(pinId);
+                }}
+                onCancelMove={() => setLocationMovePinId(null)}
+                onDeletePin={handleDeleteLocationPin}
+              />
+            ) : null
+          }
+          studioSection={
+            isEditMode ? (
+              <MapEditStudio
+                embedded
+                mapId={activeMapId}
+                canvasBusy={canvasBusy}
+                isDirty={drawingSession.isDirty}
+                saveStatus={drawingSession.saveStatus}
+                canUndo={drawingSession.canUndo}
+                canRedo={drawingSession.canRedo}
+                onUndo={drawingSession.undo}
+                onRedo={drawingSession.redo}
+              />
+            ) : null
+          }
+          canvasSection={
+            isEditMode ? (
+              <MapCanvasSection
+                width={document.width}
+                height={document.height}
+                busy={canvasBusy}
+                onExpand={() => openCanvasDialog("expand")}
+                onCrop={() => openCanvasDialog("crop")}
+              />
+            ) : null
+          }
+        />
       ) : null}
 
       <CreateMapDialog
@@ -1049,17 +1160,15 @@ export function MapWorkspace() {
         onCreate={handleCreate}
       />
 
-      <HotspotTargetDialog
-        open={hotspotTargetOpen}
-        bounds={pendingHotspotBounds}
-        navDrawings={navDrawings}
-        busy={hotspotBusy}
+      <CreateNavChildDialog
+        open={navChildDialogOpen}
+        zone={pendingNavChildZone}
+        busy={navBusy || hotspotBusy}
         onOpenChange={(open) => {
-          setHotspotTargetOpen(open);
-          if (!open) setPendingHotspotBounds(null);
+          setNavChildDialogOpen(open);
+          if (!open) setPendingNavChildZone(null);
         }}
-        onConfirm={handleConfirmHotspot}
-        onCreateNav={handleCreateNavDrawing}
+        onCreate={handleCreateNavChildWithZone}
       />
 
       {document ? (
@@ -1088,6 +1197,37 @@ export function MapWorkspace() {
           }}
         />
       ) : null}
+
+      {activeMapId && document
+        ? openNavWindows.map((entry) => {
+            const navFile = navFiles[entry.navId];
+            const summary = navDrawings.find((item) => item.id === entry.navId);
+            if (!navFile) return null;
+            return (
+              <MapNavChildWindow
+                key={entry.navId}
+                mapId={activeMapId}
+                document={document}
+                entry={entry}
+                navName={summary?.name ?? entry.navId}
+                navDrawing={navFile.drawing}
+                hotspots={hotspots}
+                navDrawings={navDrawings}
+                loadNavFile={loadNavFile}
+                calendar={calendar}
+                previewT={previewT}
+                secondaries={secondaries}
+                rootPath={rootPath}
+                mapAutosaveEnabled={mapAutosaveEnabled}
+                onPreviewTChange={handlePreviewTChange}
+                onClose={() => closeNavWindow(entry.navId)}
+                onPositionChange={(position) => setNavWindowPosition(entry.navId, position)}
+                onFocus={() => focusNavWindow(entry.navId)}
+                saveActiveDrawing={saveActiveDrawing}
+              />
+            );
+          })
+        : null}
     </div>
   );
 }

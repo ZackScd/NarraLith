@@ -13,14 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { MapHotspotBoundsV1, MapHotspotV1, MapNavSummaryV1 } from "@/lib/types/maps";
+import { hotspotShapeAabb } from "@/lib/maps/mapHotspotShape";
+import type { MapHotspotBoundsV1, MapHotspotV2, MapNavSummaryV1 } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
 
 import { CreateNavDialog } from "./CreateNavDialog";
 
 interface MapHotspotsPanelProps {
   mapId: string;
-  hotspots: MapHotspotV1[];
+  hotspots: MapHotspotV2[];
   navDrawings: MapNavSummaryV1[];
   drawMode: boolean;
   busy?: boolean;
@@ -40,7 +41,7 @@ export function MapHotspotsPanel({
   embedded = false,
 }: MapHotspotsPanelProps) {
   const { t } = useTranslation("maps");
-  const [deleteTarget, setDeleteTarget] = useState<MapHotspotV1 | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MapHotspotV2 | null>(null);
 
   const navById = useMemo(
     () => new Map(navDrawings.map((item) => [item.id, item])),
@@ -89,6 +90,7 @@ export function MapHotspotsPanel({
         ) : null}
         {hotspots.map((item) => {
           const targetNav = navById.get(item.targetNavId);
+          const zone = hotspotShapeAabb(item.shape);
           return (
           <div
             key={item.id}
@@ -103,8 +105,8 @@ export function MapHotspotsPanel({
               </span>
               <span className="text-muted-foreground">
                 {t("hotspot.zoneSize", {
-                  width: Math.round(item.bounds.width),
-                  height: Math.round(item.bounds.height),
+                  width: Math.round(zone.width),
+                  height: Math.round(zone.height),
                 })}
               </span>
             </div>

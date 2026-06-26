@@ -1,91 +1,115 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { resolveInteractiveHotspotHit } from "@/lib/maps/mapInteractiveNavClick";
-import { pushNavFromHotspot } from "@/lib/maps/mapNavFromHotspot";
-import type { MapHotspotV1 } from "@/lib/types/maps";
+import { rectShapeFromBounds } from "@/lib/maps/mapHotspotShape";
+import {
+  collectDescendantNavWindowIds,
+  filterHotspotsForHost,
+  openNavWindowFromHotspot,
+} from "@/lib/maps/mapNavWindowFromHotspot";
+import type { MapHotspotV2 } from "@/lib/types/maps";
+import { useMapNavWindowsStore } from "@/stores/useMapNavWindowsStore";
 import { useMapStore } from "@/stores/useMapStore";
 
-const hotspot: MapHotspotV1 = {
+const principalHotspot: MapHotspotV2 = {
   id: "hs-1",
   hostDrawingRef: { kind: "principal" },
-  bounds: { x: 10, y: 10, width: 40, height: 40 },
+  shape: rectShapeFromBounds({ x: 10, y: 10, width: 40, height: 40 }),
   targetNavId: "nav-1",
+};
+
+const childHotspot: MapHotspotV2 = {
+  id: "hs-2",
+  hostDrawingRef: { kind: "nav", id: "nav-parent" },
+  shape: rectShapeFromBounds({ x: 5, y: 5, width: 20, height: 20 }),
+  targetNavId: "nav-child",
 };
 
 describe("resolveInteractiveHotspotHit", () => {
   it("devuelve hotspot en interactivo sobre terreno base", () => {
     expect(
-      resolveInteractiveHotspotHit("interactive", false, 20, 20, [hotspot])?.id,
+      resolveInteractiveHotspotHit("interactive", 20, 20, [principalHotspot])?.id,
     ).toBe("hs-1");
   });
 
-  it("ignora clics en edición o dentro de nav", () => {
-    expect(resolveInteractiveHotspotHit("edit", false, 20, 20, [hotspot])).toBeNull();
-    expect(resolveInteractiveHotspotHit("interactive", true, 20, 20, [hotspot])).toBeNull();
+  it("hit-test en host nav para ventanas hijo", () => {
+    expect(
+      resolveInteractiveHotspotHit("interactive", 10, 10, [childHotspot], {
+        kind: "nav",
+        id: "nav-parent",
+      })?.id,
+    ).toBe("hs-2");
+  });
+
+  it("ignora clics en edición", () => {
+    expect(resolveInteractiveHotspotHit("edit", 20, 20, [principalHotspot])).toBeNull();
   });
 });
 
-describe("useMapStore nav session", () => {
-  beforeEach(() => {
-    useMapStore.getState().reset();
-  });
-
-  it("navPop vacío restaura activeDrawingRef a principal", () => {
-    useMapStore.setState({
-      activeDrawingRef: { kind: "nav", id: "nav-1" },
-      navStack: [{ navId: "nav-1", name: "Hijo", hostDrawingRef: { kind: "principal" } }],
+describe("filterHotspotsForHost", () => {
+  it("filtra por hostDrawingRef", () => {
+    const filtered = filterHotspotsForHost([principalHotspot, childHotspot], {
+      kind: "nav",
+      id: "nav-parent",
     });
-    useMapStore.getState().navPop();
-    expect(useMapStore.getState().navStack).toHaveLength(0);
-    expect(useMapStore.getState().activeDrawingRef).toEqual({ kind: "principal" });
-  });
-
-  it("setViewMode edit limpia navStack", () => {
-    useMapStore.setState({
-      viewMode: "interactive",
-      navStack: [{ navId: "nav-1", name: "Hijo", hostDrawingRef: { kind: "principal" } }],
-    });
-    useMapStore.getState().setViewMode("edit");
-    expect(useMapStore.getState().navStack).toHaveLength(0);
-    expect(useMapStore.getState().viewMode).toBe("edit");
-  });
-
-  it("setViewMode interactive sin nav restaura principal", () => {
-    useMapStore.setState({
-      viewMode: "edit",
-      activeDrawingRef: { kind: "nav", id: "nav-1" },
-      navStack: [],
-    });
-    useMapStore.getState().setViewMode("interactive");
-    expect(useMapStore.getState().activeDrawingRef).toEqual({ kind: "principal" });
+    expect(filtered).toEqual([childHotspot]);
   });
 });
 
-describe("pushNavFromHotspot", () => {
+describe("collectDescendantNavWindowIds", () => {
+  it("incluye nietos en cadena parentNavId", () => {
+    const ids = collectDescendantNavWindowIds("nav-a", [
+      { navId: "nav-a" },
+      { navId: "nav-b", parentNavId: "nav-a" },
+      { navId: "nav-c", parentNavId: "nav-b" },
+      { navId: "nav-other" },
+    ]);
+    expect([...ids].sort()).toEqual(["nav-a", "nav-b", "nav-c"]);
+  });
+});
+
+describe("openNavWindowFromHotspot", () => {
   beforeEach(() => {
     useMapStore.getState().reset();
+    useMapNavWindowsStore.setState({ mapId: null, openWindows: [] });
     useMapStore.setState({ activeMapId: "map-1", viewMode: "interactive" });
   });
 
-  it("empuja nav y registra depth", async () => {
+  it("abre ventana interactiva y carga nav", async () => {
     const loadNavFile = vi.fn().mockResolvedValue(undefined);
     const navDrawings = [{ id: "nav-1", name: "Ciudad", updatedAt: "2026-01-01" }];
 
-    const ok = await pushNavFromHotspot({
+    const ok = await openNavWindowFromHotspot({
       mapId: "map-1",
-      hotspot,
+      hotspot: principalHotspot,
       navDrawings,
       loadNavFile,
     });
 
     expect(ok).toBe(true);
     expect(loadNavFile).toHaveBeenCalledWith("nav-1");
-    expect(useMapStore.getState().navStack).toEqual([
-      {
-        navId: "nav-1",
-        name: "Ciudad",
-        hostDrawingRef: { kind: "principal" },
-      },
+    expect(useMapNavWindowsStore.getState().openWindows).toEqual([
+      expect.objectContaining({ navId: "nav-1", mode: "interactive" }),
     ]);
+  });
+
+  it("abre ventana nieta con parentNavId", async () => {
+    const loadNavFile = vi.fn().mockResolvedValue(undefined);
+    useMapNavWindowsStore.getState().openWindow("nav-parent", "interactive", {
+      mapId: "map-1",
+    });
+
+    await openNavWindowFromHotspot({
+      mapId: "map-1",
+      hotspot: childHotspot,
+      navDrawings: [{ id: "nav-child", name: "Barrio", updatedAt: "2026-01-01" }],
+      loadNavFile,
+      parentNavId: "nav-parent",
+    });
+
+    const child = useMapNavWindowsStore
+      .getState()
+      .openWindows.find((item) => item.navId === "nav-child");
+    expect(child?.parentNavId).toBe("nav-parent");
   });
 });

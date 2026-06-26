@@ -22,7 +22,7 @@ function acquireStrokeBuffer(
   if (cached && cached.width === width && cached.height === height) {
     return cached;
   }
-  const canvas = document.createElement("canvas");
+  const canvas = globalThis.document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   strokeBufferCache.set(key, canvas);

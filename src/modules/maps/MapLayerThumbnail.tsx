@@ -6,6 +6,7 @@ import {
   MAP_LAYER_THUMB_WIDTH,
   renderLayerThumbnail,
 } from "@/lib/maps/mapLayerThumbnail";
+import { getLayerStrokes } from "@/lib/maps/mapImageLayers";
 import { computeLayerContentBBox } from "@/lib/maps/mapLayerBBox";
 import type { MapDrawingLayerV2 } from "@/lib/types/maps";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ export function MapLayerThumbnail({ layer, className }: MapLayerThumbnailProps) 
   const { t } = useTranslation("maps");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hasContent = computeLayerContentBBox(layer) !== null;
-  const strokeSignature = layer.strokes.map((stroke) => stroke.points.length).join(",");
+  const strokeSignature = getLayerStrokes(layer).map((stroke) => stroke.points.length).join(",");
 
   useEffect(() => {
     const canvas = canvasRef.current;

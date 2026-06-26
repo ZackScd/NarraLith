@@ -52,6 +52,13 @@ export interface MapDocumentV1 {
   updatedAt: string;
 }
 
+export interface MapCreateDraft {
+  name: string;
+  width: number;
+  height: number;
+}
+
+/** @deprecated Solo IPC legacy; crear mapa usa siempre lienzo vacío (MAP-015). */
 export type MapCreateMode = "blank" | "import";
 
 export type MapAspectPreset = "none" | "16:9" | "4:3" | "1:1" | "custom";
@@ -62,14 +69,6 @@ export interface MapSizePreset {
   id: MapSizePresetId;
   width: number;
   height: number;
-}
-
-export interface MapCreateDraft {
-  name: string;
-  mode: MapCreateMode;
-  width: number;
-  height: number;
-  importPath?: string | null;
 }
 
 export const MAP_SIZE_PRESETS: MapSizePreset[] = [
@@ -113,20 +112,45 @@ export interface MapDrawingLayerGroupV2 {
   collapsed?: boolean;
 }
 
-export interface MapDrawingLayerV2 {
+export type MapLayerKind = "vector" | "image";
+
+interface MapDrawingLayerBaseV2 {
   id: string;
   name: string;
   visible: boolean;
   opacity: number;
   locked: boolean;
-  strokes: MapStrokeV2[];
   groupId?: string | null;
+}
+
+export interface MapDrawingVectorLayerV2 extends MapDrawingLayerBaseV2 {
+  kind?: "vector";
+  strokes: MapStrokeV2[];
+}
+
+export interface MapDrawingImageLayerV2 extends MapDrawingLayerBaseV2 {
+  kind: "image";
+  assetPath: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type MapDrawingLayerV2 = MapDrawingVectorLayerV2 | MapDrawingImageLayerV2;
+
+export interface MapLayerImageImportResultV1 {
+  assetPath: string;
+  width: number;
+  height: number;
 }
 
 export interface MapDrawingV2 {
   version: 2;
   width: number;
   height: number;
+  /** null/undefined = fondo transparente (ojo Fondo desactivado). */
+  backgroundColor?: string | null;
   layers: MapDrawingLayerV2[];
   groups?: MapDrawingLayerGroupV2[];
 }
@@ -143,6 +167,7 @@ export interface MapHotspotBoundsV1 {
   height: number;
 }
 
+/** @deprecated Migrado a `MapHotspotV2` / `shape` (MAP-016). */
 export interface MapHotspotV1 {
   id: string;
   label?: string;
@@ -151,10 +176,37 @@ export interface MapHotspotV1 {
   targetNavId: string;
 }
 
+/** @deprecated Usar `MapHotspotsFileV2`. */
 export interface MapHotspotsFileV1 {
   version: 1;
   hotspots: MapHotspotV1[];
 }
+
+export interface MapHotspotPointV2 {
+  x: number;
+  y: number;
+}
+
+export type MapHotspotShapeV2 =
+  | { kind: "polygon"; points: MapHotspotPointV2[] }
+  | { kind: "rect"; x: number; y: number; width: number; height: number }
+  | { kind: "circle"; cx: number; cy: number; radius: number };
+
+export interface MapHotspotV2 {
+  id: string;
+  label?: string;
+  hostDrawingRef: MapHostDrawingRef;
+  shape: MapHotspotShapeV2;
+  targetNavId: string;
+}
+
+export interface MapHotspotsFileV2 {
+  version: 2;
+  hotspots: MapHotspotV2[];
+}
+
+/** Alias activo post MAP-016 Fase 1. */
+export type MapHotspot = MapHotspotV2;
 
 export interface MapNavSummaryV1 {
   id: string;
@@ -171,7 +223,7 @@ export interface MapNavDrawingFileV1 {
   drawing: MapDrawingV2;
 }
 
-/** Frame del stack interactivo (vista hijo) — MAP-010 Fase 4+ */
+/** @deprecated MAP-016 — sustituido por ventanas flotantes (`useMapNavWindowsStore`). */
 export interface MapNavFrame {
   navId: string;
   name: string;

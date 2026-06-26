@@ -1,6 +1,6 @@
 # MAP-016 — Dibujos hijo + hotspots unificados (replan)
 
-> **Estado:** 📋 **Planificado** (2026-06-25)  
+> **Estado:** 🔄 **En progreso** — Fases 1–6 ✅ (2026-06-25) · Fases 7–8 📋  
 > **Tipo:** Replanteo navegación §5 — supersede parcial **MAP-010** (rect in-viewport)  
 > **Spec:** [`maps-design.md`](../../maps-design.md) §5.5–5.6 · Tab MAP-015 §2.8  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md)  
@@ -196,13 +196,13 @@ interface MapNavWindowState {
 
 | Fase | ID | Entregable |
 |------|-----|------------|
-| **1** | M16-SCHEMA | `hotspots.json` v2 + migración lectura v1 |
-| **2** | M16-LASSO | Rubber banding overlay + persist polygon |
-| **3** | M16-TOOLS | Selector rect/circle; hit-test extendido |
-| **4** | M16-UNIFY | Flujo único crear hijo+zona; purga UI dual |
-| **5** | M16-WINDOW | `MapNavChildWindow` + store ventanas |
-| **6** | M16-EDIT | Abrir ventana edición desde tab lista |
-| **7** | M16-INTER | Clic interactivo → ventana; deprecar navStack |
+| **1** | M16-SCHEMA | `hotspots.json` v2 + migración lectura v1 | ✅ |
+| **2** | M16-LASSO | Rubber banding overlay + persist polygon | ✅ |
+| **3** | M16-TOOLS | Selector rect/circle; hit-test extendido | ✅ |
+| **4** | M16-UNIFY | Flujo único crear hijo+zona; purga UI dual | ✅ |
+| **5** | M16-WINDOW | `MapNavChildWindow` + store ventanas | ✅ |
+| **6** | M16-EDIT | Abrir ventana edición desde tab lista | ✅ |
+| **7** | M16-INTER | Clic interactivo → ventana; deprecar navStack | ✅ |
 | **8** | M16-QA | Tests polígono + OBS + migración |
 
 **Orden:** 1 → 2 → 4 → 3 → 5 → 6 → 7 → 8. (Unificar flujo antes de pulir herramientas geométricas.)
@@ -222,7 +222,7 @@ interface MapNavWindowState {
 - [ ] T no se resetea al abrir/cerrar ventana.
 - [ ] Hotspots v1 rect migran sin pérdida.
 - [ ] **Re-editar** forma hotspot de hijo existente persiste sin recrear nav.
-- [ ] `navStack` / breadcrumb in-viewport eliminados o reducidos a legacy flag.
+- [x] `navStack` / breadcrumb in-viewport eliminados o reducidos a legacy flag.
 
 ---
 
@@ -252,4 +252,10 @@ interface MapNavWindowState {
 | Fecha | Evento |
 |-------|--------|
 | 2026-06-25 | Plan creado — hijo+hotspot unificados; rubber banding default; ventana flotante hijo; supersede MAP-010 in-viewport |
-| 2026-06-25 | **Q5 cerrada:** re-editar forma hotspot = **Sí** |
+| 2026-06-25 | **Fase 1:** `MapHotspotShapeV2` (polygon/rect/circle), migración v1→v2 en Rust + TS (`mapHotspotShape.ts`), hit-test y render por forma |
+| 2026-06-25 | **Fase 2:** rubber banding (lasso + tether), `useHotspotDrawGesture`, overlay SVG, `CreateNavChildDialog`, persist `shape: polygon`, selector lasso/rect |
+| 2026-06-25 | **Fase 4:** flujo único hijo+zona; `CreateNavChildDialog` para lasso y rect; eliminado `HotspotTargetDialog` y botón «+» suelto; borrado atómico nav+hotspot |
+| 2026-06-25 | **Fase 3:** herramienta círculo (centro+radio drag), selector lasso/rect/circle, `PendingNavChildZone` circle |
+| 2026-06-25 | **Fase 5:** `useMapNavWindowsStore`, `MapNavChildWindow` (FloatingPanelFrame + viewport + T); clic interactivo y lista abren ventana; navStack in-viewport retirado del workspace |
+| 2026-06-25 | **Fase 6:** acciones lista (editar dibujo / editar zona), re-edición `shape` sin recrear nav, highlight zona, `MapEditStudio` en ventana hijo |
+| 2026-06-25 | **Fase 7:** `navStack` eliminado; `openNavWindowFromHotspot`; ventanas nietas en interactivo (hotspots host nav + `parentNavId`); cierre en cascada |

@@ -1,6 +1,6 @@
 # MAP-015 — Ventana capas unificada + lienzo vacío + capa Fondo
 
-> **Estado:** 📋 **Planificado** (2026-06-25)  
+> **Estado:** ✅ **Completado** — Fases 1–8 (2026-06-25)  
 > **Tipo:** Replanteo modelo capas / parches / creación mapa  
 > **Spec:** [`maps-design.md`](../../maps-design.md) §3.2.1 · §4.1.1–4.1.3 · §4.1.2  
 > **Contenedor UI:** [`MAP-014`](MAP-014-floating-tools-panel.md) (ventana flotante arrastrable)  
@@ -221,48 +221,48 @@ MAP-014 Fase D–E     Sustituir rail; un botón «Capas» abre MAP-015 window
 
 | Fase | ID | Entregable | Archivos clave |
 |------|-----|------------|----------------|
-| **1** | M15-CREATE | Diálogo sin Origen/import | `CreateMapDialog.tsx`, `maps.rs` create, tipos `MapCreateDraft` |
-| **2** | M15-FONDO | `backgroundColor` + fila Fondo | `MapLayersPanel.tsx`, `maps_store.rs`, compositor render |
-| **3** | M15-TABS | `MapLayersFloatingWindow` 3 tabs expandibles | nuevo componente + store tab |
-| **4** | M15-PATCH-UI | Toolbar rojo/morado/verde en tab Parches | `MapSecondariesPanel` refactor |
-| **5** | M15-COMBINE | Vista combinada super-grupos + migración toolbar | `MapCombinedLayersPanel.tsx` (nuevo) |
-| **6** | M15-NAV | Tab Dibujos hijo + Hotspots | fusionar paneles existentes |
-| **7** | M15-IMAGE | Capa `kind: image` + import + goma | schema v3, render, estudio |
-| **8** | M15-QA | Tests + OBS + purga rail sections | `useMapEditPanelStore` sections deprecadas |
+| **1** | M15-CREATE | Diálogo sin Origen/import | ✅ `CreateMapDialog.tsx`, `MapCreateDraft` |
+| **2** | M15-FONDO | `backgroundColor` + fila Fondo | ✅ `MapLayersPanel.tsx`, `maps_store.rs`, compositor |
+| **3** | M15-TABS | `MapLayersFloatingWindow` 3 tabs expandibles | ✅ nuevo componente + store tab |
+| **4** | M15-PATCH-UI | Toolbar rojo/morado/verde en tab Parches | ✅ `MapSecondariesPanel` refactor |
+| **5** | M15-COMBINE | Vista combinada super-grupos + migración toolbar | ✅ `MapCombinedLayersPanel.tsx` |
+| **6** | M15-NAV | Tab Dibujos hijo + Hotspots | ✅ fusionar paneles existentes |
+| **7** | M15-IMAGE | Capa `kind: image` + import + goma | ✅ schema v3, render, estudio |
+| **8** | M15-QA | Tests + OBS + purga rail sections | ✅ store/sort tests, rail simplificado |
 
 ---
 
 ## 5. Criterios de aceptación
 
 ### Crear mapa
-- [ ] Diálogo sin campo Origen ni opción importar.
-- [ ] Mapa nuevo = lienzo vacío dimensionado.
+- [x] Diálogo sin campo Origen ni opción importar.
+- [x] Mapa nuevo = lienzo vacío dimensionado.
 
 ### Fondo
-- [ ] Fila «Fondo» siempre visible al pie.
-- [ ] Ojo off → fondo transparente en compositor.
-- [ ] Color picker persiste en `drawing.json`.
+- [x] Fila «Fondo» siempre visible al pie.
+- [x] Ojo off → fondo transparente en compositor.
+- [x] Color picker persiste en `drawing.json`.
 
 ### Ventana capas
-- [ ] Un solo acceso (botón) abre ventana con 3 tabs.
-- [ ] Tab activo muestra nombre expandido.
-- [ ] Ventana arrastrable (MAP-014).
+- [x] Un solo acceso (botón) abre ventana con 3 tabs.
+- [x] Tab activo muestra nombre expandido.
+- [x] Ventana arrastrable (MAP-014).
 
 ### Parches
-- [ ] Morado oculta/marca parches no activos en T preview.
-- [ ] Verde alterna orden base/cronológico.
-- [ ] Azul combina con capas; segundo clic descombina.
+- [x] Morado oculta/marca parches no activos en T preview.
+- [x] Verde alterna orden base/cronológico.
+- [x] Azul combina con capas; segundo clic descombina.
 
 ### Combinada
-- [ ] Parches colapsables; expandido lista capas del parche.
-- [ ] Toolbar añadir/ordenar/ocultar solo en vista combinada (o duplicada coherente).
+- [x] Parches colapsables; expandido lista capas del parche.
+- [x] Toolbar añadir/ordenar/ocultar solo en vista combinada (o duplicada coherente).
 
 ### Imagen
-- [ ] Import solo desde panel capas.
-- [ ] Dibujar y goma funcionan sobre/dentro de capa imagen según Q4 cerrada.
+- [x] Import solo desde panel capas.
+- [x] Dibujar y goma funcionan sobre/dentro de capa imagen según Q4 cerrada.
 
 ### Nav
-- [ ] Hotspots y dibujos hijo en un solo tab.
+- [x] Hotspots y dibujos hijo en un solo tab.
 
 ---
 
@@ -309,4 +309,5 @@ MAP-014 Fase D–E     Sustituir rail; un botón «Capas» abre MAP-015 window
 
 | Fecha | Evento |
 |-------|--------|
+| 2026-06-25 | Fases 3–8 implementadas — ventana unificada, toolbar parches, vista combinada, nav+hotspots, capa imagen |
 | 2026-06-25 | Plan creado — crear mapa solo vacío; imagen→capa; Fondo; ventana 3 tabs; parches toolbar RGB; vista combinada super-grupos; nav+hotspots fusionados |

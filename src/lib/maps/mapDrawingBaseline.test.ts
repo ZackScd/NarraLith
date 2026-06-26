@@ -4,7 +4,7 @@ import {
   fingerprintMapDrawing,
   isDrawingDirtyAgainstBaseline,
 } from "@/lib/maps/mapDrawingBaseline";
-import type { MapDrawingV2 } from "@/lib/types/maps";
+import type { MapDrawingV2, MapDrawingVectorLayerV2 } from "@/lib/types/maps";
 
 function sampleDrawing(): MapDrawingV2 {
   return {
@@ -43,7 +43,7 @@ describe("fingerprintMapDrawing", () => {
   it("cambia al añadir un trazo", () => {
     const base = fingerprintMapDrawing(sampleDrawing());
     const next = sampleDrawing();
-    next.layers[0]!.strokes.push({
+    (next.layers[0] as MapDrawingVectorLayerV2).strokes.push({
       id: "s2",
       tool: "brush",
       brush: "pen",
@@ -70,7 +70,7 @@ describe("isDrawingDirtyAgainstBaseline", () => {
     expect(isDrawingDirtyAgainstBaseline(drawing, baseline)).toBe(false);
 
     const edited = structuredClone(drawing);
-    edited.layers[0]!.strokes.push({
+    (edited.layers[0] as MapDrawingVectorLayerV2).strokes.push({
       id: "s2",
       tool: "brush",
       brush: "pen",
@@ -81,7 +81,7 @@ describe("isDrawingDirtyAgainstBaseline", () => {
     });
     expect(isDrawingDirtyAgainstBaseline(edited, baseline)).toBe(true);
 
-    edited.layers[0]!.strokes.pop();
+    (edited.layers[0] as MapDrawingVectorLayerV2).strokes.pop();
     expect(isDrawingDirtyAgainstBaseline(edited, baseline)).toBe(false);
   });
 });

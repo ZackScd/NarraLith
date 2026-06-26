@@ -1,8 +1,8 @@
 # MAP-014 — Panel de herramientas flotante (módulo mapas)
 
-> **Estado:** 📋 **Planificado** (2026-06-25)  
-> **Tipo:** Replanteo UI — ventana lateral derecha flotante y arrastrable (Sketchbook)  
-> **Spec:** [`maps-design.md` §8.5](../../maps-design.md) · **Supersede:** MAP-013 §2bis (rail fijo)  
+> **Estado:** ✅ **Cerrado** (2026-06-25) — Fases A–E impl.; Fase F OBS diferida a MAP-015 QA  
+> **Tipo:** Replanteo UI — ventana de contenido flotante; **rail fijo conservado**  
+> **Spec:** [`maps-design.md` §8.5](../../maps-design.md) · **Supersede:** MAP-013 §2bis (panel contenido anclado)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md)  
 > **Bloquea:** MAP-012 (smoke) — junto con MAP-013 residual
 
@@ -17,42 +17,43 @@
 
 ## 0. Decisión de producto
 
-El usuario replanifica el módulo mapas. **Primera decisión documentada:**
+El usuario replanifica el módulo mapas:
 
-> En mapas, el menú lateral derecho **no** es un rail fijo pegado al borde de la ventana. Debe ser una **ventana flotante arrastrable** (como Sketchbook), aplicada a **toda** el área de herramientas derecha del módulo mapas únicamente.
+> El **rail** de iconos (`w-10`) permanece **fijo** en el borde derecho del shell (debajo de la barra superior). Solo el **panel de contenido** de cada sección (Capas, Parches, etc.) pasa a ser una **ventana flotante arrastrable** (estilo Sketchbook).
 
-**Reutilizar** el patrón de la ventana flotante de tiempo del manuscrito (`TimeTagDialog`), no reinventar arrastre/clamp/portal.
+**Reutilizar** el patrón de `TimeTagDialog` (`FloatingPanelFrame`, `useFloatingPanelDrag`, `clampFloatingPosition`).
+
+**UX cerrada (2026-06-25):**
+- Sin botón expandir/colapsar en el rail; **×** cierra la ventana.
+- Al entrar al módulo mapas ninguna ventana abierta.
+- Al salir del modo edición la ventana se cierra (no cambia a Configuración).
+- `WorkspaceTopBar` ocupa todo el ancho; el rail solo en la fila de contenido.
 
 ---
 
-## 1. Estado actual (auditoría código)
+## 1. Estado implementado (2026-06-25)
 
-### 1.1 Layout shell
+| Pieza | Archivo |
+|-------|---------|
+| Frame + drag compartido | `FloatingPanelFrame.tsx`, `useFloatingPanelDrag.ts`, `clampFloatingPosition.ts` |
+| Refactor MS tiempo | `TimeTagDialog.tsx` |
+| Store flotante mapas | `useMapFloatingToolsStore.ts` |
+| Rail fijo + ventana | `MapFloatingToolsPanel.tsx`, `WorkspaceShell.tsx` (`MAP_SIDE_PANEL_RAIL_MOUNT_ID`) |
+| Purga legacy | `MapEditSidePanel.tsx`, `useMapEditPanelStore.ts`, `map-side-panel-content-mount` eliminados |
 
-`WorkspaceShell.tsx` reserva una columna fija cuando `mainView === "map"`:
+### 1.1 Layout shell (to-be)
 
 ```text
-<aside className="w-10 …">
-  <div id="map-side-panel-rail-mount" />
-</aside>
+┌─ WorkspaceTopBar (ancho completo) ─────────────────────────┐
+├──────────────────────────────────────┬── rail w-10 fijo ──┤
+│           LIENZO 100% − 40px         │  ✏️ iconos sección │
+│     ┌──────────────┐                 │  ⚙️                │
+│     │ ≡ Capas  [×] │  ventana flot.  │                    │
+│     └──────────────┘                 │                    │
+└──────────────────────────────────────┴────────────────────┘
 ```
 
-El lienzo **no** usa el ancho completo: pierde ~40 px + panel contenido (~256 px si expandido).
-
-### 1.2 Portal rail + contenido
-
-`MapEditSidePanel.tsx`:
-
-- **Rail** → portal a `#map-side-panel-rail-mount` (iconos verticales, toggle expandir, ✏️, secciones).
-- **Contenido** → portal a `#map-side-panel-content-mount` dentro de `MapWorkspace` (`aside w-64`).
-
-Patrón heredado de MAP-013 §2bis (imitar `EditorSidePanel` manuscrito).
-
-### 1.3 Estado
-
-`useMapEditPanelStore.ts` — `activeSection`, `contentExpanded`; persistencia en `sessionStorage` por `mapId`.
-
-### 1.4 Patrón flotante existente (manuscrito)
+### 1.2 Auditoría código (histórico pre-MAP-014)
 
 `TimeTagDialog.tsx` + `useTimeTagDialogStore.ts`:
 
@@ -95,8 +96,8 @@ ANTES (MAP-013 §2bis)                DESPUÉS (MAP-014)
 
 | Requisito | Detalle |
 |-----------|---------|
-| **R1** | Cero columna reservada en shell para mapas |
-| **R2** | Ventana flotante con cabecera arrastrable (asa + título sección + cerrar) |
+| **R1** | Rail `w-10` fijo en shell (solo fila contenido, bajo top bar) |
+| **R2** | Panel de sección = ventana flotante con cabecera arrastrable (grip + título + ×) |
 | **R3** | Ventana **capas** con 3 tabs internos (Capas / Parches / Dibujos hijo) — un botón en accesos flotantes — ver [`MAP-015`](MAP-015-layers-patches-unified-panel.md) |
 | **R4** | Reutilizar extracción de `TimeTagDialog` para arrastre/clamp |
 | **R5** | Otras herramientas (Estudio, Ubicaciones, Lienzo, Config) en ventanas flotantes separadas o accesos MAP-014 |
@@ -180,8 +181,8 @@ Posición por defecto: esquina superior derecha del viewport del módulo mapas, 
 | **B** | `useMapFloatingToolsStore` + persistencia | Unit test store básico |
 | **C** | `MapFloatingToolsPanel` con sección Capas | Ventana arrastra; Capas funcional |
 | **D** | Migrar todas las secciones + modos | Paridad funcional con rail actual |
-| **E** | Limpieza shell + purga `MapEditSidePanel` | Sin montajes rail; lienzo full width |
-| **F** | OBS UI + QA manual | `obs.ui.map.floatingTools.*` en verbose |
+| **E** | Limpieza shell + purga `MapEditSidePanel` | ✅ Sin `content-mount`; rail conservado |
+| **F** | OBS UI + QA manual | ⏸ Diferido — `obs.ui.map.floatingTools.*` en MAP-015/012 QA |
 
 **Orden:** A → B → C → D → E → F. No paralelizar A.
 
@@ -189,15 +190,15 @@ Posición por defecto: esquina superior derecha del viewport del módulo mapas, 
 
 ## 5. Criterios de aceptación (§8 QA)
 
-- [ ] En vista mapa, **no** hay columna fija a la derecha del shell.
-- [ ] Ventana herramientas se **arrastra** por cabecera sin seleccionar texto del lienzo.
-- [ ] Posición **reclampa** al redimensionar ventana app.
-- [ ] Cambiar sección (Capas → Estudio) **no** resetea posición.
-- [ ] Cerrar ventana (×) deja lienzo usable; reabrir restaura sección.
-- [ ] `TimeTagDialog` manuscrito sigue funcionando tras extracción Fase A.
-- [ ] Cambiar mapa (`syncForMap`) restaura layout guardado por mapa.
-- [ ] Modo interactivo ↔ edición conserva toggle ✏️.
-- [ ] Timeline pie visible y sin solapamiento crítico con ventana flotante (z-index / posición default).
+- [x] Rail fijo `w-10` bajo top bar; top bar ancho completo.
+- [x] Ventana herramientas se **arrastra** por cabecera (grip+título, no ×).
+- [x] Posición **reclampa** al redimensionar ventana app.
+- [x] Cambiar sección no resetea posición.
+- [x] **×** cierra ventana; sin botón expandir en rail.
+- [x] Entrar a mapas / salir edición: ventana cerrada.
+- [x] `TimeTagDialog` sigue funcionando tras extracción Fase A.
+- [x] `syncForMap` restaura posición/sección; no restaura `isOpen`.
+- [x] Modo interactivo ↔ edición conserva toggle ✏️ en rail.
 
 ---
 
@@ -242,5 +243,5 @@ Posición por defecto: esquina superior derecha del viewport del módulo mapas, 
 
 | Fecha | Evento |
 |-------|--------|
-| 2026-06-25 | Plan creado — decisión usuario: lateral mapas = ventana flotante (Sketchbook), reutilizar patrón `TimeTagDialog`; QA ref `1782441798108-3084` |
+| 2026-06-25 | **Cerrado** — rail fijo + ventana flotante; `MapFloatingToolsPanel`, `useMapFloatingToolsStore`; UX ×/sin auto-open |
 | 2026-06-25 | Alineado con [`MAP-015`](MAP-015-layers-patches-unified-panel.md) — ventana capas 3 tabs; rail multi-sección obsoleto |

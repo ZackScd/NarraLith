@@ -7,7 +7,7 @@
 |-------|--------|
 | **Era** | III (`03-ROADMAP.md`) |
 | **Versión objetivo** | v0.11.x |
-| **Estado** | … MAP-015 📋 · **MAP-016 📋** · **MAP-017 📋** · MAP-012 ⏸ |
+| **Estado** | … MAP-014 ✅ · MAP-015 ✅ · **MAP-016 🔄** (F1–F7 ✅) · MAP-017 📋 · MAP-012 ⏸ |
 
 \* MAP-010: código cerrado; **UX navegación superseded** por MAP-016.
 
@@ -73,9 +73,9 @@ MAP-001 persistencia v2 + purga física legacy
 | **MAP-010** | Hotspots → dibujo hijo; volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) ✅ · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 | §5 | MAP-004, MAP-009 |
 | **MAP-011** | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) 🔄 impl | §4bis.4.1 | MAP-009, MAP-010, manuscrito |
 | **MAP-013** | Backlog correcciones UX + comportamiento — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) 🔄 | §2–§8 | MAP-011 |
-| **MAP-014** | Panel herramientas **flotante** — [plan](plans/Fase%20F/MAP-014-floating-tools-panel.md) 📋 | §8.5 | MAP-013 shell |
-| **MAP-015** | Ventana capas unificada + Fondo + imagen capa — [plan](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) 📋 | §3.2.1 · §4.1 | MAP-014 Fase A |
-| **MAP-016** | Nav+hijo unificados · rubber banding · ventana hijo — [plan](plans/Fase%20F/MAP-016-nav-hotspots-replan.md) 📋 | §5.5–5.6 | MAP-014 Fase A · MAP-015 tab |
+| **MAP-014** | Panel contenido **flotante** + rail fijo — [plan](plans/Fase%20F/MAP-014-floating-tools-panel.md) ✅ | §8.5 | MAP-013 shell |
+| **MAP-015** | Ventana capas unificada + Fondo + imagen capa — [plan](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) 🔄 F1–2 | §3.2.1 · §4.1 | MAP-014 |
+| **MAP-016** | Nav+hijo unificados · rubber banding · ventana hijo — [plan](plans/Fase%20F/MAP-016-nav-hotspots-replan.md) 🔄 F1–F7 ✅ | §5.5–5.6 | MAP-014 Fase A · MAP-015 tab |
 | **MAP-017** | Timeline mapa vista rica + sparse + constantes — [plan](plans/Fase%20F/MAP-017-map-timeline-view.md) 📋 | §4.4 | MAP-009 · MAP-011 |
 | **MAP-012** | Smoke QA + purga legacy + cierre Fase F — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) ⏸ | §2 | MAP-013…017 |
 

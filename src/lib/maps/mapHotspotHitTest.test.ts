@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import { hitTestHotspots, pointInHotspotBounds } from "@/lib/maps/mapHotspotHitTest";
-import type { MapHotspotV1 } from "@/lib/types/maps";
+import { rectShapeFromBounds } from "@/lib/maps/mapHotspotShape";
+import type { MapHotspotV2 } from "@/lib/types/maps";
 
 function hotspot(
   id: string,
-  bounds: MapHotspotV1["bounds"],
+  bounds: { x: number; y: number; width: number; height: number },
   targetNavId: string,
-): MapHotspotV1 {
+): MapHotspotV2 {
   return {
     id,
     hostDrawingRef: { kind: "principal" },
-    bounds,
+    shape: rectShapeFromBounds(bounds),
     targetNavId,
   };
 }
@@ -41,10 +42,10 @@ describe("hitTestHotspots", () => {
   });
 
   it("filters by hostDrawingRef", () => {
-    const navHostHotspot: MapHotspotV1 = {
+    const navHostHotspot: MapHotspotV2 = {
       id: "hs-nav",
       hostDrawingRef: { kind: "nav", id: "nav-x" },
-      bounds: { x: 0, y: 0, width: 10, height: 10 },
+      shape: rectShapeFromBounds({ x: 0, y: 0, width: 10, height: 10 }),
       targetNavId: "nav-y",
     };
     expect(hitTestHotspots(5, 5, [navHostHotspot], host)).toBeNull();
