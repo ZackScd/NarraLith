@@ -1,6 +1,7 @@
 # MAP-009 — Timeline del mapa + scrubber T
 
-> **Estado:** ✅ **Cerrado** (2026-06-11) — Fases 1–9 implementadas · QA funcional OK · **polish §13 diferido** (no bloquea MAP-010)  
+> **Estado:** ✅ **Cerrado** (2026-06-11) — Fases 1–9 implementadas · QA funcional OK · **polish §13 diferido**  
+> **⚠️ UI superseded (2026-06-25):** `MapTimelineBar` scrubber compacto → [`MAP-017-map-timeline-view.md`](MAP-017-map-timeline-view.md) (diseño timeline proyecto + eje sparse). **Conservar:** T, `mapTimelineRange`, OBS, memoria por mapId.  
 > **Esfuerzo:** Medio–alto · **Riesgo:** Medio (UX timeline + acoplamiento calendario; compositor ya operativo)  
 > **Lista maestra:** [`implementation-plan.md`](../../implementation-plan.md) Fase F · **Spec:** [`maps-design.md`](../../maps-design.md) §4.4, §8 · **Previo:** [MAP-008 ✅](MAP-008-secondary-patches.md) · **Siguiente:** MAP-011 _(MAP-010 ✅)_
 

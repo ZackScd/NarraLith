@@ -135,19 +135,27 @@ Orden sugerido: **fundamentos → dibujo → tiempo → navegación → integrac
 | **MAP-009** | ✅ | Compositor + timeline del mapa (scrubber **T**) — [plan](plans/Fase%20F/MAP-009-map-timeline-scrubber.md) · QA `1781899299029-15084` · polish §13 diferido | Alto | [`maps-design.md` §4.4](maps-design.md) |
 | **MAP-010** | ✅ | Navegación interactiva: hotspots → dibujo hijo, breadcrumb/volver — [plan](plans/Fase%20F/MAP-010-hotspots-nav.md) · QA `1781902329565-1512` + `1781902875392-8868` · polish §13 diferido | Alto | [`maps-design.md` §5](maps-design.md) |
 | **MAP-011** | 🔄 | Ubicaciones MS → marcas **X** @ T — [plan](plans/Fase%20F/MAP-011-manuscript-location-x.md) · impl ✅ · afinado → MAP-013 | Medio | [`maps-design.md` §4bis.4.1](maps-design.md) |
-| **MAP-012** | ⏸ | Smoke Era III + purga legacy — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) · **pospuesto** tras MAP-013 | Medio | [`maps-design.md`](maps-design.md) §2 |
+| **MAP-012** | ⏸ | Smoke Era III + purga legacy — [plan](plans/Fase%20F/MAP-012-smoke-era-iii-purge.md) · **pospuesto** tras MAP-013 + MAP-014 | Medio | [`maps-design.md`](maps-design.md) §2 |
 | **MAP-013** | 🔄 | Correcciones UX + comportamiento módulo mapas — [backlog](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) · oleadas 0–2 + polish P2 ✅ | Alto | [`maps-design.md`](maps-design.md) §2–§8 |
+| **MAP-014** | 📋 | Panel herramientas **flotante** (reemplaza rail MAP-013 §2bis) — [plan](plans/Fase%20F/MAP-014-floating-tools-panel.md) | Medio–Alto | [`maps-design.md`](maps-design.md) §8.5 |
+| **MAP-015** | 📋 | Ventana capas unificada + Fondo + imagen capa + sin import crear — [plan](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) | Alto | [`maps-design.md`](maps-design.md) §3.2.1 · §4.1 |
+| **MAP-016** | 📋 | Nav+hijo unificados · rubber banding · ventana flotante hijo — [plan](plans/Fase%20F/MAP-016-nav-hotspots-replan.md) | Alto | [`maps-design.md`](maps-design.md) §5.5–5.6 |
+| **MAP-017** | 📋 | Timeline mapa = diseño proyecto + eje sparse + ubicaciones constantes — [plan](plans/Fase%20F/MAP-017-map-timeline-view.md) | Alto | [`maps-design.md`](maps-design.md) §4.4 |
 
 **Dependencias internas (orientativas):**
 
 ```text
 MAP-000 → MAP-001 → MAP-002 → MAP-003
 MAP-001 → MAP-004 → MAP-005 → MAP-006
-MAP-007 → MAP-008 → MAP-009
-MAP-004 + MAP-009 → MAP-010
-MAP-009 + manuscrito estable → MAP-011
+MAP-007 → MAP-008 → MAP-009 (lógica T ✅; UI → MAP-017)
+MAP-004 + MAP-009 → MAP-010 (código base; UX → MAP-016)
+MAP-009 + manuscrito estable → MAP-011 (filtro @ T → MAP-017 extiende constantes)
 MAP-011 → MAP-013 (afinado UX/comportamiento)
-MAP-013 → MAP-012 (smoke + purga + cierre Fase F)
+MAP-013 → MAP-014 (shell flotante §8.5)
+MAP-014 Fase A → MAP-015 (ventana capas 3 tabs)
+MAP-014 Fase A → MAP-016 (ventana hijo + lasso)
+MAP-009 + MAP-011 → MAP-017 (timeline vista rica)
+MAP-013 + MAP-014 + MAP-015 + MAP-016 + MAP-017 → MAP-012 (smoke + purga)
 ```
 
 ---
@@ -213,8 +221,12 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 27 | MAP-009 | Compositor + timeline T ✅ |
 | 28 | MAP-010 | Navegación hotspots ✅ |
 | 29 | MAP-011 | Marcas X ubicación MS 🔄 impl |
-| 30 | MAP-013 | Backlog correcciones mapas 📋 |
-| 31 | MAP-012 | Smoke + purga legacy ⏸ tras MAP-013 |
+| 30 | MAP-013 | Backlog correcciones mapas 🔄 |
+| 30b | MAP-014 | Panel herramientas flotante 📋 |
+| 30c | MAP-015 | Ventana capas + Fondo + parches combinados 📋 |
+| 30d | MAP-016 | Nav+hijo unificado + lasso + ventana hijo 📋 |
+| 30e | MAP-017 | Timeline mapa diseño proyecto + sparse 📋 |
+| 31 | MAP-012 | Smoke + purga legacy ⏸ tras MAP-013…017 |
 | — | WB-* | Post-WB (aplazado) |
 
 ---
@@ -290,7 +302,9 @@ No ejecutar hasta **Era IV** worldbuilding refactor. Listado para no perder el h
 | 2026-06-11 | **MAP-011 📋→🔄** plan + impl código (pins, X @ T, panel); QA formal → MAP-012 §6.F |
 | 2026-06-11 | **MAP-012 ⏸** pospuesto — smoke bloqueado por UX/comportamiento; usuario |
 | 2026-06-11 | **MAP-013 📋** backlog correcciones módulo mapas — [`MAP-013-maps-corrections-backlog.md`](plans/Fase%20F/MAP-013-maps-corrections-backlog.md) |
+| 2026-06-25 | **MAP-014 📋** replan UI mapas — panel herramientas flotante (Sketchbook); reutilizar `TimeTagDialog`; supersede MAP-013 §2bis — [`MAP-014-floating-tools-panel.md`](plans/Fase%20F/MAP-014-floating-tools-panel.md) |
+| 2026-06-25 | **MAP-017 📋** timeline mapa = diseño proyecto, eje solo fechas con marcas, ubicaciones constantes — [`MAP-017-map-timeline-view.md`](plans/Fase%20F/MAP-017-map-timeline-view.md) |
 
 ---
 
-**Última actualización:** 2026-06-11 (MAP-013 backlog · MAP-012 ⏸)
+**Última actualización:** 2026-06-25 (MAP-017 timeline · MAP-016 · MAP-015 · MAP-014 · MAP-012 ⏸)

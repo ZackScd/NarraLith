@@ -20,7 +20,7 @@ Decisiones **cerradas** recientes: §7. **Aún sin cerrar:**
 | — | *(ninguna crítica de arquitectura tras jun 2026)* | — |
 | 1 | Visualización de eventos / historia en el mapa | §4bis (post-WB; usuario detallará) |
 | 7 | Visualización rica ubicación (iconos, filtros, rutas) — refactor post-WB | §4bis.4.3 |
-| 3 | Forma del hotspot; UX volver atrás | §5.5 |
+| ~~3~~ | ~~Forma del hotspot; UX volver atrás~~ | **✅ cerrado jun 2026** — §5.5 · [`MAP-016`](plans/Fase%20F/MAP-016-nav-hotspots-replan.md) |
 | 4 | Lista cerrada de pinceles v1; estudio ↔ capas internas | §3bis.4 |
 | 5 | Selector de mapas; convivencia fijado vs último visto | §3ter.1 |
 | 6 | ¿Barra T de solo lectura en modo edición al dibujar parches? | §8.2 |
@@ -94,7 +94,7 @@ El diálogo **Crear mapa** es demasiado limitado: solo tres tamaños fijos y sin
 | **Tamaño libre** | El usuario define ancho y alto (no solo presets). Los presets pueden existir como atajos, no como única opción. |
 | **Relación de aspecto (opcional)** | El usuario puede fijar una proporción (ej. 16:9, 4:3, personalizada). |
 | **Autoajuste** | Si hay relación de aspecto activa, al cambiar un lado el otro se recalcula automáticamente. |
-| **Origen** | Sigue habiendo al menos dos modos: **lienzo vacío** (rejilla) e **importar imagen** (confirmar si la imagen define tamaño inicial o se escala — pendiente). |
+| **Origen** | ~~Dos modos: lienzo vacío e importar imagen~~ → **✅ cerrado jun 2026:** solo **lienzo vacío** al crear; ver §3.2.1 · [`MAP-015`](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) |
 
 #### Después de crear
 
@@ -104,6 +104,17 @@ El diálogo **Crear mapa** es demasiado limitado: solo tres tamaños fijos y sin
 | **Recortar lienzo** | Reducir el área de trabajo; definir qué ocurre con contenido fuera del nuevo borde (pendiente: aviso, borrado, o contenido oculto — usuario detallará). |
 
 > Pendiente: bordes de expansión (¿solo derecha/abajo o en las cuatro direcciones?), unidades (px vs unidades lógicas), y si el lienzo tiene un «origen» fijo (0,0) al expandir.
+
+#### 3.2.1 Crear mapa — solo lienzo vacío (jun 2026)
+
+| Antes (MAP-003) | Ahora |
+|-----------------|-------|
+| Selector **Origen**: «Lienzo vacío» / «Importar imagen» | **Eliminar** campo Origen y opción importar al crear |
+| Imagen como base del mapa al crear | Imagen entra como **capa** dentro del dibujo — §4.1.1 |
+
+Al crear un mapa el usuario solo define **nombre**, **tamaño** y **relación de aspecto**. El lienzo nace vacío (rejilla). Importar referencias visuales se hace **después**, desde el panel de capas (como Sketchbook: capa imagen).
+
+**Plan:** [`MAP-015`](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) · **Retrofit:** purgar rama `import` en `CreateMapDialog.tsx` + IPC `create_map` si aplica.
 
 ---
 
@@ -305,7 +316,7 @@ Mapa activo (un mundo)
 
 ### 4.1 Capas internas (dentro de un dibujo)
 
-> Boceto: **imagen 1** — planos apilados.
+> Boceto: **imagen 1** — planos apilados · referencia UX: panel capas **Sketchbook**.
 
 Cada **dibujo es un archivo** con su **propio stack de capas internas**. El usuario puede repartir el detalle en tantas capas como quiera (costas, relieve, vegetación, anotaciones…) sin mezclar trazos.
 
@@ -313,7 +324,7 @@ Cada **dibujo es un archivo** con su **propio stack de capas internas**. El usua
 |-----------|-------------|
 | **Ámbito** | Solo dentro de ese archivo; no se comparten entre principal y secundarios |
 | **Cantidad** | Sin límite práctico definido aún |
-| **Controles** | Pendiente: visibilidad, orden, bloqueo, opacidad por capa |
+| **Controles** | Visibilidad, orden, bloqueo, opacidad por capa — §4.1.2 · capa **Fondo** §4.1.3 |
 
 ```text
 Dibujo «principal» (archivo)
@@ -325,6 +336,84 @@ Dibujo secundario «A» (archivo distinto)
  ├── capa interna …
  └── capa interna 1
 ```
+
+#### 4.1.1 Capa imagen (raster editable)
+
+> **Decisión jun 2026:** la imagen **no** es origen del mapa al crear; es una **capa más** del dibujo activo.
+
+| Regla | Comportamiento |
+|-------|----------------|
+| **Importar** | Desde toolbar del panel capas (icono imagen / «Añadir capa imagen») — no desde «Nuevo mapa» |
+| **Edición** | Igual que el resto de capas: dibujar encima, **sobreescribir** trazos sobre la imagen, **goma** borra lo dibujado (trazos vectoriales y, según herramienta, píxeles de la capa raster — ver MAP-015) |
+| **Orden** | Participa en el stack; puede quedar bajo o sobre otras capas |
+| **Persistencia** | Capa tipo `image` en `layers[]` del `drawing.json` — asset en `assets/` |
+
+#### 4.1.2 Panel capas — ventana flotante unificada (jun 2026)
+
+Un **solo botón** en el rail / conjunto de ventanas flotantes abre la **ventana de capas** (no tres entradas separadas en rail para Capas / Parches / Nav).
+
+Cabecera de la ventana: **3 cuadros** (tabs compactos). Al seleccionar uno, el cuadro **se expande ligeramente** mostrando el nombre de la sección.
+
+| Cuadro | Contenido | Notas |
+|--------|-----------|-------|
+| **Capas** | Lista capas del dibujo activo + capa **Fondo** | Comportamiento MAP-013 §7 |
+| **Parches** | Lista parches temporales (secundarios) | Toolbar propia — §4.1.2.1 |
+| **Dibujos hijo** | Nav §5 unificado con hotspot (1:1) — [`MAP-016`](plans/Fase%20F/MAP-016-nav-hotspots-replan.md) | Un tab; rubber banding + ventana flotante hijo |
+
+**Vista combinada Capas + Parches:** botón **azul** en tab Parches (o en vista combinada) fusiona ambas listas — §4.1.2.2.
+
+**Plan detallado:** [`MAP-015`](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) · contenedor flotante: [`MAP-014`](plans/Fase%20F/MAP-014-floating-tools-panel.md).
+
+##### 4.1.2.1 Tab Parches — toolbar
+
+| Color (boceto usuario) | Acción | Estado código |
+|------------------------|--------|---------------|
+| **Rojo** `+` | Añadir parche nuevo | ✅ existe (`MapSecondariesPanel`) |
+| **Morado** | Mostrar / ocultar parches **no activos** en la **Vista en T** actual | Nuevo |
+| **Verde** | Ordenar parches: **base primero** o **orden cronológico** (por marca tiempo) | Nuevo |
+| **Azul** | **Combinar** ventana Parches con Capas → vista unificada §4.1.2.2 | Nuevo |
+
+##### 4.1.2.2 Vista combinada «Capas / Parches»
+
+Al activar combinar (botón azul):
+
+```text
+┌─────────────────────────────┐
+│ [capas/parches▓] [□] [□]    │  ← tab activo muestra etiqueta combinada
+├─────────────────────────────┤
+│ [+ rojo] [↕ verde] [👁 morado]│  ← toolbar migrada desde tab Parches
+├─────────────────────────────┤
+│ ▼ Parche 1950-2000          │  ← super-grupo (expandir/contraer)
+│     Capa 1                  │
+│     Capa 2                  │
+│ ▼ Parche 2000-2100          │
+│     …                       │
+│ ── Dibujo base (principal) ─│
+│     Capa relieve            │
+│     Fondo                   │
+└─────────────────────────────┘
+```
+
+| Concepto | Regla |
+|----------|-------|
+| **Super-grupo** | Cada **parche** (secundario) es una fila colapsable |
+| **Expandido** | Muestra las **capas internas** de ese parche |
+| **Principal** | Bloque al final (o fijo al inicio si orden «base primero») con capas del dibujo activo |
+| **Toolbar** | Botones añadir / ordenar / ocultar inactivos viven en esta vista; tab Parches solo puede quedar como atajo al modo combinado |
+
+#### 4.1.3 Capa «Fondo» (Sketchbook)
+
+Capa especial **siempre presente** al pie de la lista (como «Fondo» en Sketchbook):
+
+| Control | Comportamiento |
+|---------|----------------|
+| **Ojo** | Visible / **transparente** (sin color de fondo; se ve rejilla o lienzo vacío) |
+| **Muestra color** | Círculo o swatch con el color de fondo actual |
+| **Clic en color** | Abre selector de color de fondo del dibujo |
+| **No borrable** | No aparece en eliminar capa; no participa en DnD como capa normal |
+| **No dibujable** | El trazo activo siempre va a capas de contenido |
+
+Persistencia: `backgroundColor: string | null` en `drawing.json` (`null` = transparente).
 
 ---
 
@@ -482,6 +571,47 @@ Al mover el cursor en **T**, el sistema **compone** la pila de dibujos visibles 
 
 Cada dibujo es un **archivo** con arte ya hecho; la timeline **conmuta composiciones**, no anima un único lienzo.
 
+#### UI — línea de tiempo mapa (jun 2026)
+
+> **Decisión usuario:** misma **estructura** que la timeline del proyecto (eje sparse, ‹ ›, ±, Vista en T) — plan [`MAP-017`](plans/Fase%20F/MAP-017-map-timeline-view.md).  
+> **Marcas en el eje:** solo un **punto** por fecha con evento mapa — **sin chips** ni etiquetas en el eje.
+
+| Aspecto | Regla |
+|---------|--------|
+| **Shell** | Reutilizar layout timeline proyecto (eje colapsado, navegación, zoom) |
+| **Marcas fechadas** | **Un punto** por fecha distinta con ≥1 evento mapa |
+| **Color año 0** | Punto **negro** en la fecha **Desde** (`map.desde` — año 0 local del mapa) |
+| **Otras fechas** | Punto **blanco** |
+| **Misma fecha, varios eventos** | **Un solo punto** (dedupe por día absoluto) |
+| **Eje** | Solo fechas con marcas — ocultar siempre huecos vacíos |
+| **Detalle** | Tooltip al hover (opcional v1): lista parches/ubicaciones de ese día |
+| **Clic punto** | Mueve `previewTimeTRaw` a esa fecha |
+
+```text
+Eje mapa (sparse):     ○────●────○────○────●
+                       blanco  NEGRO blanco     ← NEGRO = Desde (año 0)
+```
+
+##### Fuentes de marcas (una fecha = un punto)
+
+| Tipo | Origen | En eje |
+|------|--------|--------|
+| **Desde** | `map.desde` | ● negro |
+| **Parche** | `tiempoInicio` / `tiempoFin` secundarios | ○ blanco |
+| **Ubicación** | Ocurrencia MS fechada | ○ blanco (mismo día → mismo punto) |
+| **Ubicación constante** | Sin marca time previa | Lane aparte (∞) — **no** en eje fechado |
+
+##### Reglas ubicación en timeline (extiende §4bis.1)
+
+| Caso | Comportamiento timeline |
+|------|-------------------------|
+| Ubicación tras marca **time** | Contribuye al **punto blanco** de esa fecha (tooltip) |
+| Varias ubicaciones, misma fecha | Un solo punto blanco |
+| Ubicación **sin** marca time previa | Lane **constante** — fuera del eje de fechas |
+| En mapa @ T | Fechadas: solo si `effectiveTime === T`; constantes: siempre |
+
+> **Cambio vs MAP-011 actual:** el extractor Rust hoy **descarta** ubicaciones sin `effective_time` — MAP-017 añade `timeBinding: "constant"`.
+
 #### Reglas de visibilidad (recap)
 
 | Condición del secundario | Activo cuando… |
@@ -523,7 +653,8 @@ Evento comienza en día X  →  barra / marca activa = X
 | Comportamiento | Descripción |
 |----------------|-------------|
 | **Acoplamiento** | Cada ubicación hereda la marca de tiempo **vigente** hasta que el usuario inserte otra. |
-| **Mapa en T** | Con el cursor del mapa en **T**, se muestran las ubicaciones cuyo tiempo efectivo aplica en **T** (junto con parches y composición §4.4). |
+| **Sin marca time** | Si aún no hay etiqueta time en el segmento (inicio del documento o prosa sin tiempo), la ubicación es **constante**: visible **siempre** en timeline mapa (lane dedicado) y en compositor @ cualquier T. |
+| **Mapa en T** | Ubicaciones fechadas: solo si tiempo efectivo coincide con **T**; constantes: siempre. |
 
 > **Era III:** ubicaciones → **X** en T (§4bis.4.1). **Post-WB:** eventos, historia, movimientos, filtros por personaje (§4bis.4.3 — usuario detallará).
 
@@ -635,29 +766,31 @@ Permite **entrar** en regiones del mapa: dentro de un dibujo, el usuario **selec
 | Elemento | Descripción |
 |----------|-------------|
 | **Dibujo padre** | Mapa de contexto amplio (p. ej. continente con río y ciudad). |
-| **Hotspot / zona de navegación** | Región del lienzo marcada por el usuario (forma libre o rectángulo — pendiente). |
-| **Dibujo hijo** | Archivo de detalle que se abre al activar el hotspot (p. ej. «mapa de la ciudad»). |
-| **Anidación** | El hijo es un dibujo **completo**: puede tener sus propias capas internas, parches temporales **y nuevos hotspots** (p. ej. edificio → interior). |
+| **Dibujo hijo + hotspot** | **Una sola entidad de producto** — crear hijo **siempre** crea su hotspot en el padre; no existen hijos sin zona ni zonas huérfanas sin hijo. |
+| **Hotspot / zona** | Región del lienzo padre que enlaza al hijo; forma por defecto **rubber banding** (§5.5). |
+| **Ventana hijo** | Al editar o visitar un hijo se abre **ventana flotante** con las mismas capacidades de dibujo que el mapa principal — §5.6. |
+| **Anidación** | El hijo es dibujo **completo** (capas, parches, hijos propios…) dentro de su ventana. |
 
 ```text
 Mapa mundo (padre)                    Clic en zona «Ciudad»
 ┌────────────────────────┐                    │
 │      Rio               │                    ▼
-│   ┌────────┐           │            Mapa ciudad (hijo)
-│   │ Ciudad │ ◄─hotspot│            ┌────────────────────────┐
-│   └────────┘           │            │  calles, edificios…    │
-└────────────────────────┘            │  ┌────┐ ◄─ hotspot     │
-                                      │  │Edif│ → mapa interior│
-                                      │  └────┘                │
-                                      └────────────────────────┘
+│   ┌────────┐           │            ┌─ Ventana flotante ─┐
+│   │ Ciudad │ ◄─hotspot│            │  mapa ciudad (hijo) │
+│   └~~~~~~~~┘  (lasso)  │            │  capas · estudio · T │
+└────────────────────────┘            └────────────────────┘
 ```
 
 ### 5.2 Flujo de usuario
 
-1. En modo edición del dibujo padre, el usuario **marca el área** que actuará como enlace (boceto imagen 1: flecha hacia la ciudad).
-2. Crea o elige el **dibujo hijo** asociado (nuevo archivo o existente).
-3. En modo **mapa interactivo**, al **clic** en el hotspot se **carga el dibujo hijo** a pantalla completa (o en el viewport del módulo).
-4. Dentro del hijo, el mismo mecanismo puede repetirse **sin límite de profundidad** (ciudad → edificio → planta → habitación…).
+1. En modo **edición** del padre, el usuario elige **«Nuevo dibujo hijo»** (tab §4.1.2).
+2. Dibuja la **zona hotspot** en el lienzo padre (herramienta por defecto: rubber banding §5.5).
+3. Al cerrar la zona → se crean **en un solo paso** el archivo hijo + el hotspot que apunta a él.
+4. Para **dibujar** en el hijo → se abre **ventana flotante** con estudio, capas, timeline, etc. (§5.6).
+5. En modo **interactivo**, **clic** dentro del hotspot → abre la **misma ventana** con el compositor del hijo (sin sustituir el lienzo padre detrás).
+6. Dentro del hijo puede repetirse la cadena (ciudad → edificio → interior…).
+
+> **Supersede MAP-010 v1:** navegación in-viewport (`navStack` sustituye lienzo) y hotspots rectángulo desacoplados de crear nav — ver [`MAP-016`](plans/Fase%20F/MAP-016-nav-hotspots-replan.md).
 
 ### 5.3 Relación con los otros sistemas
 
@@ -675,14 +808,64 @@ Mapa mundo (padre)                    Clic en zona «Ciudad»
 | **Relación espacial** | Otro lienzo (mapa de detalle) | Mismo lienzo, parche transparente alineado |
 | **Propósito** | Zoom lógico / entrar en región | Cambio histórico en la misma vista |
 
-### 5.5 Pendiente de detallar
+### 5.5 Forma del hotspot — rubber banding por defecto (jun 2026)
 
-- Forma del hotspot (rectángulo, polígono, trazo cerrado).
-- UX de **volver** (breadcrumb, botón atrás, mini-mapa).
+> **Decisión usuario:** el hotspot **no** es un cuadrado por defecto. Herramienta principal: **rubber banding** / **tethering** (anclaje elástico desde un origen).
+
+#### Herramientas de zona (selector en tab Dibujos hijo)
+
+| Herramienta | ID | Comportamiento | Default |
+|-------------|-----|----------------|---------|
+| **Rubber banding** | `lasso` | Clic fija **origen**; arrastre muestra **tether** (línea al cursor + medida px); contorno **discontinuo**; cierre del trazo define polígono | **✅ sí** |
+| **Rectángulo** | `rect` | Drag diagonal — equivalente MAP-010 v1 | Opcional |
+| **Círculo** | `circle` | Centro + radio (drag o dos clics) | Opcional |
+
+#### UX rubber banding (referencia visual)
+
+```text
+     Origin ●───────────╮  146 px
+              tether   │
+         - - - - - - - ┘   ← contorno discontinuo (preview)
+```
+
+| Pieza | Detalle |
+|-------|---------|
+| **Origen** | Primer clic; marcador visible («Origin» / punto destacado) |
+| **Tether** | Línea del origen al cursor durante el trazo; etiqueta distancia en px |
+| **Preview** | Contorno discontinuo del polígono en construcción |
+| **Cierre** | Clic cerca del origen o doble-clic / Enter — valida polígono ≥ 3 vértices |
+| **Cancelar** | Escape descarta zona en curso |
+
+**Persistencia:** `hotspots.json` v2 — `shape: { kind: "polygon", points[] } | { kind: "rect", … } | { kind: "circle", … }`. Migración desde `MapHotspotBoundsV1` rect-only.
+
+**Hit-test interactivo:** punto-en-polígono (ray casting) para `lasso`; rect/circle como hoy.
+
+### 5.6 Ventana flotante del dibujo hijo (jun 2026)
+
+> **Decisión usuario:** el hijo **no** sustituye el lienzo del padre en el viewport principal (MAP-010). Se abre una **ventana flotante** con las **mismas funciones de dibujo** (estudio, capas MAP-015, timeline T, modos interactivo/edición).
+
+| Modo padre | Acción | Ventana hijo |
+|------------|--------|--------------|
+| **Edición** | «Editar dibujo hijo» o tras crear hijo | Abre ventana en modo **edición** ✏️ |
+| **Interactivo** | Clic en hotspot | Abre ventana en modo **interactivo** (compositor @ T; sin trazos nuevos) |
+
+| Propiedad | Regla |
+|-----------|--------|
+| **Contenido** | Mini `MapWorkspace` scoped al `navId` — lienzo + pie timeline + ventanas herramientas MAP-014/015 |
+| **Arrastre / resize** | Mismo patrón `FloatingPanelFrame` que tiempo / capas |
+| **T** | Hereda `previewTimeTRaw` del mapa padre — §4bis.2 |
+| **Cerrar ventana** | Vuelve al padre visible detrás; **no** stack in-viewport |
+| **Profundidad** | Ventana hijo puede abrir ventana nieta al clic en hotspot interno |
+
+**Plan:** [`MAP-016`](plans/Fase%20F/MAP-016-nav-hotspots-replan.md).
+
+### 5.7 Pendiente de detallar
+
 - Vínculo a entidad WB desde la zona (¿además del dibujo hijo?).
-- Serialización: metadatos del enlace padre → hijo en disco.
+- ¿Varias ventanas hijo abiertas a la vez?
+- Límite de tamaño / posición default de la ventana hijo.
 
-> **Hotspots:** se **definen** en modo edición; se **activan** (clic) solo en vista interactiva — §8.
+> **Hotspots:** se **definen** en modo edición (junto al crear hijo); se **activan** (clic → ventana) solo en vista interactiva — §8.
 
 ---
 
@@ -697,7 +880,7 @@ El módulo Mapas es **una sola pantalla** con **dos modos** (no apps ni rutas se
 | **Al abrir** | El mapa entra en **vista interactiva** por defecto (no en modo dibujo). |
 | **Compositor** | Composición en **T**: principal + secundarios + **marcas X** de ubicación (§4bis.4.1) + overlays narrativos futuros. |
 | **Timeline** | El **scrubber** de la línea de tiempo vive aquí — es el modo de **consumo** espacio-temporal. |
-| **Navegación §5** | Clic en **hotspots** para cargar dibujos hijo. |
+| **Navegación §5** | Clic en **hotspot** → **ventana flotante** con dibujo hijo (padre sigue visible) |
 | **Edición de trazos** | **No** — no se dibuja ni se borra arte en esta vista. |
 
 ### 8.2 Modo edición — ✏️
@@ -707,7 +890,7 @@ El módulo Mapas es **una sola pantalla** con **dos modos** (no apps ni rutas se
 | **Entrada** | Solo al pulsar **✏️ Editar** (o equivalente). |
 | **Salida** | Volver a vista interactiva (botón «Ver mapa interactivo» / cerrar edición). |
 | **Herramientas** | Estudio §3bis: pinceles, colores, capas internas, goma, zoom/pan de trabajo. |
-| **Hotspots** | Se **crean y marcan** zonas de navegación; no se navega a hijos al clic (eso es interactivo). |
+| **Hotspots** | Se **crean** al definir dibujo hijo (zona en padre); **no** navegan in-viewport — abren ventana §5.6 |
 | **Timeline** | **T se conserva** en el estado del mapa al cambiar de modo; el scrubber **no es el foco** del modo edición (pendiente: barra T de solo lectura mientras se dibuja un parche histórico). |
 
 ### 8.3 Arquitectura del compositor
@@ -738,6 +921,78 @@ Un solo **motor de composición** alimenta la vista interactiva; el modo edició
 | Vista mapa (Leaflet, capas, propiedades) | **Vista interactiva** |
 | «Editar dibujo» / estudio con paleta | **Modo edición ✏️** |
 | «Ver mapa interactivo» desde estudio | Salir de edición → interactivo |
+
+### 8.5 Panel de herramientas flotante (replan jun 2026)
+
+> **Decisión usuario (2026-06-25):** el lateral derecho del módulo mapas **no** es un rail fijo anclado al shell (patrón `EditorSidePanel` / MAP-013 §2bis). Es una **ventana flotante arrastrable**, inspiración **Sketchbook** (panel de capas flotante), reutilizando el **patrón de ventana flotante de tiempo** del manuscrito (`TimeTagDialog`).
+>
+> **Plan:** [`plans/Fase F/MAP-014-floating-tools-panel.md`](plans/Fase%20F/MAP-014-floating-tools-panel.md)
+
+#### Principio
+
+| Aspecto | Regla |
+|---------|--------|
+| **Ámbito** | Solo módulo **Mapas** — no afecta manuscrito, timeline ni otros módulos |
+| **Lienzo** | Ocupa **todo** el ancho disponible; ninguna columna reservada a la derecha |
+| **Herramientas** | **Varias ventanas flotantes** posibles; la de **capas** es una sola con 3 tabs internos — §4.1.2 · [`MAP-015`](plans/Fase%20F/MAP-015-layers-patches-unified-panel.md) |
+| **Arrastre** | Cabecera con asa (`GripHorizontal`) — mismo UX que «Editar marca de tiempo» |
+| **Rail fijo** | **Eliminado** — un botón abre ventana capas; Estudio, Config, etc. en otras ventanas o accesos (MAP-014) |
+
+#### Wireframe objetivo — ventana capas (MAP-015)
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ [WorkspaceTopBar]  nombre mapa · lista · pin · + · Desde …    │
+├──────────────────────────────────────────────────────────────┤
+│                     LIENZO (100 % ancho)                     │
+│              ┌──────────────────────────┐                    │
+│              │ ≡ [▦capas▓][□][□]    [×] │  ← tabs expandibles│
+│              ├──────────────────────────┤                    │
+│              │ toolbar capas / parches  │                    │
+│              │ Capa 2  👁 🔒 …          │                    │
+│              │ Fondo   👁  ● color      │                    │
+│              └──────────────────────────┘                    │
+├──────────────────────────────────────────────────────────────┤
+│  scrubber T · Vista en T                                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Otras ventanas flotantes (MAP-014)
+
+| Ventana | Contenido | Modo |
+|---------|-----------|------|
+| **Capas** (un botón) | Tabs Capas · Parches · Dibujos hijo — §4.1.2 · MAP-016 | Edición |
+| Estudio | `MapEditStudio` — pinceles, colores | Edición |
+| Ubicaciones | `MapLocationsPanel` | Edición |
+| Lienzo | `MapCanvasSection` expandir/recortar | Edición |
+| Configuración | `MapModuleSettingsSection` | Interactivo + edición |
+
+> **Supersede** lista anterior que listaba Capas/Parches/Nav/Hotspots como secciones separadas del rail.
+
+#### Referencia técnica (código vigente a reemplazar)
+
+| Pieza actual | Ruta | Destino |
+|--------------|------|---------|
+| Rail fijo 40 px | `WorkspaceShell.tsx` + `mapSidePanelMount.ts` | Eliminar montaje shell |
+| Panel rail + contenido | `MapEditSidePanel.tsx` | `MapFloatingToolsPanel.tsx` |
+| Estado sección | `useMapEditPanelStore.ts` | `useMapFloatingToolsStore.ts` (+ posición/tamaño) |
+| Patrón arrastre | `TimeTagDialog.tsx` (`clampPosition`, pointer drag) | Extraer a componente/hook compartido |
+
+#### Supersede
+
+- MAP-013 **§2bis** (rail tipo manuscrito) — **obsoleto**; conservar solo el inventario de secciones y el rediseño Capas §7.
+- MAP-013 **§2ter** cabecera operativa — **sigue vigente** (lista mapas, Desde, + en top bar).
+
+#### Pendiente de detallar
+
+| # | Pregunta |
+|---|----------|
+| 1 | ¿Redimensionar ventana (asa esquina inferior derecha, estilo Sketchbook)? |
+| ~~2~~ | ~~¿Una ventana con pestañas vs varias?~~ → **cerrado:** ventana capas = 3 tabs; otras herramientas = otras ventanas (MAP-015) |
+| 3 | ¿Posición/tamaño persistidos por mapa, por proyecto o globales? |
+| 4 | ¿Comportamiento en modo interactivo: oculta, minimizada o solo Config + ✏️? |
+| 5 | ¿Atajo teclado para mostrar/ocultar panel? |
+| 6 | Goma sobre capa imagen: ¿solo trazos vectoriales o también borrar píxeles raster? — MAP-015 Q4 |
 
 ---
 
@@ -887,6 +1142,9 @@ El usuario irá añadiendo bloques. Lista de trabajo:
 | 2026-06-06 | Fechas 1950/2000/2100 = ejemplos ilustrativos, no restricciones del producto |
 | 2026-06-06 | Estudio: paleta + color personalizado; varios pinceles; presión de tableta |
 | 2026-06-06 | Referencia UX dibujo: Autodesk Sketchbook (inspiración, no clon) |
+| 2026-06-25 | **§8.5** Panel herramientas flotante (Sketchbook) — supersede MAP-013 §2bis rail; plan MAP-014 |
+| 2026-06-25 | **§3.2.1** Solo lienzo vacío al crear; import → capa imagen §4.1.1 |
+| 2026-06-25 | **§4.4 UI** Marcas = punto único por fecha; negro = Desde (año 0), blanco = resto — MAP-017 |
 | 2026-06-06 | **§8** Vista interactiva por defecto; edición/dibujo solo con ✏️; scrubber en interactivo |
 | 2026-06-06 | Navegación: zona clicable en dibujo → carga dibujo hijo; anidación recursiva |
 | 2026-06-06 | «Mapa detallado» UI actual ≈ sistema de navegación (no parche temporal) |

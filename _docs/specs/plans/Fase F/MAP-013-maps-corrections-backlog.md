@@ -51,6 +51,9 @@ Estado observado en modo **edición** (mapa `a`, 2400×1600):
 
 ## 2bis. Arquitectura UI — panel derecho tipo manuscrito (2026-06-11)
 
+> **⚠️ SUPERSEDIDO (2026-06-25):** esta sección (rail fijo anclado al shell) queda **obsoleta**. Decisión vigente: **ventana flotante arrastrable** — [`maps-design.md` §8.5](../../maps-design.md) · plan [`MAP-014-floating-tools-panel.md`](MAP-014-floating-tools-panel.md).  
+> Se conserva como histórico de implementación MAP-013 oleada 0. El inventario de **secciones** y el rediseño **Capas §7** siguen válidos dentro de la ventana flotante.
+
 > **Decisión usuario:** todo lo enmarcado en **rojo** en captura pasa al **panel derecho** en modo edición, con **barra de iconos** siempre visible (patrón `EditorSidePanel` manuscrito).  
 > **Objetivo v1:** reducir ruido — cabecera y columnas laterales actuales desaparecen como bloques permanentes.
 
